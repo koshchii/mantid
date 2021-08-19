@@ -24,6 +24,7 @@ Improvements
 - :ref:`GenerateLogbook <algm-GenerateLogbook>` now allows to perform binary operations even when certain entries do not exist, e.g. to create a string with all polarisation orientations contained in a collection of data files.
 - Event nexuses produced at ILL can now be loaded using :ref:`LoadEventNexus <algm-LoadEventNexus>`.
 - :ref:`Rebin <algm-Rebin>` now has an option for binning with reverse logarithmic and inverse power bins.
+- An importance sampling option has been added to :ref:`DiscusMultipleScatteringCorrection <algm-DiscusMultipleScatteringCorrection>` so that it handles spikes in the structure factor S(Q) better
 
 Bugfixes
 ########

@@ -539,8 +539,7 @@ useStlAlgorithm:${CMAKE_SOURCE_DIR}/Framework/DataHandling/src/UpdateInstrumentF
 funcArgOrderDifferent:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/CalculateEfficiency.cpp:308
 constParameter:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/CalculatePlaczekSelfScattering.cpp:29
 constParameter:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/CalculatePlaczek.cpp:45
-passedByValue:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/DiscusMultipleScatteringCorrection.cpp:482
-useStlAlgorithm:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/DiscusMultipleScatteringCorrection.cpp:257
+useStlAlgorithm:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/DiscusMultipleScatteringCorrection.cpp:253
 redundantInitialization:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/ChangeTimeZero.cpp:133
 constParameter:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/ConvertAxisByFormula.cpp:238
 constParameter:${CMAKE_SOURCE_DIR}/Framework/Algorithms/src/ConvertAxisByFormula.cpp:255
