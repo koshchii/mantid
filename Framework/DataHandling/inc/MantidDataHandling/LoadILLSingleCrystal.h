@@ -9,6 +9,7 @@
 #include "MantidAPI/Algorithm.h"
 #include "MantidAPI/IMDHistoWorkspace.h"
 #include "MantidDataHandling/DllConfig.h"
+#include "MantidKernel/System.h"
 #include <nexus/NeXusFile.hpp>
 
 namespace Mantid {
