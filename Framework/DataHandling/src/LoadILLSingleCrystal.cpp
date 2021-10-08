@@ -164,6 +164,20 @@ void LoadILLSingleCrystal::exec() {
   // instrument name
   std::string instr_name = *get_value<std::string>(*m_file, "name");
 
+  // initial crystal angles
+  m_file->openGroup("chi", "NXpositioner");
+  float chi = *get_value<float>(*m_file, "value");
+  m_file->closeGroup();
+  m_file->openGroup("omega", "NXpositioner");
+  float omega = *get_value<float>(*m_file, "value");
+  m_file->closeGroup();
+  m_file->openGroup("phi", "NXpositioner");
+  float phi = *get_value<float>(*m_file, "value");
+  m_file->closeGroup();
+
+  m_log.information() << "Initial sample angles: "
+                      << "chi=" << chi << ", omega=" << omega << ", phi=" << phi << std::endl;
+
   // crystal
   m_file->openGroup("SingleCrystalSettings", "NXcrystal");
   auto _cell_a = get_value<float>(*m_file, "unit_cell_a");
@@ -188,6 +202,13 @@ void LoadILLSingleCrystal::exec() {
 
   m_log.information() << "Unit cell: a=" << cell_a << ", b=" << cell_b << ", c=" << cell_c << ", alpha=" << cell_alpha
                       << ", beta=" << cell_beta << ", gamma=" << cell_gamma << std::endl;
+
+  auto UB = get_values<float>(*m_file, "orientation_matrix");
+  m_log.information() << "UB matrix:\n"
+                      << "\t" << std::setw(15) << UB[0] << std::setw(15) << UB[1] << std::setw(15) << UB[2] << "\n"
+                      << "\t" << std::setw(15) << UB[3] << std::setw(15) << UB[4] << std::setw(15) << UB[5] << "\n"
+                      << "\t" << std::setw(15) << UB[6] << std::setw(15) << UB[7] << std::setw(15) << UB[8]
+                      << std::endl;
 
   m_file->closeGroup(); // SingleCrystalSettings
 
@@ -246,6 +267,8 @@ void LoadILLSingleCrystal::exec() {
   int total_steps = *get_value<int>(*m_file, "total_steps");
   int actual_step = *get_value<int>(*m_file, "actual_step");
 
+  m_log.information() << "Total steps=" << total_steps << ", actual step=" << actual_step << std::endl;
+
   // detector data
   m_file->openGroup("detector_data", "ILL_detectors_data_scan");
 
@@ -256,7 +279,7 @@ void LoadILLSingleCrystal::exec() {
     throw std::runtime_error("Detector data dimension < 3.");
 
   m_log.information() << "Detector data dimensions: ";
-  for (std::size_t i = 0; i < detector_data_dims.size(); ++i) {
+  for (std::int16_t i = 0; i < detector_data_dims.size(); ++i) {
     m_log.information() << detector_data_dims[i];
     if (i < detector_data_dims.size() - 1)
       m_log.information() << " x ";
@@ -283,7 +306,17 @@ void LoadILLSingleCrystal::exec() {
     m_log.information() << entry.first << " = " << entry.second << std::endl;
 
   auto scanned_variables_names = get_values<std::string>(*m_file, "name");
-  auto scanned_variables = get_values<unsigned char>(*m_file, "scanned");
+  auto scanned_variables = get_values<std::uint8_t>(*m_file, "scanned");
+
+  // get index of scanned variable
+  std::uint8_t scanned_idx;
+  for (std::size_t idx = 0; idx < scanned_variables.size(); ++idx) {
+    if (scanned_variables[idx]) {
+      scanned_idx = idx;
+      break;
+    }
+  }
+  m_log.information() << "Scanned variable index: " << (int)scanned_idx << std::endl;
 
   m_file->closeGroup(); // variable names
 
@@ -297,15 +330,15 @@ void LoadILLSingleCrystal::exec() {
   // create workspace
   Geometry::GeneralFrame frame_x("x", "");
   Geometry::GeneralFrame frame_y("y", "");
-  Geometry::GeneralFrame frame_z("z", "");
+  Geometry::GeneralFrame frame_scanned("scanned", "");
 
   std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions{{
-      std::make_shared<Geometry::MDHistoDimension>("y", "y", frame_x, 0, detector_data_dims[2] - 1,
+      std::make_shared<Geometry::MDHistoDimension>("y", "y", frame_y, 0, detector_data_dims[2] - 1,
                                                    detector_data_dims[2]),
-      std::make_shared<Geometry::MDHistoDimension>("x", "x", frame_y, 0, detector_data_dims[1] - 1,
+      std::make_shared<Geometry::MDHistoDimension>("x", "x", frame_x, 0, detector_data_dims[1] - 1,
                                                    detector_data_dims[1]),
-      std::make_shared<Geometry::MDHistoDimension>("Scanned Variable", "scanned", frame_z, 0, detector_data_dims[0] - 1,
-                                                   detector_data_dims[0]),
+      std::make_shared<Geometry::MDHistoDimension>("Scanned Variable", "scanned", frame_scanned, 0,
+                                                   detector_data_dims[0] - 1, detector_data_dims[0]),
   }};
 
   m_workspace = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
@@ -323,6 +356,8 @@ void LoadILLSingleCrystal::exec() {
   info->mutableRun().addProperty("Sample_alpha", cell_alpha);
   info->mutableRun().addProperty("Sample_beta", cell_beta);
   info->mutableRun().addProperty("Sample_gamma", cell_gamma);
+  for (std::size_t i = 0; i < UB.size(); ++i)
+    info->mutableRun().addProperty("Sample_UB_" + std::to_string(i), UB[i]);
 
   Geometry::CrystalStructure crys(
       // unit cell
@@ -336,9 +371,25 @@ void LoadILLSingleCrystal::exec() {
   m_workspace->addExperimentInfo(info);
   m_workspace->setTitle(title);
 
+  // size of one detector image in pixels
+  std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
+
   // copy the detector data to the workspace
-  for (std::size_t idx = 0; idx < detector_data.size(); ++idx)
+  std::int64_t last_scan_step = -1;
+  for (std::size_t idx = 0; idx < detector_data.size(); ++idx) {
+    // completed all pixels of a frame?
+    std::int64_t cur_scan_step = idx / frame_size;
+    if (last_scan_step != cur_scan_step) {
+      double scanned_variable_value = scanned_variables_values[detector_data_dims[0] * scanned_idx + cur_scan_step];
+
+      // std::cout << scanned_variable_value << std::endl;
+      // TODO: associate scanned_variable_value with this frame (i.e. cur_scan_step)
+
+      last_scan_step = cur_scan_step;
+    }
+
     m_workspace->setSignalAt(idx, detector_data[idx]);
+  }
 
   // set ouput workspace
   setProperty("OutputWorkspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace));
