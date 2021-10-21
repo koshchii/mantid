@@ -5,6 +5,7 @@
 //   Institut Laue - Langevin & CSNS, Institute of High Energy Physics, CAS
 // SPDX - License - Identifier: GPL - 3.0 +
 #include "MantidAlgorithms/DiscusMultipleScatteringCorrection.h"
+#include "MantidAPI/Axis.h"
 #include "MantidAPI/ISpectrum.h"
 #include "MantidAPI/InstrumentValidator.h"
 #include "MantidAPI/Sample.h"
@@ -137,19 +138,17 @@ std::map<std::string, std::string> DiscusMultipleScatteringCorrection::validateI
       issues["InputWorkspace"] = "Sample must have a material set up with a non-zero number density";
     }
   }
+
+  const std::string emodeStr = getProperty("EMode");
+  auto emode = Kernel::DeltaEMode::fromString(emodeStr);
+
   MatrixWorkspace_sptr SQWS = getProperty("SofqWorkspace");
-  if (SQWS->getNumberHistograms() != 1) {
-    issues["SofqWorkspace"] = "S(Q) workspace must contain a single spectrum";
+  if ((emode == Kernel::DeltaEMode::Elastic) && (SQWS->getNumberHistograms() != 1)) {
+    issues["SofqWorkspace"] = "S(Q) workspace must contain a single spectrum for elastic mode";
   }
   auto y = SQWS->y(0);
   if (std::any_of(y.cbegin(), y.cend(), [](const auto yval) { return (yval < 0); })) {
     issues["SofqWorkspace"] = "S(Q) workspace must have all y >= 0";
-  }
-
-  const std::string emodeStr = getProperty("EMode");
-  auto emode = Kernel::DeltaEMode::fromString(emodeStr);
-  if (emode != Kernel::DeltaEMode::Elastic) {
-    issues["EMode"] = "Only elastic mode is supported at the moment";
   }
 
   const int nlambda = getProperty("NumberOfWavelengthPoints");
@@ -279,16 +278,16 @@ void DiscusMultipleScatteringCorrection::exec() {
 
         const double kinc = 2 * M_PI / lambdas[bin];
 
-        auto invPOfQ = prepareCumulativeProbForQ(SQHist, kinc);
+        auto invPOfQ = prepareCumulativeProbForQ(SQWS, kinc);
 
-        double total = simulatePaths(nSingleScatterEvents, 1, sample, *instrument, rng, sigmaSSWS, SQHist, *invPOfQ,
-                                     kinc, detPos, true, importanceSampling);
+        double total = simulatePaths(nSingleScatterEvents, 1, sample, *instrument, rng, sigmaSSWS, SQWS, invPOfQ, kinc,
+                                     detPos, true, importanceSampling);
         noAbsSimulationWS->getSpectrum(i).dataY()[bin] = total;
 
         for (int ne = 0; ne < nScatters; ne++) {
           int nEvents = ne == 0 ? nSingleScatterEvents : nMultiScatterEvents;
 
-          total = simulatePaths(nEvents, ne + 1, sample, *instrument, rng, sigmaSSWS, SQHist, *invPOfQ, kinc, detPos,
+          total = simulatePaths(nEvents, ne + 1, sample, *instrument, rng, sigmaSSWS, SQWS, invPOfQ, kinc, detPos,
                                 false, importanceSampling);
           simulationWSs[ne]->getSpectrum(i).dataY()[bin] = total;
         }
@@ -386,33 +385,46 @@ void DiscusMultipleScatteringCorrection::exec() {
  * @param kinc The incident wavenumber
  * @return the inverted cumulative probability distribution
  */
-std::shared_ptr<Mantid::HistogramData::Histogram>
-DiscusMultipleScatteringCorrection::prepareCumulativeProbForQ(HistogramData::Histogram &SQ, double kinc) {
+MatrixWorkspace_sptr DiscusMultipleScatteringCorrection::prepareCumulativeProbForQ(const MatrixWorkspace_sptr &SQ,
+                                                                                   const double kinc) {
 
-  std::vector<double> qValues = SQ.readX();
-  std::vector<double> SQValues = SQ.readY();
-  // add terminating points at 0 and 2k before multiplying by Q so no extrapolation problems
-  if (qValues.front() > 0.) {
-    qValues.insert(qValues.begin(), 0.);
-    SQValues.insert(SQValues.begin(), SQValues.front());
-  }
-  if (qValues.back() < 2 * kinc) {
-    qValues.push_back(2 * kinc);
-    SQValues.push_back(SQValues.back());
-  }
-  // add some extra points to help the Q.S(Q) integral get the right answer
-  for (size_t i = 1; i < qValues.size(); i++) {
-    if (std::abs(SQValues[i] - SQValues[i - 1]) > std::numeric_limits<double>::epsilon()) {
-      qValues.insert(qValues.begin() + i, qValues[i] - std::numeric_limits<double>::epsilon());
-      SQValues.insert(SQValues.begin() + i, SQValues[i - 1]);
-      i++;
+  std::vector<double> flattenedQ, flattenedQSQ;
+  double maxQ = SQ->histogram(0).readY().back();
+  // loop through the S(Q) spectra for the different energy transfer values
+  for (int iW = 0; iW < SQ->getNumberHistograms(); iW++) {
+
+    std::vector<double> qValues = SQ->histogram(iW).readX();
+    std::vector<double> SQValues = SQ->histogram(iW).readY();
+    // add terminating points at 0 and 2k before multiplying by Q so no extrapolation problems
+    if (qValues.front() > 0.) {
+      qValues.insert(qValues.begin(), iW == 0 ? 0. : std::numeric_limits<double>::epsilon());
+      SQValues.insert(SQValues.begin(), SQValues.front());
     }
+    if (qValues.back() < 2 * kinc) {
+      qValues.push_back(2 * kinc);
+      SQValues.push_back(SQValues.back());
+    }
+    // add some extra points to help the Q.S(Q) integral get the right answer
+    for (size_t i = 1; i < qValues.size(); i++) {
+      if (std::abs(SQValues[i] - SQValues[i - 1]) > std::numeric_limits<double>::epsilon()) {
+        qValues.insert(qValues.begin() + i, qValues[i] - std::numeric_limits<double>::epsilon());
+        SQValues.insert(SQValues.begin() + i, SQValues[i - 1]);
+        i++;
+      }
+    }
+
+    std::vector<double> QSQValues;
+    std::transform(SQValues.begin(), SQValues.end(), qValues.begin(), std::back_inserter(QSQValues),
+                   std::multiplies<double>());
+
+    std::transform(qValues.begin(), qValues.end(), qValues.begin(),
+                   [maxQ, iW](double d) -> double { return d + iW * maxQ; });
+
+    flattenedQSQ.insert(flattenedQSQ.begin(), QSQValues.begin(), QSQValues.end());
+    flattenedQ.insert(flattenedQ.begin(), qValues.begin(), qValues.end());
   }
-  std::vector<double> QSQValues;
-  std::transform(SQValues.begin(), SQValues.end(), qValues.begin(), std::back_inserter(QSQValues),
-                 std::multiplies<double>());
-  auto QSQ = Mantid::HistogramData::Histogram(Mantid::HistogramData::Points(qValues),
-                                              Mantid::HistogramData::Frequencies(QSQValues));
+  auto QSQ = Mantid::HistogramData::Histogram(Mantid::HistogramData::Points(flattenedQ),
+                                              Mantid::HistogramData::Frequencies(flattenedQSQ));
   auto IOfQ = integrateCumulative(QSQ, 2 * kinc);
   auto IOfQX = IOfQ->dataX();
   auto IOfQY = IOfQ->dataY();
@@ -420,8 +432,13 @@ DiscusMultipleScatteringCorrection::prepareCumulativeProbForQ(HistogramData::His
   if (IOfQYAt2K == 0.)
     throw std::runtime_error("Integral of Q * S(Q) is zero so can't generate probability distribution");
   std::transform(IOfQY.begin(), IOfQY.end(), IOfQY.begin(), [IOfQYAt2K](double d) -> double { return d / IOfQYAt2K; });
-  return std::make_shared<Mantid::HistogramData::Histogram>(Mantid::HistogramData::Points{IOfQY},
-                                                            Mantid::HistogramData::Counts{IOfQX});
+  // construct a workspace storing the normalized integral (= cumulative probability) on the x axis
+  // the y values in the three spectra store coordinate of flattened S(Q,W) workspace, Q, W
+  auto retVal = DataObjects::create<Workspace2D>(3, Mantid::HistogramData::Points{IOfQY});
+  retVal->mutableY(0).assign(IOfQX.cbegin(), IOfQX.cend());
+  retVal->mutableY(1).assign(IOfQX.cbegin(), IOfQX.cend());
+  retVal->mutableY(2).assign(IOfQX.cbegin(), IOfQX.cend());
+  return retVal;
 }
 
 /**
@@ -495,6 +512,10 @@ std::tuple<double, double> DiscusMultipleScatteringCorrection::new_vector(const 
   return {sig_total, scatteringXSection};
 }
 
+double DiscusMultipleScatteringCorrection::sampleQW(const MatrixWorkspace_sptr &CumulativeProb, double x) {
+  return interpolateSquareRoot(CumulativeProb->histogram(0), x);
+}
+
 /**
  * Interpolate function of the form y = a * sqrt(x - b) ie inverse of a quadratic
  * Used to lookup value in the cumulative probability distribution of Q S(Q) which
@@ -525,7 +546,7 @@ double DiscusMultipleScatteringCorrection::interpolateSquareRoot(const Histogram
 /**
  * Interpolate function using flat interpolation from previous point
  */
-double DiscusMultipleScatteringCorrection::interpolateFlat(const Mantid::HistogramData::Histogram &histToInterpolate,
+double DiscusMultipleScatteringCorrection::interpolateFlat(const HistogramData::Histogram &histToInterpolate,
                                                            double x) {
   if (x > histToInterpolate.x().back()) {
     return histToInterpolate.y().back();
@@ -562,9 +583,9 @@ double DiscusMultipleScatteringCorrection::interpolateFlat(const Mantid::Histogr
  */
 double DiscusMultipleScatteringCorrection::simulatePaths(
     const int nPaths, const int nScatters, const Sample &sample, const Geometry::Instrument &instrument,
-    Kernel::PseudoRandomNumberGenerator &rng, const MatrixWorkspace_sptr &sigmaSSWS,
-    const HistogramData::Histogram &SOfQ, const HistogramData::Histogram &invPOfQ, const double kinc,
-    const Kernel::V3D &detPos, bool specialSingleScatterCalc, bool importanceSampling) {
+    Kernel::PseudoRandomNumberGenerator &rng, const MatrixWorkspace_sptr &sigmaSSWS, const MatrixWorkspace_sptr &SOfQ,
+    const MatrixWorkspace_sptr &invPOfQ, const double kinc, const Kernel::V3D &detPos, bool specialSingleScatterCalc,
+    bool importanceSampling) {
   double sumOfWeights = 0, sumOfQSS = 0.;
   int countZeroWeights = 0; // for debugging and analysis of where importance sampling may help
   auto sourcePos = instrument.getSource()->getPos();
@@ -614,9 +635,9 @@ double DiscusMultipleScatteringCorrection::simulatePaths(
  */
 std::tuple<bool, double, double> DiscusMultipleScatteringCorrection::scatter(
     const int nScatters, const Sample &sample, const Geometry::Instrument &instrument, const V3D sourcePos,
-    Kernel::PseudoRandomNumberGenerator &rng, const MatrixWorkspace_sptr &sigmaSSWS,
-    const HistogramData::Histogram &SOfQ, const HistogramData::Histogram &invPOfQ, const double kinc,
-    Kernel::V3D detPos, bool specialSingleScatterCalc, bool importanceSampling) {
+    Kernel::PseudoRandomNumberGenerator &rng, const MatrixWorkspace_sptr &sigmaSSWS, const MatrixWorkspace_sptr &SOfQ,
+    const MatrixWorkspace_sptr &invPOfQ, const double kinc, Kernel::V3D detPos, bool specialSingleScatterCalc,
+    bool importanceSampling) {
   double weight = 1;
   double numberDensity = sample.getMaterial().numberDensityEffective();
   // if scale up scatteringXSection by 100*numberDensity then may not need
@@ -654,7 +675,7 @@ std::tuple<bool, double, double> DiscusMultipleScatteringCorrection::scatter(
   }
   const double dl = track.front().distInsideObject;
   const auto q = (directionToDetector - prevDirection) * kinc;
-  const auto SQ = interpolateFlat(SOfQ, q.norm());
+  const auto SQ = interpolateFlat(SOfQ->histogram(0), q.norm());
   if (specialSingleScatterCalc)
     vmu = 0;
   const auto AT2 = exp(-dl * vmu);
@@ -664,23 +685,46 @@ std::tuple<bool, double, double> DiscusMultipleScatteringCorrection::scatter(
 }
 
 // update track direction, QSS and weight
-void DiscusMultipleScatteringCorrection::q_dir(Geometry::Track &track, const HistogramData::Histogram &SOfQ,
-                                               const HistogramData::Histogram &invPOfQ, const double kinc,
+void DiscusMultipleScatteringCorrection::q_dir(Geometry::Track &track, const MatrixWorkspace_sptr &SOfQ,
+                                               const MatrixWorkspace_sptr &invPOfQ, const double kinc,
                                                const double scatteringXSection,
                                                Kernel::PseudoRandomNumberGenerator &rng, double &QSS, double &weight,
                                                bool importanceSampling) {
-  const double kf = kinc; // elastic only so far
+  double kf;
   double QQ, SQ;
   if (importanceSampling) {
-    QQ = interpolateSquareRoot(invPOfQ, rng.nextValue());
+    kf = kinc; // elastic only so far
+    QQ = sampleQW(invPOfQ, rng.nextValue());
+    int iW = 0;
     // S(Q) not strictly needed here but useful to see if the higher values are indeed being returned
-    SQ = interpolateFlat(SOfQ, QQ);
+    SQ = interpolateFlat(SOfQ->histogram(iW), QQ);
     weight = weight * scatteringXSection;
   } else {
+
+    const std::string emodeStr = getProperty("EMode");
+    auto emode = Kernel::DeltaEMode::fromString(emodeStr);
+    double deltaE, qrange;
+    auto iW = rng.nextInt(0, static_cast<int>(SOfQ->getNumberHistograms() - 1));
+    if (emode == Kernel::DeltaEMode::Elastic) {
+      deltaE = 0.;
+    } else {
+      assert(!SOfQ->getAxis(1)->isSpectra());
+      deltaE = SOfQ->getAxis(1)->getValue(iW);
+    }
+    if (deltaE == 0.) {
+      kf = kinc; // avoid costly sqrt
+    } else {
+      kf = sqrt(kinc * kinc + deltaE / PhysicalConstants::E_mev_toNeutronWavenumberSq);
+    }
     const double qmin = abs(kf - kinc);
-    const double qrange = 2 * kinc;
+    if (deltaE <= 0) {
+      qrange = 2 * kinc;
+    } else {
+      qrange = 2 * kf;
+    }
+
     QQ = qmin + qrange * rng.nextValue();
-    SQ = interpolateFlat(SOfQ, QQ);
+    SQ = interpolateFlat(SOfQ->histogram(iW), QQ);
     weight = weight * scatteringXSection * SQ * QQ;
   }
   // T = 2theta

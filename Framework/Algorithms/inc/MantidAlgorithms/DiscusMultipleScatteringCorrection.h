@@ -24,6 +24,8 @@ namespace Geometry {
 class Instrument;
 }
 
+using namespace Mantid::API;
+
 namespace Algorithms {
 
 /** Calculates a multiple scattering correction
@@ -50,11 +52,12 @@ public:
   const std::string alias() const override { return "Muscat"; }
 
 protected:
-  virtual std::shared_ptr<SparseWorkspace> createSparseWorkspace(const API::MatrixWorkspace &modelWS,
+  virtual std::shared_ptr<SparseWorkspace> createSparseWorkspace(const MatrixWorkspace &modelWS,
                                                                  const size_t wavelengthPoints, const size_t rows,
                                                                  const size_t columns);
   virtual std::unique_ptr<InterpolationOption> createInterpolateOption();
   double interpolateFlat(const HistogramData::Histogram &histToInterpolate, double x);
+  double sampleQW(const MatrixWorkspace_sptr &CumulativeProb, double x);
   double interpolateSquareRoot(const HistogramData::Histogram &histToInterpolate, double x);
   void updateTrackDirection(Geometry::Track &track, const double cosT, const double phi);
   std::shared_ptr<Mantid::HistogramData::Histogram> integrateCumulative(const Mantid::HistogramData::Histogram &h,
@@ -64,19 +67,20 @@ private:
   void init() override;
   void exec() override;
   std::map<std::string, std::string> validateInputs() override;
-  API::MatrixWorkspace_sptr createOutputWorkspace(const API::MatrixWorkspace &inputWS) const;
-  std::tuple<double, double> new_vector(const API::MatrixWorkspace_sptr &sigmaSSWS, const Kernel::Material &material,
+  MatrixWorkspace_sptr createOutputWorkspace(const MatrixWorkspace &inputWS) const;
+  std::tuple<double, double> new_vector(const MatrixWorkspace_sptr &sigmaSSWS, const Kernel::Material &material,
                                         double kinc, bool specialSingleScatterCalc);
-  double simulatePaths(const int nEvents, const int nScatters, const API::Sample &sample,
+  double simulatePaths(const int nEvents, const int nScatters, const Sample &sample,
                        const Geometry::Instrument &instrument, Kernel::PseudoRandomNumberGenerator &rng,
-                       const API::MatrixWorkspace_sptr &sigmaSSWS, const HistogramData::Histogram &SOfQ,
-                       const HistogramData::Histogram &invPOfQ, const double kinc, const Kernel::V3D &detPos,
+                       const MatrixWorkspace_sptr &sigmaSSWS, const MatrixWorkspace_sptr &SOfQ,
+                       const MatrixWorkspace_sptr &invPOfQ, const double kinc, const Kernel::V3D &detPos,
                        bool specialSingleScatterCalc, bool importanceSampling);
-  std::tuple<bool, double, double>
-  scatter(const int nScatters, const API::Sample &sample, const Geometry::Instrument &instrument, Kernel::V3D sourcePos,
-          Kernel::PseudoRandomNumberGenerator &rng, const API::MatrixWorkspace_sptr &sigmaSSWS,
-          const HistogramData::Histogram &SOfQ, const HistogramData::Histogram &invPOfQ, const double kinc,
-          Kernel::V3D detPos, bool specialSingleScatterCalc, bool importanceSampling);
+  std::tuple<bool, double, double> scatter(const int nScatters, const Sample &sample,
+                                           const Geometry::Instrument &instrument, Kernel::V3D sourcePos,
+                                           Kernel::PseudoRandomNumberGenerator &rng,
+                                           const MatrixWorkspace_sptr &sigmaSSWS, const MatrixWorkspace_sptr &SOfQ,
+                                           const MatrixWorkspace_sptr &invPOfQ, const double kinc, Kernel::V3D detPos,
+                                           bool specialSingleScatterCalc, bool importanceSampling);
   Geometry::Track start_point(const Geometry::IObject &shape, const std::shared_ptr<const Geometry::ReferenceFrame> &,
                               const Kernel::V3D &sourcePos, Kernel::PseudoRandomNumberGenerator &rng);
   Geometry::Track generateInitialTrack(const Geometry::IObject &shape,
@@ -85,15 +89,14 @@ private:
   void inc_xyz(Geometry::Track &track, double vl);
   void updateWeightAndPosition(Geometry::Track &track, double &weight, const double vmfp, const double sigma_total,
                                Kernel::PseudoRandomNumberGenerator &rng);
-  void q_dir(Geometry::Track &track, const HistogramData::Histogram &SOfQ, const HistogramData::Histogram &invPOfQ,
+  void q_dir(Geometry::Track &track, const MatrixWorkspace_sptr &SOfQ, const MatrixWorkspace_sptr &invPOfQ,
              const double kinc, const double scatteringXSection, Kernel::PseudoRandomNumberGenerator &rng, double &QSS,
              double &weight, bool importanceSampling);
-  void interpolateFromSparse(API::MatrixWorkspace &targetWS, const SparseWorkspace &sparseWS,
+  void interpolateFromSparse(MatrixWorkspace &targetWS, const SparseWorkspace &sparseWS,
                              const Mantid::Algorithms::InterpolationOption &interpOpt);
   void correctForWorkspaceNameClash(std::string &wsName);
-  void setWorkspaceName(const API::MatrixWorkspace_sptr &ws, std::string wsName);
-  std::shared_ptr<Mantid::HistogramData::Histogram> prepareCumulativeProbForQ(HistogramData::Histogram &SQ,
-                                                                              double kinc);
+  void setWorkspaceName(const MatrixWorkspace_sptr &ws, std::string wsName);
+  MatrixWorkspace_sptr prepareCumulativeProbForQ(const MatrixWorkspace_sptr &SQ, const double kinc);
   long long m_callsToInterceptSurface{0};
   std::map<int, int> m_attemptsToGenerateInitialTrack;
 };
