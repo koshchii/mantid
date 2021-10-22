@@ -7,6 +7,7 @@
 #pragma once
 
 #include "MantidAPI/Algorithm.h"
+#include "MantidAPI/IMDEventWorkspace.h"
 #include "MantidAPI/IMDHistoWorkspace.h"
 #include "MantidDataHandling/DllConfig.h"
 #include "MantidKernel/System.h"
@@ -30,7 +31,8 @@ private:
 
   std::string m_filename;
   std::unique_ptr<NeXus::File> m_file;
-  API::IMDHistoWorkspace_sptr m_workspace;
+  API::IMDHistoWorkspace_sptr m_workspace_histo;
+  API::IMDEventWorkspace_sptr m_workspace_event;
 };
 
 } // namespace DataHandling

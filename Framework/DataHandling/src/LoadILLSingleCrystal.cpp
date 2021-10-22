@@ -11,6 +11,8 @@
 #include "MantidAPI/Sample.h"
 #include "MantidAPI/WorkspaceFactory.h"
 #include "MantidDataHandling/H5Util.h"
+#include "MantidDataObjects/MDEvent.h"
+#include "MantidDataObjects/MDEventWorkspace.h"
 #include "MantidDataObjects/MDHistoWorkspace.h"
 #include "MantidGeometry/Crystal/CrystalStructure.h"
 #include "MantidGeometry/Crystal/IsotropicAtomBraggScatterer.h"
@@ -28,8 +30,6 @@
  */
 namespace Mantid {
 namespace DataHandling {
-using Mantid::API::WorkspaceProperty;
-using Mantid::Kernel::Direction;
 
 // Register the algorithm into the AlgorithmFactory
 DECLARE_ALGORITHM(LoadILLSingleCrystal)
@@ -110,20 +110,28 @@ void LoadILLSingleCrystal::init() {
   declareProperty(std::make_unique<API::FileProperty>("Filename", "", API::FileProperty::Load, ".nxs"),
                   "File path of the data file to load");
 
-  // verbose log flag
-  // declareProperty(std::make_unique<Kernel::PropertyWithValue<bool>>("Verbose Logging", false,
-  //                Direction::Input), "Show verbose logs.");
+  // create Q events workspace
+  declareProperty(
+      std::make_unique<Kernel::PropertyWithValue<bool>>("Create Event Workspace", false, Kernel::Direction::Input),
+      "Create the workspace with Q events.");
 
-  // output workspace
-  declareProperty(std::make_unique<WorkspaceProperty<API::IMDHistoWorkspace>>("OutputWorkspace", "", Direction::Output),
-                  "An output workspace.");
+  // output workspaces
+  declareProperty(std::make_unique<API::WorkspaceProperty<API::IMDHistoWorkspace>>(
+                      "Output Histogram Workspace", "", Kernel::Direction::Output, API::PropertyMode::Mandatory),
+                  "An output histogram workspace for the detector pixel values.");
+  // we do not really use events, but some of the following algorithms expect an event workspace
+  declareProperty(std::make_unique<API::WorkspaceProperty<API::IMDEventWorkspace>>(
+                      "Output Event Workspace", "", Kernel::Direction::Output, API::PropertyMode::Optional),
+                  "An output event workspace in momentum coordinates.");
 }
 
 //----------------------------------------------------------------------------------------------
 /** Execute the algorithm.
  */
 void LoadILLSingleCrystal::exec() {
-  // m_log.setEnabled(getProperty("Verbose Logging"));
+  bool create_event_workspace = getProperty("Create Event Workspace");
+  if (getProperty("Output Event Workspace").operator std::string() == "")
+    create_event_workspace = false;
 
   // get input file name
   m_filename = getPropertyValue("Filename");
@@ -279,7 +287,7 @@ void LoadILLSingleCrystal::exec() {
     throw std::runtime_error("Detector data dimension < 3.");
 
   m_log.information() << "Detector data dimensions: ";
-  for (std::int16_t i = 0; i < detector_data_dims.size(); ++i) {
+  for (std::size_t i = 0; i < detector_data_dims.size(); ++i) {
     m_log.information() << detector_data_dims[i];
     if (i < detector_data_dims.size() - 1)
       m_log.information() << " x ";
@@ -309,14 +317,14 @@ void LoadILLSingleCrystal::exec() {
   auto scanned_variables = get_values<std::uint8_t>(*m_file, "scanned");
 
   // get index of scanned variable
-  std::uint8_t scanned_idx;
+  std::size_t scanned_idx = 0;
   for (std::size_t idx = 0; idx < scanned_variables.size(); ++idx) {
     if (scanned_variables[idx]) {
       scanned_idx = idx;
       break;
     }
   }
-  m_log.information() << "Scanned variable index: " << (int)scanned_idx << std::endl;
+  m_log.information() << "Scanned variable index: " << scanned_idx << std::endl;
 
   m_file->closeGroup(); // variable names
 
@@ -327,7 +335,7 @@ void LoadILLSingleCrystal::exec() {
 
   m_file->closeGroup();
 
-  // create workspace
+  // create histogram workspace
   Geometry::GeneralFrame frame_x("x", "");
   Geometry::GeneralFrame frame_y("y", "");
   Geometry::GeneralFrame frame_scanned("scanned", "");
@@ -341,7 +349,31 @@ void LoadILLSingleCrystal::exec() {
                                                    detector_data_dims[0] - 1, detector_data_dims[0]),
   }};
 
-  m_workspace = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
+  m_workspace_histo = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
+
+  // create event workspace
+  if (create_event_workspace) {
+    Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
+
+    coord_t min_Q = 0;
+    coord_t max_Q = 10;
+    std::size_t num_Q_bins = 64;
+    std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
+        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, min_Q, max_Q, num_Q_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, min_Q, max_Q, num_Q_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, min_Q, max_Q, num_Q_bins),
+    }};
+
+    using t_event = DataObjects::MDEvent<3>;
+    using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
+    m_workspace_event = std::make_shared<t_eventworkspace>(API::NoNormalization, API::NoNormalization);
+
+    m_workspace_event->addDimension(dimensions_Q[0]);
+    m_workspace_event->addDimension(dimensions_Q[1]);
+    m_workspace_event->addDimension(dimensions_Q[2]);
+    m_workspace_event->setCoordinateSystem(Kernel::QSample);
+    m_workspace_event->initialize();
+  }
 
   // set the metadata
   auto info = std::make_shared<API::ExperimentInfo>();
@@ -356,6 +388,16 @@ void LoadILLSingleCrystal::exec() {
   info->mutableRun().addProperty("Sample_alpha", cell_alpha);
   info->mutableRun().addProperty("Sample_beta", cell_beta);
   info->mutableRun().addProperty("Sample_gamma", cell_gamma);
+
+  // set the metadata units
+  info->mutableRun().getProperty("Wavelength")->setUnits("Angstrom");
+  info->mutableRun().getProperty("Sample_a")->setUnits("Angstrom");
+  info->mutableRun().getProperty("Sample_b")->setUnits("Angstrom");
+  info->mutableRun().getProperty("Sample_c")->setUnits("Angstrom");
+  info->mutableRun().getProperty("Sample_alpha")->setUnits("degree");
+  info->mutableRun().getProperty("Sample_beta")->setUnits("degree");
+  info->mutableRun().getProperty("Sample_gamma")->setUnits("degree");
+
   for (std::size_t i = 0; i < UB.size(); ++i)
     info->mutableRun().addProperty("Sample_UB_" + std::to_string(i), UB[i]);
 
@@ -368,8 +410,12 @@ void LoadILLSingleCrystal::exec() {
       Geometry::CompositeBraggScatterer::create(Geometry::IsotropicAtomBraggScattererParser("")()));
   info->mutableSample().setCrystalStructure(crys);
 
-  m_workspace->addExperimentInfo(info);
-  m_workspace->setTitle(title);
+  m_workspace_histo->addExperimentInfo(info);
+  m_workspace_histo->setTitle(title);
+  if (m_workspace_event) {
+    m_workspace_event->addExperimentInfo(info);
+    m_workspace_event->setTitle(title);
+  }
 
   // size of one detector image in pixels
   std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
@@ -388,11 +434,24 @@ void LoadILLSingleCrystal::exec() {
       last_scan_step = cur_scan_step;
     }
 
-    m_workspace->setSignalAt(idx, detector_data[idx]);
+    m_workspace_histo->setSignalAt(idx, detector_data[idx]);
+
+    if (m_workspace_event) {
+      // TODO: convert pixels to Q coordinates and insert events
+      // coord_t Q_coord[3] = { 5, 5, 5 };
+      // std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(
+      //                                            t_event(1.f, 1.f, Q_coord));
+    }
   }
 
-  // set ouput workspace
-  setProperty("OutputWorkspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace));
+  // set ouput workspaces
+  if (m_workspace_histo) {
+    setProperty("Output Histogram Workspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
+  }
+
+  if (m_workspace_event) {
+    setProperty("Output Event Workspace", std::dynamic_pointer_cast<API::IMDEventWorkspace>(m_workspace_event));
+  }
 }
 
 } // namespace DataHandling
