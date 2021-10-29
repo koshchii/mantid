@@ -158,6 +158,7 @@ void LoadILLSingleCrystal::exec() {
 
   // wavelength
   float wavelength = *get_value<float>(*m_file, "wavelength");
+  float wavenumber = float(2. * M_PI) / wavelength;
   // --------------------------------------------------------------------------
 
   // --------------------------------------------------------------------------
@@ -171,6 +172,12 @@ void LoadILLSingleCrystal::exec() {
 
   // instrument name
   std::string instr_name = *get_value<std::string>(*m_file, "name");
+
+  // detector
+  m_file->openGroup("Det1", "NXdetector");
+  float dist_sample_det = *get_value<float>(*m_file, "sample_distance");
+  float det_angular_width = *get_value<float>(*m_file, "angular_width");
+  m_file->closeGroup();
 
   // initial crystal angles
   m_file->openGroup("chi", "NXpositioner");
@@ -352,20 +359,21 @@ void LoadILLSingleCrystal::exec() {
   m_workspace_histo = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
 
   // create event workspace
+  using t_event = DataObjects::MDEvent<3>;
+  using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
+
   if (create_event_workspace) {
     Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
 
-    coord_t min_Q = 0;
-    coord_t max_Q = 10;
-    std::size_t num_Q_bins = 64;
+    coord_t min_Q = -1;
+    coord_t max_Q = 1;
+    std::size_t num_Q_bins = 32;
     std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
         std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, min_Q, max_Q, num_Q_bins),
         std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, min_Q, max_Q, num_Q_bins),
         std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, min_Q, max_Q, num_Q_bins),
     }};
 
-    using t_event = DataObjects::MDEvent<3>;
-    using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
     m_workspace_event = std::make_shared<t_eventworkspace>(API::NoNormalization, API::NoNormalization);
 
     m_workspace_event->addDimension(dimensions_Q[0]);
@@ -380,6 +388,7 @@ void LoadILLSingleCrystal::exec() {
   info->mutableRun().addProperty("Filename", m_filename);
   info->mutableRun().addProperty("Instrument", instr_name);
   info->mutableRun().addProperty("Wavelength", wavelength);
+  info->mutableRun().addProperty("Wavenumber", wavenumber);
   info->mutableRun().addProperty("Numor", numor);
   info->mutableRun().addProperty("Monitor", monitor_sum);
   info->mutableRun().addProperty("Sample_a", cell_a);
@@ -391,6 +400,7 @@ void LoadILLSingleCrystal::exec() {
 
   // set the metadata units
   info->mutableRun().getProperty("Wavelength")->setUnits("Angstrom");
+  info->mutableRun().getProperty("Wavenumber")->setUnits("1/Angstrom");
   info->mutableRun().getProperty("Sample_a")->setUnits("Angstrom");
   info->mutableRun().getProperty("Sample_b")->setUnits("Angstrom");
   info->mutableRun().getProperty("Sample_c")->setUnits("Angstrom");
@@ -417,6 +427,11 @@ void LoadILLSingleCrystal::exec() {
     m_workspace_event->setTitle(title);
   }
 
+  // minimum and maximum Qs
+  coord_t Qxminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
+  coord_t Qyminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
+  coord_t Qzminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
+
   // size of one detector image in pixels
   std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
 
@@ -425,24 +440,62 @@ void LoadILLSingleCrystal::exec() {
   for (std::size_t idx = 0; idx < detector_data.size(); ++idx) {
     // completed all pixels of a frame?
     std::int64_t cur_scan_step = idx / frame_size;
+    std::int64_t cur_frame_step = idx % frame_size;
+    std::int64_t cur_y = cur_frame_step / detector_data_dims[1];
+    std::int64_t cur_x = cur_frame_step % detector_data_dims[1];
+
+    // save pixels in histogram workspace
+    m_workspace_histo->setSignalAt(idx, detector_data[idx]);
+
+    double scanned_variable_value = -1;
     if (last_scan_step != cur_scan_step) {
-      double scanned_variable_value = scanned_variables_values[detector_data_dims[0] * scanned_idx + cur_scan_step];
-
-      // std::cout << scanned_variable_value << std::endl;
-      // TODO: associate scanned_variable_value with this frame (i.e. cur_scan_step)
-
+      // only update this once per frame
+      scanned_variable_value = scanned_variables_values[detector_data_dims[0] * scanned_idx + cur_scan_step];
       last_scan_step = cur_scan_step;
     }
 
-    m_workspace_histo->setSignalAt(idx, detector_data[idx]);
+    // TODO: check if scanned_variable_value really corresponds to omega
+    coord_t omega = coord_t(scanned_variable_value * M_PI / 180.);
 
     if (m_workspace_event) {
+      coord_t pix_coord[2] = {coord_t(cur_x), coord_t(cur_y)};
+
+      // in-plane scattering angle
+      coord_t phi = pix_coord[0] / coord_t(detector_data_dims[0]) * det_angular_width;
+      phi = phi / 180.f * coord_t(M_PI);
+
+      // out-of-plane scattering angle
+      float det_angular_height = 10.f; // TODO
+      coord_t theta = pix_coord[1] / coord_t(detector_data_dims[1]) * det_angular_height;
+      theta -= det_angular_height * 0.5;
+      theta = theta / 180.f * coord_t(M_PI);
+
       // TODO: convert pixels to Q coordinates and insert events
-      // coord_t Q_coord[3] = { 5, 5, 5 };
-      // std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(
-      //                                            t_event(1.f, 1.f, Q_coord));
+      coord_t Q_coord[3] = {
+          2.f * wavenumber * wavenumber * (1.f - std::cos(phi)),
+          0,
+          2.f * wavenumber * wavenumber * (1.f - std::cos(theta)),
+      };
+
+      // rotate by sample omega angle
+      coord_t Q_coord_rot[3] = {Q_coord[0] * std::cos(omega) - Q_coord[1] * std::sin(omega),
+                                Q_coord[0] * std::sin(omega) + Q_coord[1] * std::cos(omega), Q_coord[2]};
+
+      // calculate Q ranges
+      Qxminmax[0] = std::min(Q_coord_rot[0], Qxminmax[0]);
+      Qxminmax[1] = std::max(Q_coord_rot[0], Qxminmax[1]);
+      Qyminmax[0] = std::min(Q_coord_rot[1], Qyminmax[0]);
+      Qyminmax[1] = std::max(Q_coord_rot[1], Qyminmax[1]);
+      Qzminmax[0] = std::min(Q_coord_rot[2], Qzminmax[0]);
+      Qzminmax[1] = std::max(Q_coord_rot[2], Qzminmax[1]);
+
+      std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(t_event(1.f, 1.f, Q_coord_rot));
     }
   }
+
+  m_log.information() << "Q_x range: [" << Qxminmax[0] << ", " << Qxminmax[1] << "]." << std::endl;
+  m_log.information() << "Q_y range: [" << Qyminmax[0] << ", " << Qyminmax[1] << "]." << std::endl;
+  m_log.information() << "Q_z range: [" << Qzminmax[0] << ", " << Qzminmax[1] << "]." << std::endl;
 
   // set ouput workspaces
   if (m_workspace_histo) {
