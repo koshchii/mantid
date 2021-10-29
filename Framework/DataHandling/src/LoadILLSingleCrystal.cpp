@@ -358,31 +358,6 @@ void LoadILLSingleCrystal::exec() {
 
   m_workspace_histo = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
 
-  // create event workspace
-  using t_event = DataObjects::MDEvent<3>;
-  using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
-
-  if (create_event_workspace) {
-    Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
-
-    coord_t min_Q = -1;
-    coord_t max_Q = 1;
-    std::size_t num_Q_bins = 32;
-    std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
-        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, min_Q, max_Q, num_Q_bins),
-        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, min_Q, max_Q, num_Q_bins),
-        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, min_Q, max_Q, num_Q_bins),
-    }};
-
-    m_workspace_event = std::make_shared<t_eventworkspace>(API::NoNormalization, API::NoNormalization);
-
-    m_workspace_event->addDimension(dimensions_Q[0]);
-    m_workspace_event->addDimension(dimensions_Q[1]);
-    m_workspace_event->addDimension(dimensions_Q[2]);
-    m_workspace_event->setCoordinateSystem(Kernel::QSample);
-    m_workspace_event->initialize();
-  }
-
   // set the metadata
   auto info = std::make_shared<API::ExperimentInfo>();
   info->mutableRun().addProperty("Filename", m_filename);
@@ -422,10 +397,6 @@ void LoadILLSingleCrystal::exec() {
 
   m_workspace_histo->addExperimentInfo(info);
   m_workspace_histo->setTitle(title);
-  if (m_workspace_event) {
-    m_workspace_event->addExperimentInfo(info);
-    m_workspace_event->setTitle(title);
-  }
 
   // minimum and maximum Qs
   coord_t Qxminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
@@ -434,6 +405,12 @@ void LoadILLSingleCrystal::exec() {
 
   // size of one detector image in pixels
   std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
+
+  // data type for event workspace
+  using t_event = DataObjects::MDEvent<3>;
+  using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
+  std::vector<t_event> events;
+  events.reserve(detector_data.size());
 
   // copy the detector data to the workspace
   std::int64_t last_scan_step = -1;
@@ -457,7 +434,7 @@ void LoadILLSingleCrystal::exec() {
     // TODO: check if scanned_variable_value really corresponds to omega
     coord_t omega = coord_t(scanned_variable_value * M_PI / 180.);
 
-    if (m_workspace_event) {
+    if (create_event_workspace) {
       coord_t pix_coord[2] = {coord_t(cur_x), coord_t(cur_y)};
 
       // in-plane scattering angle
@@ -465,7 +442,7 @@ void LoadILLSingleCrystal::exec() {
       phi = phi / 180.f * coord_t(M_PI);
 
       // out-of-plane scattering angle
-      float det_angular_height = 10.f; // TODO
+      float det_angular_height = 20.f; // TODO
       coord_t theta = pix_coord[1] / coord_t(detector_data_dims[1]) * det_angular_height;
       theta -= det_angular_height * 0.5;
       theta = theta / 180.f * coord_t(M_PI);
@@ -489,13 +466,41 @@ void LoadILLSingleCrystal::exec() {
       Qzminmax[0] = std::min(Q_coord_rot[2], Qzminmax[0]);
       Qzminmax[1] = std::max(Q_coord_rot[2], Qzminmax[1]);
 
-      std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(t_event(1.f, 1.f, Q_coord_rot));
+      // store all events
+      events.emplace_back(t_event(1.f, 1.f, Q_coord_rot));
     }
   }
 
   m_log.information() << "Q_x range: [" << Qxminmax[0] << ", " << Qxminmax[1] << "]." << std::endl;
   m_log.information() << "Q_y range: [" << Qyminmax[0] << ", " << Qyminmax[1] << "]." << std::endl;
   m_log.information() << "Q_z range: [" << Qzminmax[0] << ", " << Qzminmax[1] << "]." << std::endl;
+
+  // create event workspace
+  if (create_event_workspace) {
+    Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
+
+    std::size_t num_Q_bins = 32;
+    std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
+        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, Qxminmax[0], Qxminmax[1], num_Q_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, Qyminmax[0], Qyminmax[1], num_Q_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, Qzminmax[0], Qzminmax[1], num_Q_bins),
+    }};
+
+    m_workspace_event = std::make_shared<t_eventworkspace>(API::NoNormalization, API::NoNormalization);
+
+    m_workspace_event->addDimension(dimensions_Q[0]);
+    m_workspace_event->addDimension(dimensions_Q[1]);
+    m_workspace_event->addDimension(dimensions_Q[2]);
+    m_workspace_event->setCoordinateSystem(Kernel::QSample);
+    m_workspace_event->initialize();
+
+    m_workspace_event->addExperimentInfo(info);
+    m_workspace_event->setTitle(title);
+
+    // add all events
+    for (const t_event &event : events)
+      std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(event);
+  }
 
   // set ouput workspaces
   if (m_workspace_histo) {
