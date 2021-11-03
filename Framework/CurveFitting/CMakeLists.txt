@@ -397,6 +397,7 @@ set(TEST_FILES
     FunctionFactoryConstraintTest.h
     FunctionParameterDecoratorFitTest.h
     Functions/AbragamTest.h
+    Functions/ActivationTest.h
     Functions/BSplineTest.h
     Functions/BackToBackExponentialTest.h
     Functions/BivariateNormalTest.h
