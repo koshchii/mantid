@@ -33,8 +33,8 @@ public:
     DiscusMultipleScatteringCorrection::updateTrackDirection(track, cosT, phi);
   }
   std::shared_ptr<Mantid::HistogramData::Histogram> integrateCumulative(const Mantid::HistogramData::Histogram &h,
-                                                                        double xmax) {
-    return DiscusMultipleScatteringCorrection::integrateCumulative(h, xmax);
+                                                                        double xmin, double xmax) {
+    return DiscusMultipleScatteringCorrection::integrateCumulative(h, xmin, xmax);
   }
 };
 
@@ -339,13 +339,19 @@ public:
     DiscusMultipleScatteringCorrectionHelper alg;
     Mantid::HistogramData::Histogram test(Mantid::HistogramData::Points({0., 1., 2., 3.}),
                                           Mantid::HistogramData::Frequencies({1., 1., 1., 1.}));
-    auto testResult = alg.integrateCumulative(test, 2.2);
+    auto testResult = alg.integrateCumulative(test, 0., 2.2);
     TS_ASSERT_EQUALS(testResult->dataY()[3], 2.2);
-    TS_ASSERT_THROWS(testResult = alg.integrateCumulative(test, 3.2), std::runtime_error &);
-    testResult = alg.integrateCumulative(test, 2.0);
+    TS_ASSERT_THROWS(testResult = alg.integrateCumulative(test, 0., 3.2), std::runtime_error &);
+    testResult = alg.integrateCumulative(test, 0., 2.0);
     TS_ASSERT_EQUALS(testResult->dataY()[2], 2.0);
-    testResult = alg.integrateCumulative(test, 0.);
+    testResult = alg.integrateCumulative(test, 0., 0.);
     TS_ASSERT_EQUALS(testResult->dataY()[0], 0.);
+    testResult = alg.integrateCumulative(test, 1., 0.);
+    TS_ASSERT_EQUALS(testResult->dataY()[0], 0.);
+    testResult = alg.integrateCumulative(test, 0.5, 1.5);
+    TS_ASSERT_EQUALS(testResult->dataY()[2], 1.0);
+    testResult = alg.integrateCumulative(test, 0.5, 0.9);
+    TS_ASSERT_EQUALS(testResult->dataY()[1], 0.4);
   }
 
   //---------------------------------------------------------------------------
