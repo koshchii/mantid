@@ -71,16 +71,17 @@ if NOT DEFINED MANTID_DATA_STORE (
 set CLEANBUILD=
 set BUILDPKG=
 
-if not "%JOB_NAME%" == "%JOB_NAME:clean=%" (
-  set CLEANBUILD=yes
-  set BUILDPKG=yes
-)
-
 :: BUILD_PACKAGE can be provided as a job parameter
 if not "%BUILD_PACKAGE%" == "%BUILD_PACKAGE:true=%" (
   set BUILDPKG=yes
 ) else (
   set BUILDPKG=no
+)
+
+:: Always build package on clean builds
+if not "%JOB_NAME%" == "%JOB_NAME:clean=%" (
+  set CLEANBUILD=yes
+  set BUILDPKG=yes
 )
 
 :: Never want package for debug builds
