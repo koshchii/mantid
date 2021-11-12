@@ -1,0 +1,82 @@
+#!/bin/bash -ex
+
+# This script expects to be in a POSIX environment, the script clones the conda-recipes
+# repo and then runs conda builds based on passed args. By default it only clones the
+# source, you need to pass a flag to actually build something useful. If building a
+# package dependent on a different one it will build and produce that package too.
+#
+# Script usage:
+# conda-build-recipes WORKSPACE [options]
+#
+# Example command to build all of the packages:
+# conda-build-recipes $WORKSPACE --build-framework --build-qt --build-workbench
+#
+# Expected args:
+#   1. WORKSPACE: path to the workspace/source code that this should run inside
+#                 (mantid repo)
+#
+# Possible flags:
+#   --build-framework: Runs the system tests from being compiled or ran
+#   --build-qt:
+#   --build-qt: runs conda-build
+#
+
+# Setup expected variables
+WORKSPACE=$1
+shift
+EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
+EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/conda
+CONDA_ENV_NAME=mantid-developer
+RECIPES_DIR=$WORKSPACE/recipes
+
+# Parse flags
+ENABLE_BUILD_FRAMEWORK=false
+ENABLE_BUILD_QT=false
+ENABLE_BUILD_WORKBENCH=false
+
+# Handle flag inputs
+while [ ! $# -eq 0 ]
+do
+    case "$1" in
+        --build-framework) ENABLE_BUILD_FRAMEWORK=true ;;
+        --build-qt) ENABLE_BUILD_QT=true ;;
+        --build-workbench) ENABLE_WORKBENCH=true ;;
+        *)
+            echo "Argument not accepted: $1"
+            exit 1
+            ;;
+  esac
+  shift
+done
+
+# Build dependencies for requested packages
+if [[ $ENABLE_BUILD_QT  == true ]]; then
+    ENABLE_BUILD_FRAMEWORK=true
+fi
+
+if [[ $ENABLE_WORKBENCH  == true ]]; then
+    ENABLE_BUILD_FRAMEWORK=true
+    ENABLE_BUILD_QT=true
+fi
+
+# Setup Mambaforge
+$SCRIPT_DIR/download-and-install-mambaforge $EXPECTED_MAMBAFORGE_PATH $EXPECTED_CONDA_PATH true
+
+# Remove conda env if it exists
+$EXPECTED_CONDA_PATH env remove -n $CONDA_ENV_NAME
+
+# Create env with conda-build installed
+$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build
+
+# Activate Conda environment
+. $WORKSPACE/mambaforge/etc/profile.d/conda.sh
+conda activate $CONDA_ENV_NAME
+
+# Clone the recipes
+git clone https://github.com/mantidproject/conda-recipes.git $RECIPES_DIR
+
+# Run conda build on framework
+cd $RECIPES_DIR/recipes/
+conda build ./mantid-framework/
+conda build ./mantid-qt/
+conda build ./mantid-workbench/
