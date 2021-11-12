@@ -40,7 +40,7 @@ do
     case "$1" in
         --build-framework) ENABLE_BUILD_FRAMEWORK=true ;;
         --build-qt) ENABLE_BUILD_QT=true ;;
-        --build-workbench) ENABLE_WORKBENCH=true ;;
+        --build-workbench) ENABLE_BUILD_WORKBENCH=true ;;
         *)
             echo "Argument not accepted: $1"
             exit 1
@@ -77,6 +77,17 @@ git clone https://github.com/mantidproject/conda-recipes.git $RECIPES_DIR
 
 # Run conda build on framework
 cd $RECIPES_DIR/recipes/
-conda build ./mantid-framework/
-conda build ./mantid-qt/
-conda build ./mantid-workbench/
+
+if [[ $ENABLE_BUILD_FRAMEWORK == true ]]; then
+    conda build ./mantid-framework/
+fi
+
+
+if [[ $ENABLE_BUILD_QT == true ]]; then
+    conda build ./mantid-qt/
+fi
+
+
+if [[ $ENABLE_BUILD_WORKBENCH == true ]]; then
+    conda build ./mantid-workbench/
+fi
