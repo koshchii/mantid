@@ -422,7 +422,8 @@ void LoadILLSingleCrystal::exec() {
     std::int64_t cur_x = cur_frame_step % detector_data_dims[1];
 
     // save pixels in histogram workspace
-    m_workspace_histo->setSignalAt(idx, detector_data[idx]);
+    Mantid::signal_t intensity = detector_data[idx];
+    m_workspace_histo->setSignalAt(idx, intensity);
 
     double scanned_variable_value = -1;
     if (last_scan_step != cur_scan_step) {
@@ -442,21 +443,24 @@ void LoadILLSingleCrystal::exec() {
       phi = phi / 180.f * coord_t(M_PI);
 
       // out-of-plane scattering angle
-      float det_angular_height = 20.f; // TODO
+      float det_angular_height = 40.f; // TODO
       coord_t theta = pix_coord[1] / coord_t(detector_data_dims[1]) * det_angular_height;
       theta -= det_angular_height * 0.5;
       theta = theta / 180.f * coord_t(M_PI);
 
-      // TODO: convert pixels to Q coordinates and insert events
+      // convert pixels to Q coordinates and insert events
       coord_t Q_coord[3] = {
-          2.f * wavenumber * wavenumber * (1.f - std::cos(phi)),
-          0,
-          2.f * wavenumber * wavenumber * (1.f - std::cos(theta)),
+          wavenumber * std::sin(theta) * std::cos(phi),
+          wavenumber * std::sin(theta) * std::sin(phi),
+          wavenumber * std::cos(theta),
       };
 
       // rotate by sample omega angle
-      coord_t Q_coord_rot[3] = {Q_coord[0] * std::cos(omega) - Q_coord[1] * std::sin(omega),
-                                Q_coord[0] * std::sin(omega) + Q_coord[1] * std::cos(omega), Q_coord[2]};
+      coord_t Q_coord_rot[3] = {
+          Q_coord[0] * std::cos(omega) - Q_coord[1] * std::sin(omega),
+          Q_coord[0] * std::sin(omega) + Q_coord[1] * std::cos(omega),
+          Q_coord[2],
+      };
 
       // calculate Q ranges
       Qxminmax[0] = std::min(Q_coord_rot[0], Qxminmax[0]);
@@ -467,7 +471,7 @@ void LoadILLSingleCrystal::exec() {
       Qzminmax[1] = std::max(Q_coord_rot[2], Qzminmax[1]);
 
       // store all events
-      events.emplace_back(t_event(1.f, 1.f, Q_coord_rot));
+      events.emplace_back(t_event(intensity, std::sqrt(intensity), Q_coord_rot));
     }
   }
 
