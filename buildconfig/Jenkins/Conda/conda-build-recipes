@@ -27,7 +27,7 @@ shift
 EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
 EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/conda
 CONDA_ENV_NAME=mantid-developer
-RECIPES_DIR=$WORKSPACE/recipes
+RECIPES_DIR=$WORKSPACE/conda-recipes
 SCRIPT_DIR=$WORKSPACE/buildconfig/Jenkins/Conda/
 
 # Parse flags
@@ -74,7 +74,7 @@ $EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build
 conda activate $CONDA_ENV_NAME
 
 # Clone the recipes
-git clone https://github.com/mantidproject/conda-recipes.git $RECIPES_DIR
+git clone https://github.com/mantidproject/conda-recipes.git
 
 # Run conda build on framework
 cd $RECIPES_DIR/recipes/
