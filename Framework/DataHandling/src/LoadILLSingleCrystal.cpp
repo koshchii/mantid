@@ -484,6 +484,9 @@ void LoadILLSingleCrystal::exec() {
 
   // copy the detector data to the workspace
   std::int64_t last_scan_step = -1;
+  API::Progress progress(this, 0., create_event_workspace ? 0.5 : 1., detector_data.size() / frame_size);
+  bool cancelled = false;
+
   for (std::size_t idx = 0; idx < detector_data.size(); ++idx) {
     // completed all pixels of a frame?
     std::int64_t cur_scan_step = idx / frame_size;
@@ -500,6 +503,12 @@ void LoadILLSingleCrystal::exec() {
       // only update this once per frame
       scanned_variable_value = scanned_variables_values[detector_data_dims[0] * scanned_idx + cur_scan_step];
       last_scan_step = cur_scan_step;
+
+      progress.report(cur_scan_step);
+      if (progress.hasCancellationBeenRequested()) {
+        cancelled = true;
+        break;
+      }
     }
 
     // TODO: check if scanned_variable_value really corresponds to omega
@@ -550,7 +559,10 @@ void LoadILLSingleCrystal::exec() {
   m_log.information() << "Q_z range: [" << Qzminmax[0] << ", " << Qzminmax[1] << "]." << std::endl;
 
   // create event workspace
-  if (create_event_workspace) {
+  if (create_event_workspace && !cancelled) {
+    std::size_t progress_div = events.size() / 100;
+    API::Progress progress_evt(this, 0.5, 1., events.size() / progress_div);
+
     Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
 
     std::size_t num_Q_bins = 32;
@@ -572,17 +584,29 @@ void LoadILLSingleCrystal::exec() {
     m_workspace_event->setTitle(title);
 
     // add all events
-    for (const t_event &event : events)
+    for (std::size_t evt_idx = 0; evt_idx < events.size(); ++evt_idx) {
+      if (evt_idx % progress_div == 0) {
+        progress_evt.report(evt_idx / progress_div);
+        if (progress_evt.hasCancellationBeenRequested()) {
+          cancelled = true;
+          break;
+        }
+      }
+
+      const t_event &event = events[evt_idx];
       std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(event);
+    }
   }
 
-  // set ouput workspaces
-  if (m_workspace_histo) {
-    setProperty("Output Histogram Workspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
-  }
+  if (!cancelled) {
+    // set ouput workspaces
+    if (m_workspace_histo) {
+      setProperty("Output Histogram Workspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
+    }
 
-  if (m_workspace_event) {
-    setProperty("Output Event Workspace", std::dynamic_pointer_cast<API::IMDEventWorkspace>(m_workspace_event));
+    if (m_workspace_event) {
+      setProperty("Output Event Workspace", std::dynamic_pointer_cast<API::IMDEventWorkspace>(m_workspace_event));
+    }
   }
 }
 
