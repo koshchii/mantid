@@ -102,7 +102,7 @@ template <> boost::optional<std::string> get_value(NeXus::File &file, const std:
 }
 
 // get the dimesions of a dataset from a nexus file
-static std::vector<int64_t> get_dims(NeXus::File &file, const std::string &key) {
+static std::vector<std::int64_t> get_dims(NeXus::File &file, const std::string &key) {
   file.openData(key);
   NeXus::Info infos = file.getInfo();
   file.closeData();
@@ -179,6 +179,10 @@ void LoadILLSingleCrystal::init() {
 /** Execute the algorithm.
  */
 void LoadILLSingleCrystal::exec() {
+  // data types
+  using t_real = coord_t;
+  using t_data = double;
+
   bool create_event_workspace = getProperty("Create Event Workspace");
   if (getProperty("Output Event Workspace").operator std::string() == "")
     create_event_workspace = false;
@@ -217,11 +221,11 @@ void LoadILLSingleCrystal::exec() {
   std::string title = *get_value<std::string>(*m_file, "title");
 
   // run number
-  int numor = *get_value<int>(*m_file, "run_number");
+  std::int64_t numor = *get_value<std::int64_t>(*m_file, "run_number");
 
   // wavelength
-  float wavelength = *get_value<float>(*m_file, "wavelength");
-  float wavenumber = float(2. * M_PI) / wavelength;
+  t_real wavelength = *get_value<t_real>(*m_file, "wavelength");
+  t_real wavenumber = t_real(2. * M_PI) / wavelength;
   // --------------------------------------------------------------------------
 
   // --------------------------------------------------------------------------
@@ -238,19 +242,19 @@ void LoadILLSingleCrystal::exec() {
 
   // detector
   m_file->openGroup("Det1", "NXdetector");
-  float dist_sample_det = *get_value<float>(*m_file, "sample_distance");
-  float det_angular_width = *get_value<float>(*m_file, "angular_width");
+  t_real dist_sample_det = *get_value<t_real>(*m_file, "sample_distance");
+  t_real det_angular_width = *get_value<t_real>(*m_file, "angular_width");
   m_file->closeGroup();
 
   // initial crystal angles
   m_file->openGroup("chi", "NXpositioner");
-  float chi = *get_value<float>(*m_file, "value");
+  t_real chi = *get_value<t_real>(*m_file, "value");
   m_file->closeGroup();
   m_file->openGroup("omega", "NXpositioner");
-  float omega = *get_value<float>(*m_file, "value");
+  t_real omega = *get_value<t_real>(*m_file, "value");
   m_file->closeGroup();
   m_file->openGroup("phi", "NXpositioner");
-  float phi = *get_value<float>(*m_file, "value");
+  t_real phi = *get_value<t_real>(*m_file, "value");
   m_file->closeGroup();
 
   m_log.information() << "Initial sample angles: "
@@ -258,30 +262,30 @@ void LoadILLSingleCrystal::exec() {
 
   // crystal
   m_file->openGroup("SingleCrystalSettings", "NXcrystal");
-  auto _cell_a = get_value<float>(*m_file, "unit_cell_a");
-  auto _cell_b = get_value<float>(*m_file, "unit_cell_b");
-  auto _cell_c = get_value<float>(*m_file, "unit_cell_c");
-  auto _cell_alpha = get_value<float>(*m_file, "unit_cell_alpha");
-  auto _cell_beta = get_value<float>(*m_file, "unit_cell_beta");
-  auto _cell_gamma = get_value<float>(*m_file, "unit_cell_gamma");
+  auto _cell_a = get_value<t_real>(*m_file, "unit_cell_a");
+  auto _cell_b = get_value<t_real>(*m_file, "unit_cell_b");
+  auto _cell_c = get_value<t_real>(*m_file, "unit_cell_c");
+  auto _cell_alpha = get_value<t_real>(*m_file, "unit_cell_alpha");
+  auto _cell_beta = get_value<t_real>(*m_file, "unit_cell_beta");
+  auto _cell_gamma = get_value<t_real>(*m_file, "unit_cell_gamma");
 
   // if a is not given, set it to 0
-  float cell_a = _cell_a ? *_cell_a : 0;
+  t_real cell_a = _cell_a ? *_cell_a : 0;
   // if b is not given, set it to a
-  float cell_b = _cell_b ? *_cell_b : cell_a;
+  t_real cell_b = _cell_b ? *_cell_b : cell_a;
   // if c is not given, set it to a
-  float cell_c = _cell_c ? *_cell_c : cell_a;
+  t_real cell_c = _cell_c ? *_cell_c : cell_a;
   // if alpha is not given, set it to 90 deg
-  float cell_alpha = _cell_alpha ? *_cell_alpha : 90;
+  t_real cell_alpha = _cell_alpha ? *_cell_alpha : 90;
   // if beta is not given, set it to alpha
-  float cell_beta = _cell_beta ? *_cell_beta : cell_alpha;
+  t_real cell_beta = _cell_beta ? *_cell_beta : cell_alpha;
   // if gamma is not given, set it to alpha
-  float cell_gamma = _cell_gamma ? *_cell_gamma : cell_alpha;
+  t_real cell_gamma = _cell_gamma ? *_cell_gamma : cell_alpha;
 
   m_log.information() << "Unit cell: a=" << cell_a << ", b=" << cell_b << ", c=" << cell_c << ", alpha=" << cell_alpha
                       << ", beta=" << cell_beta << ", gamma=" << cell_gamma << std::endl;
 
-  auto UB = get_values<float>(*m_file, "orientation_matrix");
+  auto UB = get_values<t_real>(*m_file, "orientation_matrix");
   m_log.information() << "UB matrix:\n"
                       << "\t" << std::setw(15) << UB[0] << std::setw(15) << UB[1] << std::setw(15) << UB[2] << "\n"
                       << "\t" << std::setw(15) << UB[3] << std::setw(15) << UB[4] << std::setw(15) << UB[5] << "\n"
@@ -327,7 +331,7 @@ void LoadILLSingleCrystal::exec() {
     m_log.information() << entry.first << " = " << entry.second << std::endl;
 
   // total monitor counts
-  float monitor_sum = *get_value<float>(*m_file, "monsum");
+  t_real monitor_sum = *get_value<t_real>(*m_file, "monsum");
 
   m_file->closeGroup(); // monitor
   // --------------------------------------------------------------------------
@@ -342,8 +346,8 @@ void LoadILLSingleCrystal::exec() {
     m_log.information() << entry.first << " = " << entry.second << std::endl;
 
   // steps
-  int total_steps = *get_value<int>(*m_file, "total_steps");
-  int actual_step = *get_value<int>(*m_file, "actual_step");
+  std::int64_t total_steps = *get_value<std::int64_t>(*m_file, "total_steps");
+  std::int64_t actual_step = *get_value<std::int64_t>(*m_file, "actual_step");
 
   m_log.information() << "Total steps=" << total_steps << ", actual step=" << actual_step << std::endl;
 
@@ -351,7 +355,7 @@ void LoadILLSingleCrystal::exec() {
   m_file->openGroup("detector_data", "ILL_detectors_data_scan");
 
   auto detector_data_dims = get_dims(*m_file, "data");
-  auto detector_data = get_values<uint32_t>(*m_file, "data");
+  auto detector_data = get_values<std::uint32_t>(*m_file, "data");
 
   if (detector_data_dims.size() < 3)
     throw std::runtime_error("Detector data dimension < 3.");
@@ -374,7 +378,7 @@ void LoadILLSingleCrystal::exec() {
   for (const auto &entry : scanned_vars_entries)
     m_log.information() << entry.first << " = " << entry.second << std::endl;
 
-  auto scanned_variables_values = get_values<double>(*m_file, "data");
+  auto scanned_variables_values = get_values<t_data>(*m_file, "data");
 
   m_file->openGroup("variables_names", "ILL_data_scan_vars");
   auto variables_names_entries = m_file->getEntries();
@@ -465,9 +469,9 @@ void LoadILLSingleCrystal::exec() {
   m_workspace_histo->setTitle(title);
 
   // minimum and maximum Qs
-  coord_t Qxminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
-  coord_t Qyminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
-  coord_t Qzminmax[2] = {std::numeric_limits<coord_t>::max(), std::numeric_limits<coord_t>::lowest()};
+  t_real Qxminmax[2] = {std::numeric_limits<t_real>::max(), std::numeric_limits<t_real>::lowest()};
+  t_real Qyminmax[2] = {std::numeric_limits<t_real>::max(), std::numeric_limits<t_real>::lowest()};
+  t_real Qzminmax[2] = {std::numeric_limits<t_real>::max(), std::numeric_limits<t_real>::lowest()};
 
   // size of one detector image in pixels
   std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
@@ -491,7 +495,7 @@ void LoadILLSingleCrystal::exec() {
     Mantid::signal_t intensity = detector_data[idx];
     m_workspace_histo->setSignalAt(idx, intensity);
 
-    double scanned_variable_value = -1;
+    t_data scanned_variable_value = -1;
     if (last_scan_step != cur_scan_step) {
       // only update this once per frame
       scanned_variable_value = scanned_variables_values[detector_data_dims[0] * scanned_idx + cur_scan_step];
@@ -499,30 +503,30 @@ void LoadILLSingleCrystal::exec() {
     }
 
     // TODO: check if scanned_variable_value really corresponds to omega
-    coord_t omega = coord_t(scanned_variable_value * M_PI / 180.);
+    t_real omega = t_real(scanned_variable_value * M_PI / 180.);
 
     if (create_event_workspace) {
-      coord_t pix_coord[2] = {coord_t(cur_x), coord_t(cur_y)};
+      t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
 
       // in-plane scattering angle
-      coord_t phi = pix_coord[0] / coord_t(detector_data_dims[0]) * det_angular_width;
-      phi = phi / 180.f * coord_t(M_PI);
+      t_real phi = pix_coord[0] / t_real(detector_data_dims[0]) * det_angular_width;
+      phi = phi / 180.f * t_real(M_PI);
 
       // out-of-plane scattering angle
-      coord_t det_angular_height = 40.f; // TODO
-      coord_t theta = pix_coord[1] / coord_t(detector_data_dims[1]) * det_angular_height;
+      t_real det_angular_height = 40.f; // TODO
+      t_real theta = pix_coord[1] / t_real(detector_data_dims[1]) * det_angular_height;
       theta -= det_angular_height * 0.5f;
-      theta = theta / 180.f * coord_t(M_PI);
+      theta = theta / 180.f * t_real(M_PI);
 
       // convert pixels to Q coordinates and insert events
-      coord_t Q_coord[3] = {
+      t_real Q_coord[3] = {
           wavenumber * std::sin(theta) * std::cos(phi),
           wavenumber * std::sin(theta) * std::sin(phi),
           wavenumber * std::cos(theta),
       };
 
       // rotate by sample omega angle
-      coord_t Q_coord_rot[3] = {
+      t_real Q_coord_rot[3] = {
           Q_coord[0] * std::cos(omega) - Q_coord[1] * std::sin(omega),
           Q_coord[0] * std::sin(omega) + Q_coord[1] * std::cos(omega),
           Q_coord[2],
