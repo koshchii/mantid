@@ -31,6 +31,7 @@ private:
 
   std::string m_filename;
   std::unique_ptr<NeXus::File> m_file;
+
   API::IMDHistoWorkspace_sptr m_workspace_histo;
   API::IMDEventWorkspace_sptr m_workspace_event;
 };

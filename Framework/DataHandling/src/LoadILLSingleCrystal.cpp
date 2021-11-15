@@ -22,6 +22,7 @@
 #include "MantidGeometry/MDGeometry/MDFrame.h"
 #include "MantidGeometry/MDGeometry/MDFrameFactory.h"
 #include "MantidGeometry/MDGeometry/UnknownFrame.h"
+#include <hdf5.h>
 
 /*
  @class LoadILLSingleCrystal
@@ -51,6 +52,8 @@ const std::string LoadILLSingleCrystal::summary() const { return "Loads ILL sing
 //----------------------------------------------------------------------------------------------
 /** Helper functions
  */
+
+// get numerical values from a nexus file
 template <class T> static std::vector<T> get_values(NeXus::File &file, const std::string &key) {
   std::vector<T> values;
 
@@ -62,18 +65,21 @@ template <class T> static std::vector<T> get_values(NeXus::File &file, const std
   return values;
 }
 
-template <> std::vector<std::string> get_values(NeXus::File &file, const std::string &key) {
+// get strings from a nexus file (apparently not supported by the nexus library!)
+/*template <> std::vector<std::string> get_values(NeXus::File &file, const std::string &key) {
   std::vector<std::string> values;
-
   file.openData(key);
 
-  // TODO
+  std::string valuestr = file.getStrData();
+  //NeXus::Info info = file.getInfo();
+
+  // TODO: add this function (and remove the raw hdf5 code) as soon as the nexus library supports it
 
   file.closeData();
-
   return values;
-}
+}*/
 
+// get a numerical value from a nexus file
 template <class T> static boost::optional<T> get_value(NeXus::File &file, const std::string &key) {
   std::vector<T> values = get_values<T>(file, key);
 
@@ -83,6 +89,7 @@ template <class T> static boost::optional<T> get_value(NeXus::File &file, const 
   return values[0];
 }
 
+// get a string from a nexus file
 template <> boost::optional<std::string> get_value(NeXus::File &file, const std::string &key) {
   std::string str;
 
@@ -94,12 +101,55 @@ template <> boost::optional<std::string> get_value(NeXus::File &file, const std:
   return str;
 }
 
+// get the dimesions of a dataset from a nexus file
 static std::vector<int64_t> get_dims(NeXus::File &file, const std::string &key) {
   file.openData(key);
   NeXus::Info infos = file.getInfo();
   file.closeData();
 
   return infos.dims;
+}
+
+// get the dimesions of a dataset from a hdf5 dataset
+static std::vector<hsize_t> get_dims(hid_t data) {
+  std::vector<hsize_t> dims;
+
+  hid_t space = H5Dget_space(data);
+  if (space < 0)
+    return dims;
+
+  int rank = H5Sget_simple_extent_ndims(space);
+  dims.resize(rank);
+  H5Sget_simple_extent_dims(space, dims.data(), 0);
+
+  H5Sclose(space);
+  return dims;
+}
+
+// get strings from a raw hdf5 file
+static std::vector<std::string> get_values(hid_t file, const std::string &key) {
+  std::vector<std::string> values;
+
+  hid_t data = H5Dopen(file, key.c_str(), H5P_DEFAULT);
+  if (data < 0)
+    return values;
+
+  auto dims = get_dims(data);
+  if (dims.size() == 1) {
+    hid_t type_id = H5Tcopy(H5T_C_S1);
+    H5Tset_size(type_id, H5T_VARIABLE);
+
+    hsize_t num_strings = dims[0];
+    const char **str = new const char *[num_strings];
+    if (H5Dread(data, type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, str) >= 0) {
+      for (hsize_t i = 0; i < num_strings; ++i)
+        values.push_back(str[i]);
+    }
+    delete[] str;
+  }
+
+  H5Dclose(data);
+  return values;
 }
 
 //----------------------------------------------------------------------------------------------
@@ -136,10 +186,23 @@ void LoadILLSingleCrystal::exec() {
   // get input file name
   m_filename = getPropertyValue("Filename");
 
+  // --------------------------------------------------------------------------
+  // hack: open the raw hdf5 file because not all data can be accessed
+  // via the Nexus interface, e.g. string arrays.
+  hid_t file_raw = H5Fopen(m_filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  if (file_raw < 0)
+    throw Kernel::Exception::FileError("Cannot open hdf5 file ", m_filename);
+
+  auto scanned_variables_names = get_values(file_raw, "/entry0/data_scan/scanned_variables/variables_names/name");
+
+  // the raw file has to be closed before reopening it using nexus
+  H5Fclose(file_raw);
+  // --------------------------------------------------------------------------
+
   // open the corresponding nexus file
   m_file = std::make_unique<NeXus::File>(m_filename, NXACC_READ);
   if (!m_file)
-    throw Kernel::Exception::FileError("Can not open file ", m_filename);
+    throw Kernel::Exception::FileError("Cannot open Nexus file ", m_filename);
 
   // --------------------------------------------------------------------------
   // root group
@@ -320,7 +383,8 @@ void LoadILLSingleCrystal::exec() {
   for (const auto &entry : variables_names_entries)
     m_log.information() << entry.first << " = " << entry.second << std::endl;
 
-  auto scanned_variables_names = get_values<std::string>(*m_file, "name");
+  // already got scanned_variables_names via raw hdf5 interface
+  // auto scanned_variables_names = get_values<std::string>(*m_file, "name");
   auto scanned_variables = get_values<std::uint8_t>(*m_file, "scanned");
 
   // get index of scanned variable
@@ -331,7 +395,8 @@ void LoadILLSingleCrystal::exec() {
       break;
     }
   }
-  m_log.information() << "Scanned variable index: " << scanned_idx << std::endl;
+  m_log.information() << "Scanned variable: " << scanned_variables_names[scanned_idx] << ", index: " << scanned_idx
+                      << std::endl;
 
   m_file->closeGroup(); // variable names
 
@@ -352,7 +417,8 @@ void LoadILLSingleCrystal::exec() {
                                                    detector_data_dims[2]),
       std::make_shared<Geometry::MDHistoDimension>("x", "x", frame_x, 0, detector_data_dims[1] - 1,
                                                    detector_data_dims[1]),
-      std::make_shared<Geometry::MDHistoDimension>("Scanned Variable", "scanned", frame_scanned, 0,
+      std::make_shared<Geometry::MDHistoDimension>(scanned_variables_names[scanned_idx],
+                                                   scanned_variables_names[scanned_idx], frame_scanned, 0,
                                                    detector_data_dims[0] - 1, detector_data_dims[0]),
   }};
 
@@ -443,9 +509,9 @@ void LoadILLSingleCrystal::exec() {
       phi = phi / 180.f * coord_t(M_PI);
 
       // out-of-plane scattering angle
-      float det_angular_height = 40.f; // TODO
+      coord_t det_angular_height = 40.f; // TODO
       coord_t theta = pix_coord[1] / coord_t(detector_data_dims[1]) * det_angular_height;
-      theta -= det_angular_height * 0.5;
+      theta -= det_angular_height * 0.5f;
       theta = theta / 180.f * coord_t(M_PI);
 
       // convert pixels to Q coordinates and insert events
