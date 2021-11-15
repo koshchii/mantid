@@ -74,6 +74,9 @@ $EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build
 conda activate $CONDA_ENV_NAME
 
 # Clone the recipes
+if [[ -f $WORKSPACE/conda-recipes ]]; then
+    rm -rf $WORKSPACE/conda-recipes
+fi
 git clone https://github.com/mantidproject/conda-recipes.git
 
 # TEMP REMOVE AFTER PR https://github.com/mantidproject/conda-recipes/pull/58 is Merged
