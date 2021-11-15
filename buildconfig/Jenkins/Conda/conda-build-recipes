@@ -76,6 +76,10 @@ conda activate $CONDA_ENV_NAME
 # Clone the recipes
 git clone https://github.com/mantidproject/conda-recipes.git
 
+# TEMP REMOVE AFTER PR https://github.com/mantidproject/conda-recipes/pull/58 is Merged
+cd $RECIPES_DIR
+git checkout add_conda_new_recipes
+
 # Run conda build on framework
 cd $RECIPES_DIR/recipes/
 
