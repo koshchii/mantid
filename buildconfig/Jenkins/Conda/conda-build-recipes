@@ -74,8 +74,8 @@ $EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build
 conda activate $CONDA_ENV_NAME
 
 # Clone the recipes
-if [[ -f $WORKSPACE/conda-recipes ]]; then
-    rm -rf $WORKSPACE/conda-recipes
+if [[ -d conda-recipes ]]; then
+    rm -rf conda-recipes
 fi
 git clone https://github.com/mantidproject/conda-recipes.git
 
