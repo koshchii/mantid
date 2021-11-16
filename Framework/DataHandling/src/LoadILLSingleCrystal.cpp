@@ -101,7 +101,7 @@ template <> boost::optional<std::string> get_value(NeXus::File &file, const std:
   return str;
 }
 
-// get the dimesions of a dataset from a nexus file
+// get the dimensions of a dataset from a nexus file
 static std::vector<std::int64_t> get_dims(NeXus::File &file, const std::string &key) {
   file.openData(key);
   NeXus::Info infos = file.getInfo();
@@ -110,7 +110,7 @@ static std::vector<std::int64_t> get_dims(NeXus::File &file, const std::string &
   return infos.dims;
 }
 
-// get the dimesions of a dataset from a hdf5 dataset
+// get the dimensions of a dataset from a hdf5 dataset
 static std::vector<hsize_t> get_dims(hid_t data) {
   std::vector<hsize_t> dims;
 
@@ -140,12 +140,14 @@ static std::vector<std::string> get_values(hid_t file, const std::string &key) {
     H5Tset_size(type_id, H5T_VARIABLE);
 
     hsize_t num_strings = dims[0];
-    const char **str = new const char *[num_strings];
-    if (H5Dread(data, type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, str) >= 0) {
-      for (hsize_t i = 0; i < num_strings; ++i)
-        values.push_back(str[i]);
+    if (num_strings) {
+      const char **str = new const char *[num_strings];
+      if (H5Dread(data, type_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, str) >= 0) {
+        for (hsize_t i = 0; i < num_strings; ++i)
+          values.push_back(str[i]);
+      }
+      delete[] str;
     }
-    delete[] str;
   }
 
   H5Dclose(data);
@@ -162,16 +164,23 @@ void LoadILLSingleCrystal::init() {
 
   // create Q events workspace
   declareProperty(
-      std::make_unique<Kernel::PropertyWithValue<bool>>("Create Event Workspace", false, Kernel::Direction::Input),
+      std::make_unique<Kernel::PropertyWithValue<bool>>("CreateEventWorkspace", false, Kernel::Direction::Input),
       "Create the workspace with Q events.");
+
+  declareProperty(std::make_unique<Kernel::PropertyWithValue<std::size_t>>("QxBins", 64, Kernel::Direction::Input),
+                  "Number of bins along the Qx direction.");
+  declareProperty(std::make_unique<Kernel::PropertyWithValue<std::size_t>>("QyBins", 64, Kernel::Direction::Input),
+                  "Number of bins along the Qy direction.");
+  declareProperty(std::make_unique<Kernel::PropertyWithValue<std::size_t>>("QzBins", 64, Kernel::Direction::Input),
+                  "Number of bins along the Qz direction.");
 
   // output workspaces
   declareProperty(std::make_unique<API::WorkspaceProperty<API::IMDHistoWorkspace>>(
-                      "Output Histogram Workspace", "", Kernel::Direction::Output, API::PropertyMode::Mandatory),
+                      "OutputHistogramWorkspace", "out_histo", Kernel::Direction::Output, API::PropertyMode::Mandatory),
                   "An output histogram workspace for the detector pixel values.");
   // we do not really use events, but some of the following algorithms expect an event workspace
   declareProperty(std::make_unique<API::WorkspaceProperty<API::IMDEventWorkspace>>(
-                      "Output Event Workspace", "", Kernel::Direction::Output, API::PropertyMode::Optional),
+                      "OutputEventWorkspace", "out_event", Kernel::Direction::Output, API::PropertyMode::Optional),
                   "An output event workspace in momentum coordinates.");
 }
 
@@ -179,12 +188,16 @@ void LoadILLSingleCrystal::init() {
 /** Execute the algorithm.
  */
 void LoadILLSingleCrystal::exec() {
-  // data types
+  // number data types
   using t_real = coord_t;
   using t_data = double;
 
-  bool create_event_workspace = getProperty("Create Event Workspace");
-  if (getProperty("Output Event Workspace").operator std::string() == "")
+  // data type for event workspace
+  using t_event = DataObjects::MDEvent<3>;
+  using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
+
+  bool create_event_workspace = getProperty("CreateEventWorkspace");
+  if (getProperty("OutputEventWorkspace").operator std::string() == "")
     create_event_workspace = false;
 
   // get input file name
@@ -242,7 +255,7 @@ void LoadILLSingleCrystal::exec() {
 
   // detector
   m_file->openGroup("Det1", "NXdetector");
-  t_real dist_sample_det = *get_value<t_real>(*m_file, "sample_distance");
+  // t_real dist_sample_det = *get_value<t_real>(*m_file, "sample_distance");
   t_real det_angular_width = *get_value<t_real>(*m_file, "angular_width");
   m_file->closeGroup();
 
@@ -293,7 +306,6 @@ void LoadILLSingleCrystal::exec() {
                       << std::endl;
 
   m_file->closeGroup(); // SingleCrystalSettings
-
   m_file->closeGroup(); // instrument
   // --------------------------------------------------------------------------
 
@@ -391,21 +403,31 @@ void LoadILLSingleCrystal::exec() {
   // auto scanned_variables_names = get_values<std::string>(*m_file, "name");
   auto scanned_variables = get_values<std::uint8_t>(*m_file, "scanned");
 
-  // get index of scanned variable
+  // get indices of scanned variables
+  std::size_t omega_idx = 0;
   std::size_t scanned_idx = 0;
+
+  bool scanned_idx_set = false;
+  bool omega_idx_set = false;
+
   for (std::size_t idx = 0; idx < scanned_variables.size(); ++idx) {
     if (scanned_variables[idx]) {
-      scanned_idx = idx;
-      break;
+      if (!scanned_idx_set) {
+        scanned_idx = idx;
+        scanned_idx_set = true;
+      }
+
+      if (!omega_idx_set && scanned_variables_names[scanned_idx] == "omega") {
+        omega_idx = idx;
+        omega_idx_set = true;
+      }
     }
   }
   m_log.information() << "Scanned variable: " << scanned_variables_names[scanned_idx] << ", index: " << scanned_idx
                       << std::endl;
 
   m_file->closeGroup(); // variable names
-
   m_file->closeGroup(); // scanned_variables
-
   m_file->closeGroup(); // data_scan
   // --------------------------------------------------------------------------
 
@@ -476,9 +498,6 @@ void LoadILLSingleCrystal::exec() {
   // size of one detector image in pixels
   std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
 
-  // data type for event workspace
-  using t_event = DataObjects::MDEvent<3>;
-  using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
   std::vector<t_event> events;
   events.reserve(detector_data.size());
 
@@ -498,10 +517,11 @@ void LoadILLSingleCrystal::exec() {
     Mantid::signal_t intensity = detector_data[idx];
     m_workspace_histo->setSignalAt(idx, intensity);
 
-    t_data scanned_variable_value = -1;
+    t_data omega_deg = 0;
+    // only update this once per frame
     if (last_scan_step != cur_scan_step) {
-      // only update this once per frame
-      scanned_variable_value = scanned_variables_values[detector_data_dims[0] * scanned_idx + cur_scan_step];
+      if (omega_idx_set)
+        omega_deg = scanned_variables_values[detector_data_dims[0] * omega_idx + cur_scan_step];
       last_scan_step = cur_scan_step;
 
       progress.report(cur_scan_step);
@@ -511,14 +531,15 @@ void LoadILLSingleCrystal::exec() {
       }
     }
 
-    // TODO: check if scanned_variable_value really corresponds to omega
-    t_real omega = t_real(scanned_variable_value * M_PI / 180.);
+    t_real omega = t_real(omega_deg * M_PI / 180.);
 
     if (create_event_workspace) {
       t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
 
+      // TODO: find zero positions on detector
       // in-plane scattering angle
       t_real phi = pix_coord[0] / t_real(detector_data_dims[0]) * det_angular_width;
+      phi -= det_angular_width * 0.5f;
       phi = phi / 180.f * t_real(M_PI);
 
       // out-of-plane scattering angle
@@ -563,13 +584,18 @@ void LoadILLSingleCrystal::exec() {
     std::size_t progress_div = events.size() / 100;
     API::Progress progress_evt(this, 0.5, 1., events.size() / progress_div);
 
+    std::size_t num_Qx_bins = getProperty("QxBins");
+    std::size_t num_Qy_bins = getProperty("QyBins");
+    ;
+    std::size_t num_Qz_bins = getProperty("QzBins");
+    ;
+
     Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
 
-    std::size_t num_Q_bins = 32;
     std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
-        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, Qxminmax[0], Qxminmax[1], num_Q_bins),
-        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, Qyminmax[0], Qyminmax[1], num_Q_bins),
-        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, Qzminmax[0], Qzminmax[1], num_Q_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, Qxminmax[0], Qxminmax[1], num_Qx_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, Qyminmax[0], Qyminmax[1], num_Qy_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, Qzminmax[0], Qzminmax[1], num_Qz_bins),
     }};
 
     m_workspace_event = std::make_shared<t_eventworkspace>(API::NoNormalization, API::NoNormalization);
@@ -596,16 +622,18 @@ void LoadILLSingleCrystal::exec() {
       const t_event &event = events[evt_idx];
       std::dynamic_pointer_cast<t_eventworkspace>(m_workspace_event)->addEvent(event);
     }
+
+    m_workspace_event->refreshCache();
   }
 
   if (!cancelled) {
     // set ouput workspaces
     if (m_workspace_histo) {
-      setProperty("Output Histogram Workspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
+      setProperty("OutputHistogramWorkspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
     }
 
     if (m_workspace_event) {
-      setProperty("Output Event Workspace", std::dynamic_pointer_cast<API::IMDEventWorkspace>(m_workspace_event));
+      setProperty("OutputEventWorkspace", std::dynamic_pointer_cast<API::IMDEventWorkspace>(m_workspace_event));
     }
   }
 }
