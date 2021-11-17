@@ -43,7 +43,11 @@ shift
 EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
 EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/conda
 CONDA_ENV_NAME="mantid-developer"
-BUILD_THREADS="$(grep -c ^processor /proc/cpuinfo)" # Not physical but logical cores, includes hyper threaded.
+if [[ $OSTYPE == 'darwin'* ]]; then
+    BUILD_THREADS="$(sysctl -n hw.logicalcpu)"
+else
+    BUILD_THREADS="$(grep -c ^processor /proc/cpuinfo)" # Not physical but logical cores, includes hyper threaded.
+fi
 XVFB_SERVER_NUM=101
 BUILD_DIR=$WORKSPACE/build
 
