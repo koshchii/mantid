@@ -11,7 +11,8 @@ EXPECTED_MAMBAFORGE_PATH=$1
 EXPECTED_CONDA_PATH=$2
 CLEAN_BUILD=$3
 
-MAMBAFORGE_SCRIPT_NAME=Mambaforge-$(uname)-$(uname -m).sh
+# Only supporting x86 at this time for the build process
+MAMBAFORGE_SCRIPT_NAME=Mambaforge-$(uname)-x86_64.sh
 URL=https://github.com/conda-forge/miniforge/releases/latest/download/$MAMBAFORGE_SCRIPT_NAME
 
 if [[ $CLEAN_BUILD  == true ]]; then
