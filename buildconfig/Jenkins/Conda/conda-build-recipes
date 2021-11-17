@@ -67,7 +67,7 @@ $SCRIPT_DIR/download-and-install-mambaforge $EXPECTED_MAMBAFORGE_PATH $EXPECTED_
 $EXPECTED_CONDA_PATH env remove -n $CONDA_ENV_NAME
 
 # Create env with conda-build installed
-$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build
+$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build conda-verify
 
 # Activate Conda environment
 . $WORKSPACE/mambaforge/etc/profile.d/conda.sh
