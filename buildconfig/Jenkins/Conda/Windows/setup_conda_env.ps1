@@ -9,6 +9,6 @@ $workspace=$Args[0]
 $expected_conda_path=$Args[1]
 $conda_env_name=$Args[2]
 
-Start-Process -NoNewWindow -Wait $expected_conda_path -ArgumentList "env remove -n $conda_env_name"
+Start-Process -NoNewWindow -Wait "$expected_conda_path" -ArgumentList "env remove -n $conda_env_name"
 
-Start-Process -NoNewWindow -Wait $expected_conda_path -ArgumentList "env create -f $workspace/mantid-developer-win.yml"
+Start-Process -NoNewWindow -Wait "$expected_conda_path" -ArgumentList "env create -f $workspace/mantid-developer-win.yml"

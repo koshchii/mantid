@@ -23,11 +23,11 @@ $extra_cmake_flags=$Args[7]
 $build_threads=$Args[8]
 $mantid_data_store_cmake=""
 
-if ($null -eq $env:MANTID_DATA_STORE) {
+if (-not ($null -eq $env:MANTID_DATA_STORE)) {
     $mantid_data_store_cmake = "-DMANTID_DATA_STORE=$env:MANTID_DATA_STORE"
 }
 
-. cmake -preset=$cmake_preset $mantid_data_store_cmake $extra_cmake_flags $workspace
+. cmake --preset="$cmake_preset" "$mantid_data_store_cmake" "$extra_cmake_flags" "$workspace"
 
 cd $workspace/build
 if ($enable_build_code) {
