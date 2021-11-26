@@ -16,8 +16,11 @@
 #include "MantidDataObjects/MDHistoWorkspace.h"
 #include "MantidGeometry/Crystal/CrystalStructure.h"
 #include "MantidGeometry/Crystal/IsotropicAtomBraggScatterer.h"
+#include "MantidGeometry/Crystal/OrientedLattice.h"
 #include "MantidGeometry/Crystal/PointGroupFactory.h"
 #include "MantidGeometry/Crystal/SpaceGroupFactory.h"
+#include "MantidGeometry/Instrument.h"
+#include "MantidGeometry/Instrument/Component.h"
 #include "MantidGeometry/Instrument/DetectorInfo.h"
 #include "MantidGeometry/MDGeometry/MDFrame.h"
 #include "MantidGeometry/MDGeometry/MDFrameFactory.h"
@@ -289,6 +292,7 @@ void LoadILLSingleCrystal::exec() {
   // wavelength
   t_real wavelength = *get_value<t_real>(*m_file, "wavelength");
   t_real wavenumber = t_real(2. * M_PI) / wavelength;
+  m_log.information() << "Wavelength: " << wavelength << std::endl;
   // --------------------------------------------------------------------------
 
   // --------------------------------------------------------------------------
@@ -567,6 +571,23 @@ void LoadILLSingleCrystal::exec() {
   info->mutableRun().getProperty("Sample_beta")->setUnits("degree");
   info->mutableRun().getProperty("Sample_gamma")->setUnits("degree");
 
+  // set the instrument with a sample and source, needed by PredictPeaks.cpp
+  auto instr = std::make_shared<Geometry::Instrument>();
+
+  // add a sample
+  auto *sample = new Geometry::Component("sample", instr.get());
+  sample->setPos(0, 0, 0); // TODO
+  instr->add(sample);
+  instr->markAsSamplePos(sample);
+
+  // add a source
+  auto *source = new Geometry::Component("source", instr.get());
+  source->setPos(0, 0, -10); // TODO
+  instr->add(source);
+  instr->markAsSource(source);
+
+  info->setInstrument(instr);
+
   for (std::size_t i = 0; i < UB.size(); ++i)
     info->mutableRun().addProperty("Sample_UB_" + std::to_string(i), UB[i]);
 
@@ -578,6 +599,9 @@ void LoadILLSingleCrystal::exec() {
       // dummy scatterer
       Geometry::CompositeBraggScatterer::create(Geometry::IsotropicAtomBraggScattererParser("")()));
   info->mutableSample().setCrystalStructure(crys);
+
+  auto lattice = std::make_unique<Geometry::OrientedLattice>(cell_a, cell_b, cell_c, cell_alpha, cell_beta, cell_gamma);
+  info->mutableSample().setOrientedLattice(std::move(lattice));
 
   m_workspace_histo->addExperimentInfo(info);
   m_workspace_histo->setTitle(title);
@@ -641,14 +665,14 @@ void LoadILLSingleCrystal::exec() {
       twotheta -= det_angular_width * 0.5f;
 
       // out-of-plane scattering angle
-      t_real theta = pix_coord[1] / t_real(detector_data_dims[1]) * det_angular_height;
-      theta -= det_angular_height * 0.5f;
+      t_real angle_oop = pix_coord[1] / t_real(detector_data_dims[1]) * det_angular_height;
+      angle_oop -= det_angular_height * 0.5f;
 
       // convert pixels to Q coordinates and insert events
       t_real Q_coord[3] = {
-          wavenumber * std::sin(theta) * std::cos(twotheta),
-          wavenumber * std::sin(theta) * std::sin(twotheta),
-          wavenumber * std::cos(theta),
+          wavenumber * std::sin(angle_oop) * std::cos(twotheta),
+          wavenumber * std::sin(angle_oop) * std::sin(twotheta),
+          wavenumber * std::cos(angle_oop),
       };
 
       // rotate by sample euler angles
