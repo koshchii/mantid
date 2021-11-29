@@ -7,6 +7,7 @@
 
 #include "MantidDataHandling/LoadILLSingleCrystal.h"
 #include "MantidAPI/FileProperty.h"
+#include "MantidAPI/RegisterFileLoader.h"
 #include "MantidAPI/Run.h"
 #include "MantidAPI/Sample.h"
 #include "MantidAPI/WorkspaceFactory.h"
@@ -41,7 +42,8 @@ namespace Mantid {
 namespace DataHandling {
 
 // Register the algorithm into the AlgorithmFactory
-DECLARE_ALGORITHM(LoadILLSingleCrystal)
+// DECLARE_ALGORITHM(LoadILLSingleCrystal);
+DECLARE_NEXUS_FILELOADER_ALGORITHM(LoadILLSingleCrystal)
 
 //----------------------------------------------------------------------------------------------
 
@@ -228,23 +230,286 @@ void LoadILLSingleCrystal::init() {
                   "Number of bins along the Qz direction.");
 
   // output workspaces
+  // use a histogram workspace for pixel data
   declareProperty(std::make_unique<API::WorkspaceProperty<API::IMDHistoWorkspace>>(
-                      "OutputHistogramWorkspace", "out_histo", Kernel::Direction::Output, API::PropertyMode::Mandatory),
+                      "OutputHistoWorkspace", "out_histo", Kernel::Direction::Output, API::PropertyMode::Mandatory),
                   "An output histogram workspace for the detector pixel values.");
-  // we do not really use events, but some of the following algorithms expect an event workspace
+  // use an event workspace for Q coordinates
   declareProperty(std::make_unique<API::WorkspaceProperty<API::IMDEventWorkspace>>(
                       "OutputEventWorkspace", "out_event", Kernel::Direction::Output, API::PropertyMode::Optional),
                   "An output event workspace in momentum coordinates.");
 }
 
 //----------------------------------------------------------------------------------------------
+/**
+ * confidence that we can load the given file
+ */
+int LoadILLSingleCrystal::confidence(Kernel::NexusDescriptor &descr) const {
+  bool det_data_exists = descr.pathExists("/entry0/data_scan/detector_data/data");
+
+  return det_data_exists ? 75 : 0;
+}
+
+bool LoadILLSingleCrystal::LoadScannedVariables() {
+  // --------------------------------------------------------------------------
+  // hack: open the raw hdf5 file because not all data can be accessed
+  // via the Nexus interface, e.g. string arrays.
+  hid_t file_raw = H5Fopen(m_filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+  if (file_raw < 0)
+    throw Kernel::Exception::FileError("Cannot open hdf5 file ", m_filename);
+
+  m_scanned_variables_names = get_values(file_raw, "/entry0/data_scan/scanned_variables/variables_names/name");
+
+  // the raw file has to be closed before reopening it using nexus
+  H5Fclose(file_raw);
+  return true;
+  // --------------------------------------------------------------------------
+}
+
+bool LoadILLSingleCrystal::LoadInstrumentGroup() {
+  m_file->openGroup("instrument", "NXinstrument");
+  auto entries = m_file->getEntries();
+
+  m_log.information() << "\nInstrument group:" << std::endl;
+  for (const auto &entry : entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  // instrument name
+  m_instr_name = *get_value<decltype(m_instr_name)>(*m_file, "name");
+
+  // detector
+  m_file->openGroup("Det1", "NXdetector");
+  // in mm
+  t_real det_height = 441; // TODO: get this from the file
+  // in mm
+  m_dist_sample_det = *get_value<decltype(m_dist_sample_det)>(*m_file, "sample_distance");
+  // in deg
+  m_det_angular_width = *get_value<decltype(m_det_angular_width)>(*m_file, "angular_width");
+  m_det_angular_height = std::abs(std::atan(det_height / m_dist_sample_det));
+  m_file->closeGroup();
+
+  m_log.information() << "Detector: "
+                      << "angular width=" << m_det_angular_width << ", sample-detector distance=" << m_dist_sample_det
+                      << std::endl;
+
+  m_det_angular_width = m_det_angular_width / 180.f * t_real(M_PI);
+
+  // initial crystal angles
+  m_file->openGroup(SAMPLE_CHI_NAME, "NXpositioner");
+  m_chi_deg = *get_value<decltype(m_chi_deg)>(*m_file, "value");
+  std::int32_t chi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
+  std::int32_t chi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
+  std::int32_t chi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
+  m_file->closeGroup();
+  m_file->openGroup(SAMPLE_OMEGA_NAME, "NXpositioner");
+  m_omega_deg = *get_value<decltype(m_omega_deg)>(*m_file, "value");
+  std::int32_t omega_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
+  std::int32_t omega_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
+  std::int32_t omega_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
+  m_file->closeGroup();
+  m_file->openGroup(SAMPLE_PHI_NAME, "NXpositioner");
+  m_phi_deg = *get_value<decltype(m_phi_deg)>(*m_file, "value");
+  std::int32_t phi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
+  std::int32_t phi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
+  std::int32_t phi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
+  m_file->closeGroup();
+
+  // get axis indices
+  m_chi_axis = get_axis_index(chi_dir_x, chi_dir_y, chi_dir_z);
+  m_omega_axis = get_axis_index(omega_dir_x, omega_dir_y, omega_dir_z);
+  m_phi_axis = get_axis_index(phi_dir_x, phi_dir_y, phi_dir_z);
+
+  m_log.information() << "Initial sample angles: "
+                      << "chi=" << m_chi_deg << ", omega=" << m_omega_deg << ", phi=" << m_phi_deg << std::endl;
+  m_log.information() << "Sample axes: "
+                      << "chi=" << m_chi_axis << ", omega=" << m_omega_axis << ", phi=" << m_phi_axis << std::endl;
+
+  // crystal
+  m_file->openGroup("SingleCrystalSettings", "NXcrystal");
+  auto _cell_a = get_value<t_real>(*m_file, "unit_cell_a");
+  auto _cell_b = get_value<t_real>(*m_file, "unit_cell_b");
+  auto _cell_c = get_value<t_real>(*m_file, "unit_cell_c");
+  auto _cell_alpha = get_value<t_real>(*m_file, "unit_cell_alpha");
+  auto _cell_beta = get_value<t_real>(*m_file, "unit_cell_beta");
+  auto _cell_gamma = get_value<t_real>(*m_file, "unit_cell_gamma");
+
+  // if a is not given, set it to 0
+  m_cell[0] = _cell_a ? *_cell_a : 0;
+  // if b is not given, set it to a
+  m_cell[1] = _cell_b ? *_cell_b : m_cell[0];
+  // if c is not given, set it to a
+  m_cell[2] = _cell_c ? *_cell_c : m_cell[0];
+  // if alpha is not given, set it to 90 deg
+  m_cell_angles[0] = _cell_alpha ? *_cell_alpha : 90;
+  // if beta is not given, set it to alpha
+  m_cell_angles[1] = _cell_beta ? *_cell_beta : m_cell_angles[0];
+  // if gamma is not given, set it to alpha
+  m_cell_angles[2] = _cell_gamma ? *_cell_gamma : m_cell_angles[0];
+
+  m_log.information() << "Unit cell: a=" << m_cell[0] << ", b=" << m_cell[1] << ", c=" << m_cell[2]
+                      << ", alpha=" << m_cell_angles[0] << ", beta=" << m_cell_angles[1]
+                      << ", gamma=" << m_cell_angles[2] << std::endl;
+
+  m_UB = get_values<typename decltype(m_UB)::value_type>(*m_file, "orientation_matrix");
+  m_log.information() << "UB matrix:\n"
+                      << "\t" << std::setw(15) << m_UB[0] << std::setw(15) << m_UB[1] << std::setw(15) << m_UB[2]
+                      << "\n"
+                      << "\t" << std::setw(15) << m_UB[3] << std::setw(15) << m_UB[4] << std::setw(15) << m_UB[5]
+                      << "\n"
+                      << "\t" << std::setw(15) << m_UB[6] << std::setw(15) << m_UB[7] << std::setw(15) << m_UB[8]
+                      << std::endl;
+
+  m_file->closeGroup(); // SingleCrystalSettings
+  m_file->closeGroup(); // instrument
+
+  return true;
+}
+
+bool LoadILLSingleCrystal::LoadSampleGroup() {
+  m_file->openGroup("sample", "NXsample");
+  auto entries = m_file->getEntries();
+
+  m_log.information() << "\nSample group:" << std::endl;
+  for (const auto &entry : entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  m_file->closeGroup(); // sample
+
+  return true;
+}
+
+bool LoadILLSingleCrystal::LoadUserGroup() {
+  m_file->openGroup("user", "NXuser");
+  auto entries = m_file->getEntries();
+
+  m_log.information() << "\nUser group:" << std::endl;
+  for (const auto &entry : entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  m_file->closeGroup(); // user
+
+  return true;
+}
+
+bool LoadILLSingleCrystal::LoadMonitorGroup() {
+  m_file->openGroup("monitor", "NXmonitor");
+  auto entries = m_file->getEntries();
+
+  m_log.information() << "\nMonitor group:" << std::endl;
+  for (const auto &entry : entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  // total monitor counts
+  m_monitor_sum = *get_value<decltype(m_monitor_sum)>(*m_file, "monsum");
+
+  m_file->closeGroup(); // monitor
+
+  return true;
+}
+
+bool LoadILLSingleCrystal::LoadDataScanGroup() {
+  m_file->openGroup("data_scan", "NXdata");
+  auto entries = m_file->getEntries();
+
+  m_log.information() << "\nData group:" << std::endl;
+  for (const auto &entry : entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  // steps
+  std::int64_t total_steps = *get_value<std::int64_t>(*m_file, "total_steps");
+  std::int64_t actual_step = *get_value<std::int64_t>(*m_file, "actual_step");
+
+  m_log.information() << "Total steps=" << total_steps << ", actual step=" << actual_step << std::endl;
+
+  // detector data
+  m_file->openGroup("detector_data", "ILL_detectors_data_scan");
+
+  m_detector_data_dims = get_dims(*m_file, "data");
+  m_detector_data = get_values<typename decltype(m_detector_data)::value_type>(*m_file, "data");
+
+  if (m_detector_data_dims.size() < 3)
+    throw std::runtime_error("Detector data dimension < 3.");
+
+  m_log.information() << "Detector data dimensions: ";
+  for (std::size_t i = 0; i < m_detector_data_dims.size(); ++i) {
+    m_log.information() << m_detector_data_dims[i];
+    if (i < m_detector_data_dims.size() - 1)
+      m_log.information() << " x ";
+  }
+  m_log.information() << std::endl;
+
+  m_file->closeGroup(); // detector_data
+
+  // scanned variables
+  m_file->openGroup("scanned_variables", "ILL_data_scan_vars");
+  auto scanned_vars_entries = m_file->getEntries();
+
+  m_log.information() << "\nData group -> Scanned variables:" << std::endl;
+  for (const auto &entry : scanned_vars_entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  m_scanned_variables_values = get_values<typename decltype(m_scanned_variables_values)::value_type>(*m_file, "data");
+
+  m_file->openGroup("variables_names", "ILL_data_scan_vars");
+  auto variables_names_entries = m_file->getEntries();
+
+  m_log.information() << "\nData group -> Scanned variables -> Variables names:" << std::endl;
+  for (const auto &entry : variables_names_entries)
+    m_log.information() << entry.first << " = " << entry.second << std::endl;
+
+  // already got m_scanned_variables_names via raw hdf5 interface
+  // auto_m_scanned_variables_names = get_values<std::string>(*m_file, "name");
+  auto scanned_variables = get_values<std::uint8_t>(*m_file, "scanned");
+
+  // get indices of scanned variables
+  m_first_scanned_idx = 0;
+  m_chi_idx = 0;
+  m_omega_idx = 0;
+  m_phi_idx = 0;
+
+  m_first_scanned_idx_set = false;
+  m_chi_idx_set = false;
+  m_omega_idx_set = false;
+  m_phi_idx_set = false;
+
+  for (std::size_t idx = 0; idx < scanned_variables.size(); ++idx) {
+    if (scanned_variables[idx]) {
+      if (!m_first_scanned_idx_set) {
+        m_first_scanned_idx = idx;
+        m_first_scanned_idx_set = true;
+      }
+
+      if (!m_chi_idx_set && m_scanned_variables_names[idx] == SAMPLE_CHI_NAME) {
+        m_chi_idx = idx;
+        m_chi_idx_set = true;
+      }
+
+      if (!m_omega_idx_set && m_scanned_variables_names[idx] == SAMPLE_OMEGA_NAME) {
+        m_omega_idx = idx;
+        m_omega_idx_set = true;
+      }
+
+      if (!m_phi_idx_set && m_scanned_variables_names[idx] == SAMPLE_PHI_NAME) {
+        m_phi_idx = idx;
+        m_phi_idx = true;
+      }
+    }
+  }
+
+  m_log.information() << "First scanned variable: " << m_scanned_variables_names[m_first_scanned_idx]
+                      << ", index: " << m_first_scanned_idx << std::endl;
+
+  m_file->closeGroup(); // variable names
+  m_file->closeGroup(); // scanned_variables
+  m_file->closeGroup(); // data_scan
+
+  return true;
+}
+
+//----------------------------------------------------------------------------------------------
 /** Execute the algorithm.
  */
 void LoadILLSingleCrystal::exec() {
-  // number data types
-  using t_real = coord_t;
-  using t_data = double;
-
   // data type for event workspace
   using t_event = DataObjects::MDEvent<3>;
   using t_eventworkspace = DataObjects::MDEventWorkspace<t_event, 3>;
@@ -256,18 +521,7 @@ void LoadILLSingleCrystal::exec() {
   // get input file name
   m_filename = getPropertyValue("Filename");
 
-  // --------------------------------------------------------------------------
-  // hack: open the raw hdf5 file because not all data can be accessed
-  // via the Nexus interface, e.g. string arrays.
-  hid_t file_raw = H5Fopen(m_filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
-  if (file_raw < 0)
-    throw Kernel::Exception::FileError("Cannot open hdf5 file ", m_filename);
-
-  auto scanned_variables_names = get_values(file_raw, "/entry0/data_scan/scanned_variables/variables_names/name");
-
-  // the raw file has to be closed before reopening it using nexus
-  H5Fclose(file_raw);
-  // --------------------------------------------------------------------------
+  LoadScannedVariables();
 
   // open the corresponding nexus file
   m_file = std::make_unique<NeXus::File>(m_filename, NXACC_READ);
@@ -275,7 +529,7 @@ void LoadILLSingleCrystal::exec() {
     throw Kernel::Exception::FileError("Cannot open Nexus file ", m_filename);
 
   // --------------------------------------------------------------------------
-  // root group
+  // load root group
   m_file->openGroup("/entry0", "NXentry");
   auto entries = m_file->getEntries();
 
@@ -293,241 +547,15 @@ void LoadILLSingleCrystal::exec() {
   t_real wavelength = *get_value<t_real>(*m_file, "wavelength");
   t_real wavenumber = t_real(2. * M_PI) / wavelength;
   m_log.information() << "Wavelength: " << wavelength << std::endl;
+
+  LoadInstrumentGroup();
+  LoadSampleGroup();
+  LoadUserGroup();
+  LoadMonitorGroup();
+  LoadDataScanGroup();
+
+  m_file->closeGroup(); // entry0
   // --------------------------------------------------------------------------
-
-  // --------------------------------------------------------------------------
-  // instrument group
-  m_file->openGroup("instrument", "NXinstrument");
-  entries = m_file->getEntries();
-
-  m_log.information() << "\nInstrument group:" << std::endl;
-  for (const auto &entry : entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  // instrument name
-  std::string instr_name = *get_value<std::string>(*m_file, "name");
-
-  // detector
-  m_file->openGroup("Det1", "NXdetector");
-  // in mm
-  t_real det_height = 441; // TODO: get this from the file
-  // in mm
-  t_real dist_sample_det = *get_value<t_real>(*m_file, "sample_distance");
-  // in deg
-  t_real det_angular_width = *get_value<t_real>(*m_file, "angular_width");
-  t_real det_angular_height = std::abs(std::atan(det_height / dist_sample_det));
-  m_file->closeGroup();
-
-  m_log.information() << "Detector: "
-                      << "angular width=" << det_angular_width << ", sample-detector distance=" << dist_sample_det
-                      << std::endl;
-
-  det_angular_width = det_angular_width / 180.f * t_real(M_PI);
-
-  // initial crystal angles
-  m_file->openGroup(SAMPLE_CHI_NAME, "NXpositioner");
-  t_real chi_deg = *get_value<t_real>(*m_file, "value");
-  std::int32_t chi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
-  std::int32_t chi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
-  std::int32_t chi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
-  m_file->closeGroup();
-  m_file->openGroup(SAMPLE_OMEGA_NAME, "NXpositioner");
-  t_real omega_deg = *get_value<t_real>(*m_file, "value");
-  std::int32_t omega_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
-  std::int32_t omega_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
-  std::int32_t omega_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
-  m_file->closeGroup();
-  m_file->openGroup(SAMPLE_PHI_NAME, "NXpositioner");
-  t_real phi_deg = *get_value<t_real>(*m_file, "value");
-  std::int32_t phi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
-  std::int32_t phi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
-  std::int32_t phi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
-  m_file->closeGroup();
-
-  // get axis indices
-  int chi_axis = get_axis_index(chi_dir_x, chi_dir_y, chi_dir_z);
-  int omega_axis = get_axis_index(omega_dir_x, omega_dir_y, omega_dir_z);
-  int phi_axis = get_axis_index(phi_dir_x, phi_dir_y, phi_dir_z);
-
-  m_log.information() << "Initial sample angles: "
-                      << "chi=" << chi_deg << ", omega=" << omega_deg << ", phi=" << phi_deg << std::endl;
-  m_log.information() << "Sample axes: "
-                      << "chi=" << chi_axis << ", omega=" << omega_axis << ", phi=" << phi_axis << std::endl;
-
-  // crystal
-  m_file->openGroup("SingleCrystalSettings", "NXcrystal");
-  auto _cell_a = get_value<t_real>(*m_file, "unit_cell_a");
-  auto _cell_b = get_value<t_real>(*m_file, "unit_cell_b");
-  auto _cell_c = get_value<t_real>(*m_file, "unit_cell_c");
-  auto _cell_alpha = get_value<t_real>(*m_file, "unit_cell_alpha");
-  auto _cell_beta = get_value<t_real>(*m_file, "unit_cell_beta");
-  auto _cell_gamma = get_value<t_real>(*m_file, "unit_cell_gamma");
-
-  // if a is not given, set it to 0
-  t_real cell_a = _cell_a ? *_cell_a : 0;
-  // if b is not given, set it to a
-  t_real cell_b = _cell_b ? *_cell_b : cell_a;
-  // if c is not given, set it to a
-  t_real cell_c = _cell_c ? *_cell_c : cell_a;
-  // if alpha is not given, set it to 90 deg
-  t_real cell_alpha = _cell_alpha ? *_cell_alpha : 90;
-  // if beta is not given, set it to alpha
-  t_real cell_beta = _cell_beta ? *_cell_beta : cell_alpha;
-  // if gamma is not given, set it to alpha
-  t_real cell_gamma = _cell_gamma ? *_cell_gamma : cell_alpha;
-
-  m_log.information() << "Unit cell: a=" << cell_a << ", b=" << cell_b << ", c=" << cell_c << ", alpha=" << cell_alpha
-                      << ", beta=" << cell_beta << ", gamma=" << cell_gamma << std::endl;
-
-  auto UB = get_values<t_real>(*m_file, "orientation_matrix");
-  m_log.information() << "UB matrix:\n"
-                      << "\t" << std::setw(15) << UB[0] << std::setw(15) << UB[1] << std::setw(15) << UB[2] << "\n"
-                      << "\t" << std::setw(15) << UB[3] << std::setw(15) << UB[4] << std::setw(15) << UB[5] << "\n"
-                      << "\t" << std::setw(15) << UB[6] << std::setw(15) << UB[7] << std::setw(15) << UB[8]
-                      << std::endl;
-
-  m_file->closeGroup(); // SingleCrystalSettings
-  m_file->closeGroup(); // instrument
-  // --------------------------------------------------------------------------
-
-  // --------------------------------------------------------------------------
-  // sample group
-  m_file->openGroup("sample", "NXsample");
-  entries = m_file->getEntries();
-
-  m_log.information() << "\nSample group:" << std::endl;
-  for (const auto &entry : entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  m_file->closeGroup(); // sample
-  // --------------------------------------------------------------------------
-
-  // --------------------------------------------------------------------------
-  // user group
-  m_file->openGroup("user", "NXuser");
-  entries = m_file->getEntries();
-
-  m_log.information() << "\nUser group:" << std::endl;
-  for (const auto &entry : entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  m_file->closeGroup(); // user
-  // --------------------------------------------------------------------------
-
-  // --------------------------------------------------------------------------
-  // monitor group
-  m_file->openGroup("monitor", "NXmonitor");
-  entries = m_file->getEntries();
-
-  m_log.information() << "\nMonitor group:" << std::endl;
-  for (const auto &entry : entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  // total monitor counts
-  t_real monitor_sum = *get_value<t_real>(*m_file, "monsum");
-
-  m_file->closeGroup(); // monitor
-  // --------------------------------------------------------------------------
-
-  // --------------------------------------------------------------------------
-  // data_scan group
-  m_file->openGroup("data_scan", "NXdata");
-  entries = m_file->getEntries();
-
-  m_log.information() << "\nData group:" << std::endl;
-  for (const auto &entry : entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  // steps
-  std::int64_t total_steps = *get_value<std::int64_t>(*m_file, "total_steps");
-  std::int64_t actual_step = *get_value<std::int64_t>(*m_file, "actual_step");
-
-  m_log.information() << "Total steps=" << total_steps << ", actual step=" << actual_step << std::endl;
-
-  // detector data
-  m_file->openGroup("detector_data", "ILL_detectors_data_scan");
-
-  auto detector_data_dims = get_dims(*m_file, "data");
-  auto detector_data = get_values<std::uint32_t>(*m_file, "data");
-
-  if (detector_data_dims.size() < 3)
-    throw std::runtime_error("Detector data dimension < 3.");
-
-  m_log.information() << "Detector data dimensions: ";
-  for (std::size_t i = 0; i < detector_data_dims.size(); ++i) {
-    m_log.information() << detector_data_dims[i];
-    if (i < detector_data_dims.size() - 1)
-      m_log.information() << " x ";
-  }
-  m_log.information() << std::endl;
-
-  m_file->closeGroup(); // detector_data
-
-  // scanned variables
-  m_file->openGroup("scanned_variables", "ILL_data_scan_vars");
-  auto scanned_vars_entries = m_file->getEntries();
-
-  m_log.information() << "\nData group -> Scanned variables:" << std::endl;
-  for (const auto &entry : scanned_vars_entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  auto scanned_variables_values = get_values<t_data>(*m_file, "data");
-
-  m_file->openGroup("variables_names", "ILL_data_scan_vars");
-  auto variables_names_entries = m_file->getEntries();
-
-  m_log.information() << "\nData group -> Scanned variables -> Variables names:" << std::endl;
-  for (const auto &entry : variables_names_entries)
-    m_log.information() << entry.first << " = " << entry.second << std::endl;
-
-  // already got scanned_variables_names via raw hdf5 interface
-  // auto scanned_variables_names = get_values<std::string>(*m_file, "name");
-  auto scanned_variables = get_values<std::uint8_t>(*m_file, "scanned");
-
-  // get indices of scanned variables
-  std::size_t first_scanned_idx = 0;
-  std::size_t chi_idx = 0;
-  std::size_t omega_idx = 0;
-  std::size_t phi_idx = 0;
-
-  bool first_scanned_idx_set = false;
-  bool chi_idx_set = false;
-  bool omega_idx_set = false;
-  bool phi_idx_set = false;
-
-  for (std::size_t idx = 0; idx < scanned_variables.size(); ++idx) {
-    if (scanned_variables[idx]) {
-      if (!first_scanned_idx_set) {
-        first_scanned_idx = idx;
-        first_scanned_idx_set = true;
-      }
-
-      if (!chi_idx_set && scanned_variables_names[idx] == SAMPLE_CHI_NAME) {
-        chi_idx = idx;
-        chi_idx_set = true;
-      }
-
-      if (!omega_idx_set && scanned_variables_names[idx] == SAMPLE_OMEGA_NAME) {
-        omega_idx = idx;
-        omega_idx_set = true;
-      }
-
-      if (!phi_idx_set && scanned_variables_names[idx] == SAMPLE_PHI_NAME) {
-        phi_idx = idx;
-        phi_idx = true;
-      }
-    }
-  }
-
-  m_log.information() << "First scanned variable: " << scanned_variables_names[first_scanned_idx]
-                      << ", index: " << first_scanned_idx << std::endl;
-
-  m_file->closeGroup(); // variable names
-  m_file->closeGroup(); // scanned_variables
-  m_file->closeGroup(); // data_scan
-  // --------------------------------------------------------------------------
-
-  m_file->closeGroup();
 
   // create histogram workspace
   Geometry::GeneralFrame frame_x("x", "");
@@ -535,13 +563,13 @@ void LoadILLSingleCrystal::exec() {
   Geometry::GeneralFrame frame_scanned("scanned", "");
 
   std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions{{
-      std::make_shared<Geometry::MDHistoDimension>("y", "y", frame_y, 0, detector_data_dims[2] - 1,
-                                                   detector_data_dims[2]),
-      std::make_shared<Geometry::MDHistoDimension>("x", "x", frame_x, 0, detector_data_dims[1] - 1,
-                                                   detector_data_dims[1]),
-      std::make_shared<Geometry::MDHistoDimension>(scanned_variables_names[first_scanned_idx],
-                                                   scanned_variables_names[first_scanned_idx], frame_scanned, 0,
-                                                   detector_data_dims[0] - 1, detector_data_dims[0]),
+      std::make_shared<Geometry::MDHistoDimension>("y", "y", frame_y, 0, m_detector_data_dims[2] - 1,
+                                                   m_detector_data_dims[2]),
+      std::make_shared<Geometry::MDHistoDimension>("x", "x", frame_x, 0, m_detector_data_dims[1] - 1,
+                                                   m_detector_data_dims[1]),
+      std::make_shared<Geometry::MDHistoDimension>(m_scanned_variables_names[m_first_scanned_idx],
+                                                   m_scanned_variables_names[m_first_scanned_idx], frame_scanned, 0,
+                                                   m_detector_data_dims[0] - 1, m_detector_data_dims[0]),
   }};
 
   m_workspace_histo = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
@@ -549,17 +577,17 @@ void LoadILLSingleCrystal::exec() {
   // set the metadata
   auto info = std::make_shared<API::ExperimentInfo>();
   info->mutableRun().addProperty("Filename", m_filename);
-  info->mutableRun().addProperty("Instrument", instr_name);
+  info->mutableRun().addProperty("Instrument", m_instr_name);
   info->mutableRun().addProperty("Wavelength", wavelength);
   info->mutableRun().addProperty("Wavenumber", wavenumber);
   info->mutableRun().addProperty("Numor", numor);
-  info->mutableRun().addProperty("Monitor", monitor_sum);
-  info->mutableRun().addProperty("Sample_a", cell_a);
-  info->mutableRun().addProperty("Sample_b", cell_b);
-  info->mutableRun().addProperty("Sample_c", cell_c);
-  info->mutableRun().addProperty("Sample_alpha", cell_alpha);
-  info->mutableRun().addProperty("Sample_beta", cell_beta);
-  info->mutableRun().addProperty("Sample_gamma", cell_gamma);
+  info->mutableRun().addProperty("Monitor", m_monitor_sum);
+  info->mutableRun().addProperty("Sample_a", m_cell[0]);
+  info->mutableRun().addProperty("Sample_b", m_cell[1]);
+  info->mutableRun().addProperty("Sample_c", m_cell[2]);
+  info->mutableRun().addProperty("Sample_alpha", m_cell_angles[0]);
+  info->mutableRun().addProperty("Sample_beta", m_cell_angles[1]);
+  info->mutableRun().addProperty("Sample_gamma", m_cell_angles[2]);
 
   // set the metadata units
   info->mutableRun().getProperty("Wavelength")->setUnits("Angstrom");
@@ -588,19 +616,21 @@ void LoadILLSingleCrystal::exec() {
 
   info->setInstrument(instr);
 
-  for (std::size_t i = 0; i < UB.size(); ++i)
-    info->mutableRun().addProperty("Sample_UB_" + std::to_string(i), UB[i]);
+  for (std::size_t i = 0; i < m_UB.size(); ++i)
+    info->mutableRun().addProperty("Sample_UB_" + std::to_string(i), m_UB[i]);
 
   Geometry::CrystalStructure crys(
       // unit cell
-      Geometry::UnitCell(cell_a, cell_b, cell_c, cell_alpha, cell_beta, cell_gamma, Geometry::angDegrees),
+      Geometry::UnitCell(m_cell[0], m_cell[1], m_cell[2], m_cell_angles[0], m_cell_angles[1], m_cell_angles[2],
+                         Geometry::angDegrees),
       // dummy space group
       Geometry::SpaceGroupFactory::Instance().createSpaceGroup("P 1"),
       // dummy scatterer
       Geometry::CompositeBraggScatterer::create(Geometry::IsotropicAtomBraggScattererParser("")()));
   info->mutableSample().setCrystalStructure(crys);
 
-  auto lattice = std::make_unique<Geometry::OrientedLattice>(cell_a, cell_b, cell_c, cell_alpha, cell_beta, cell_gamma);
+  auto lattice = std::make_unique<Geometry::OrientedLattice>(m_cell[0], m_cell[1], m_cell[2], m_cell_angles[0],
+                                                             m_cell_angles[1], m_cell_angles[2]);
   info->mutableSample().setOrientedLattice(std::move(lattice));
 
   m_workspace_histo->addExperimentInfo(info);
@@ -612,36 +642,36 @@ void LoadILLSingleCrystal::exec() {
   t_real Qzminmax[2] = {std::numeric_limits<t_real>::max(), std::numeric_limits<t_real>::lowest()};
 
   // size of one detector image in pixels
-  std::int64_t frame_size = detector_data_dims[1] * detector_data_dims[2];
+  std::int64_t frame_size = m_detector_data_dims[1] * m_detector_data_dims[2];
 
   std::vector<t_event> events;
-  events.reserve(detector_data.size());
+  events.reserve(m_detector_data.size());
 
   // copy the detector data to the workspace
   std::int64_t last_scan_step = -1;
-  API::Progress progress(this, 0., create_event_workspace ? 0.5 : 1., detector_data.size() / frame_size);
+  API::Progress progress(this, 0., create_event_workspace ? 0.5 : 1., m_detector_data.size() / frame_size);
   bool cancelled = false;
 
-  for (std::size_t idx = 0; idx < detector_data.size(); ++idx) {
+  for (std::size_t idx = 0; idx < m_detector_data.size(); ++idx) {
     // completed all pixels of a frame?
     std::int64_t cur_scan_step = idx / frame_size;
     std::int64_t cur_frame_step = idx % frame_size;
-    std::int64_t cur_y = cur_frame_step / detector_data_dims[1];
-    std::int64_t cur_x = cur_frame_step % detector_data_dims[1];
+    std::int64_t cur_y = cur_frame_step / m_detector_data_dims[1];
+    std::int64_t cur_x = cur_frame_step % m_detector_data_dims[1];
 
     // save pixels in histogram workspace
-    Mantid::signal_t intensity = detector_data[idx];
+    Mantid::signal_t intensity = m_detector_data[idx];
     m_workspace_histo->setSignalAt(idx, intensity);
 
     // only update this once per frame
     if (last_scan_step != cur_scan_step) {
       // get sample angles
-      if (chi_idx_set)
-        chi_deg = t_real(scanned_variables_values[detector_data_dims[0] * chi_idx + cur_scan_step]);
-      if (omega_idx_set)
-        omega_deg = t_real(scanned_variables_values[detector_data_dims[0] * omega_idx + cur_scan_step]);
-      if (phi_idx_set)
-        phi_deg = t_real(scanned_variables_values[detector_data_dims[0] * phi_idx + cur_scan_step]);
+      if (m_chi_idx_set)
+        m_chi_deg = t_real(m_scanned_variables_values[m_detector_data_dims[0] * m_chi_idx + cur_scan_step]);
+      if (m_omega_idx_set)
+        m_omega_deg = t_real(m_scanned_variables_values[m_detector_data_dims[0] * m_omega_idx + cur_scan_step]);
+      if (m_phi_idx_set)
+        m_phi_deg = t_real(m_scanned_variables_values[m_detector_data_dims[0] * m_phi_idx + cur_scan_step]);
 
       last_scan_step = cur_scan_step;
 
@@ -652,21 +682,21 @@ void LoadILLSingleCrystal::exec() {
       }
     }
 
-    t_real chi = t_real(chi_deg * M_PI / 180.);
-    t_real omega = t_real(omega_deg * M_PI / 180.);
-    t_real phi = t_real(phi_deg * M_PI / 180.);
+    t_real chi = t_real(m_chi_deg * M_PI / 180.);
+    t_real omega = t_real(m_omega_deg * M_PI / 180.);
+    t_real phi = t_real(m_phi_deg * M_PI / 180.);
 
     if (create_event_workspace) {
       t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
 
       // TODO: find zero positions on detector
       // in-plane scattering angle
-      t_real twotheta = pix_coord[0] / t_real(detector_data_dims[0]) * det_angular_width;
-      twotheta -= det_angular_width * 0.5f;
+      t_real twotheta = pix_coord[0] / t_real(m_detector_data_dims[0]) * m_det_angular_width;
+      twotheta -= m_det_angular_width * 0.5f;
 
       // out-of-plane scattering angle
-      t_real angle_oop = pix_coord[1] / t_real(detector_data_dims[1]) * det_angular_height;
-      angle_oop -= det_angular_height * 0.5f;
+      t_real angle_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;
+      angle_oop -= m_det_angular_height * 0.5f;
 
       // convert pixels to Q coordinates and insert events
       t_real Q_coord[3] = {
@@ -677,9 +707,9 @@ void LoadILLSingleCrystal::exec() {
 
       // rotate by sample euler angles
       // TODO: check order
-      rotate_around_axis(omega_axis, Q_coord[0], Q_coord[1], Q_coord[2], omega);
-      rotate_around_axis(chi_axis, Q_coord[0], Q_coord[1], Q_coord[2], chi);
-      rotate_around_axis(phi_axis, Q_coord[0], Q_coord[1], Q_coord[2], phi);
+      rotate_around_axis(m_omega_axis, Q_coord[0], Q_coord[1], Q_coord[2], omega);
+      rotate_around_axis(m_chi_axis, Q_coord[0], Q_coord[1], Q_coord[2], chi);
+      rotate_around_axis(m_phi_axis, Q_coord[0], Q_coord[1], Q_coord[2], phi);
 
       // calculate Q ranges
       Qxminmax[0] = std::min(Q_coord[0], Qxminmax[0]);
@@ -694,12 +724,12 @@ void LoadILLSingleCrystal::exec() {
     }
   }
 
-  m_log.information() << "Q_x range: [" << Qxminmax[0] << ", " << Qxminmax[1] << "]." << std::endl;
-  m_log.information() << "Q_y range: [" << Qyminmax[0] << ", " << Qyminmax[1] << "]." << std::endl;
-  m_log.information() << "Q_z range: [" << Qzminmax[0] << ", " << Qzminmax[1] << "]." << std::endl;
-
   // create event workspace
   if (create_event_workspace && !cancelled) {
+    m_log.information() << "Q_x range: [" << Qxminmax[0] << ", " << Qxminmax[1] << "]." << std::endl;
+    m_log.information() << "Q_y range: [" << Qyminmax[0] << ", " << Qyminmax[1] << "]." << std::endl;
+    m_log.information() << "Q_z range: [" << Qzminmax[0] << ", " << Qzminmax[1] << "]." << std::endl;
+
     std::size_t progress_div = events.size() / 100;
     API::Progress progress_evt(this, 0.5, 1., events.size() / progress_div);
 
@@ -746,7 +776,7 @@ void LoadILLSingleCrystal::exec() {
   if (!cancelled) {
     // set ouput workspaces
     if (m_workspace_histo) {
-      setProperty("OutputHistogramWorkspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
+      setProperty("OutputHistoWorkspace", std::dynamic_pointer_cast<API::IMDHistoWorkspace>(m_workspace_histo));
     }
 
     if (m_workspace_event) {
