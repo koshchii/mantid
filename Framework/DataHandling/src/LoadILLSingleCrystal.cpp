@@ -5,16 +5,25 @@
 //   Institut Laue - Langevin & CSNS, Institute of High Energy Physics, CAS
 // SPDX - License - Identifier: GPL - 3.0 +
 
+#include <boost/filesystem.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <hdf5.h>
+
+#include "MantidDataHandling/H5Util.h"
 #include "MantidDataHandling/LoadILLSingleCrystal.h"
+
 #include "MantidAPI/FileProperty.h"
 #include "MantidAPI/RegisterFileLoader.h"
 #include "MantidAPI/Run.h"
 #include "MantidAPI/Sample.h"
 #include "MantidAPI/WorkspaceFactory.h"
-#include "MantidDataHandling/H5Util.h"
+
+#include "MantidKernel/OptionalBool.h"
+
 #include "MantidDataObjects/MDEvent.h"
 #include "MantidDataObjects/MDEventWorkspace.h"
 #include "MantidDataObjects/MDHistoWorkspace.h"
+
 #include "MantidGeometry/Crystal/CrystalStructure.h"
 #include "MantidGeometry/Crystal/IsotropicAtomBraggScatterer.h"
 #include "MantidGeometry/Crystal/OrientedLattice.h"
@@ -26,7 +35,6 @@
 #include "MantidGeometry/MDGeometry/MDFrame.h"
 #include "MantidGeometry/MDGeometry/MDFrameFactory.h"
 #include "MantidGeometry/MDGeometry/UnknownFrame.h"
-#include <hdf5.h>
 
 // sample angle names
 #define SAMPLE_CHI_NAME "chi"
@@ -267,6 +275,8 @@ bool LoadILLSingleCrystal::LoadScannedVariables() {
 }
 
 bool LoadILLSingleCrystal::LoadInstrumentGroup() {
+  namespace fs = boost::filesystem;
+
   m_file->openGroup("instrument", "NXinstrument");
   auto entries = m_file->getEntries();
 
@@ -276,6 +286,14 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
 
   // instrument name
   m_instr_name = *get_value<decltype(m_instr_name)>(*m_file, "name");
+
+  // find the instrument definition file
+  std::string instr_dir = Kernel::ConfigService::Instance().getInstrumentDirectory();
+  fs::path instr_file = fs::path(instr_dir) / fs::path(m_instr_name + "_Definition.xml");
+  m_instr_file = instr_file.string();
+  if (!fs::exists(instr_file)) {
+    m_log.error() << "No definition file was found for instrument \"" << m_instr_name << "\"" << std::endl;
+  }
 
   // detector
   m_file->openGroup("Det1", "NXdetector");
@@ -558,6 +576,8 @@ void LoadILLSingleCrystal::exec() {
   // --------------------------------------------------------------------------
 
   // create histogram workspace
+  m_log.information() << "\nCreating histogram workspace..." << std::endl;
+
   Geometry::GeneralFrame frame_x("x", "");
   Geometry::GeneralFrame frame_y("y", "");
   Geometry::GeneralFrame frame_scanned("scanned", "");
@@ -573,6 +593,25 @@ void LoadILLSingleCrystal::exec() {
   }};
 
   m_workspace_histo = std::make_shared<DataObjects::MDHistoWorkspace>(dimensions, API::NoNormalization);
+
+  // load instrument definition file into a dummy workspace
+  auto workspace_instr = API::WorkspaceFactory::Instance().create("Workspace2D", 1, 1, 1);
+  if (m_instr_file != "") {
+    API::Algorithm_sptr load_instr = createChildAlgorithm("LoadInstrument");
+
+    if (load_instr) {
+      load_instr->setPropertyValue("Filename", m_instr_file);
+      load_instr->setProperty("Workspace", workspace_instr);
+      load_instr->setProperty<Kernel::OptionalBool>("RewriteSpectraMap", true);
+
+      if (load_instr->execute())
+        m_log.information() << "Successfully loaded instrument parameters from \"" << m_instr_file << "\"" << std::endl;
+      else
+        m_log.error() << "Failed to loaded instrument parameters from \"" << m_instr_file << "\"" << std::endl;
+
+      // TODO: load detector dimensions, etc.
+    }
+  }
 
   // set the metadata
   auto info = std::make_shared<API::ExperimentInfo>();
@@ -599,21 +638,8 @@ void LoadILLSingleCrystal::exec() {
   info->mutableRun().getProperty("Sample_beta")->setUnits("degree");
   info->mutableRun().getProperty("Sample_gamma")->setUnits("degree");
 
-  // set the instrument with a sample and source, needed by PredictPeaks.cpp
-  auto instr = std::make_shared<Geometry::Instrument>();
-
-  // add a sample
-  auto *sample = new Geometry::Component("sample", instr.get());
-  sample->setPos(0, 0, 0); // TODO
-  instr->add(sample);
-  instr->markAsSamplePos(sample);
-
-  // add a source
-  auto *source = new Geometry::Component("source", instr.get());
-  source->setPos(0, 0, -10); // TODO
-  instr->add(source);
-  instr->markAsSource(source);
-
+  // set the loaded instrument infos, needed by PredictPeaks.cpp
+  auto instr = workspace_instr->getInstrument();
   info->setInstrument(instr);
 
   for (std::size_t i = 0; i < m_UB.size(); ++i)
@@ -726,6 +752,8 @@ void LoadILLSingleCrystal::exec() {
 
   // create event workspace
   if (create_event_workspace && !cancelled) {
+    m_log.information() << "\nCreating event workspace..." << std::endl;
+
     m_log.information() << "Q_x range: [" << Qxminmax[0] << ", " << Qxminmax[1] << "]." << std::endl;
     m_log.information() << "Q_y range: [" << Qyminmax[0] << ", " << Qyminmax[1] << "]." << std::endl;
     m_log.information() << "Q_z range: [" << Qzminmax[0] << ", " << Qzminmax[1] << "]." << std::endl;

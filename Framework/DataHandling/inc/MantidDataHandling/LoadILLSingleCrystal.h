@@ -57,6 +57,7 @@ private:
   // instrument group
   // --------------------------------------------------------------------------
   std::string m_instr_name;
+  std::string m_instr_file;
 
   t_real m_cell[3];
   t_real m_cell_angles[3];
