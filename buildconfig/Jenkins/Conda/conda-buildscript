@@ -40,16 +40,19 @@ WORKSPACE=$1
 shift
 CMAKE_PRESET=$1
 shift
+
 if [[ $OSTYPE == "msys" ]]; then
     EXPECTED_MAMBAFORGE_PATH=$WORKSPACE\\mambaforge # Install into the WORKSPACE_DIR
 else
     EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge
 fi
+
 if [[ $OSTYPE == "msys" ]]; then
-    EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH\\condabin\\mamba.bat
+    EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/condabin/mamba.bat
 else
     EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/mamba
 fi
+
 CONDA_ENV_NAME="mantid-developer"
 if [[ $OSTYPE == 'darwin'* ]]; then
     BUILD_THREADS="$(sysctl -n hw.logicalcpu)"
