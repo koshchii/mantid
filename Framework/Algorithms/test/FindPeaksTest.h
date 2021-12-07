@@ -269,7 +269,9 @@ public:
         tol_width = 0.001;
       }
       // super-special peaks
-      if (i == 4) {
+      if (i == 0) {
+        tol_height = 30.;
+      } else if (i == 4) {
         tol_height = 19.;
       } else if (i == 5) {
         tol_height = 55.;
