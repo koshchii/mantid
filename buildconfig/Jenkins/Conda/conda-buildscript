@@ -42,7 +42,7 @@ CMAKE_PRESET=$1
 shift
 
 if [[ $OSTYPE == "msys" ]]; then
-    EXPECTED_MAMBAFORGE_PATH=$WORKSPACE\\mambaforge # Install into the WORKSPACE_DIR
+    EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
 else
     EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge
 fi

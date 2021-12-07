@@ -37,7 +37,8 @@ if [[ ! -f $EXPECTED_CONDA_PATH ]]; then
         fi
     fi
     if [[ $OSTYPE == 'msys'* ]]; then
-        cmd.exe /C "START /wait "" $MAMBAFORGE_SCRIPT_NAME /InstallationType=JustMe /RegisterPython=0 /S /D=$EXPECTED_MAMBAFORGE_PATH"
+        # Replace all / with \ for windows batch support before passing in $EXPECTED_MAMBAFORGE_PATH
+        cmd.exe /C "START /wait "" $MAMBAFORGE_SCRIPT_NAME /InstallationType=JustMe /RegisterPython=0 /S /D=${EXPECTED_MAMBAFORGE_PATH////\\}"
     else
         bash $MAMBAFORGE_SCRIPT_NAME -b -p $EXPECTED_MAMBAFORGE_PATH
     fi
