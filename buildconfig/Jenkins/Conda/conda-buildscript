@@ -40,7 +40,11 @@ WORKSPACE=$1
 shift
 CMAKE_PRESET=$1
 shift
-EXPECTED_MAMBAFORGE_PATH=$WORKSPACE\\mambaforge # Install into the WORKSPACE_DIR
+if [[ $OSTYPE == "msys" ]]; then
+    EXPECTED_MAMBAFORGE_PATH=$WORKSPACE\\mambaforge # Install into the WORKSPACE_DIR
+else
+    EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge
+fi
 if [[ $OSTYPE == "msys" ]]; then
     EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH\\condabin\\mamba.bat
 else
