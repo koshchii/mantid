@@ -70,6 +70,10 @@ if [[ ${USE_CORE_DUMPS} == true ]]; then
     ulimit -c unlimited
 fi
 
+if [[ $OSTYPE == "msys"* ]]; then
+    WINDOWS_BUILD_OPTIONS="--config Release"
+fi
+
 # Run unit tests
 cd $WORKSPACE/build
 if [[ $ENABLE_UNIT_TESTS == true ]]; then
@@ -78,7 +82,7 @@ if [[ $ENABLE_UNIT_TESTS == true ]]; then
 fi
 
 if [[ $ENABLE_DOCS == true && $ENABLE_DOC_TESTS == true ]]; then
-    run_with_xvfb cmake --build . --target docs-doctest -j$BUILD_THREADS
+    run_with_xvfb cmake --build . --target docs-doctest -j$BUILD_THREADS $WINDOWS_BUILD_OPTIONS
     terminate_xvfb_sessions
 fi
 

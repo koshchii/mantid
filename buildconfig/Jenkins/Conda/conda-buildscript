@@ -40,8 +40,12 @@ WORKSPACE=$1
 shift
 CMAKE_PRESET=$1
 shift
-EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
-EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/conda
+EXPECTED_MAMBAFORGE_PATH=$WORKSPACE\\mambaforge # Install into the WORKSPACE_DIR
+if [[ $OSTYPE == "msys" ]]; then
+    EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH\\condabin\\mamba.bat
+else
+    EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/condabin/mamba
+fi
 CONDA_ENV_NAME="mantid-developer"
 if [[ $OSTYPE == 'darwin'* ]]; then
     BUILD_THREADS="$(sysctl -n hw.logicalcpu)"
@@ -102,6 +106,7 @@ $SCRIPT_DIR/setup-conda-env $WORKSPACE $EXPECTED_CONDA_PATH $CONDA_ENV_NAME
 conda activate $CONDA_ENV_NAME
 
 # Clean the source tree to remove stale configured files ignoring the build directory
+cd $WORKSPACE
 git clean -d -x --force --exclude=build --exclude=mambaforge --exclude=".Xauthority-*"
 
 # Clean up build folder
@@ -120,7 +125,7 @@ if [[ ${CLEAN_EXTERNAL_PROJECTS} == true ]]; then
 fi
 
 # Clean up artifacts from previous builds
-rm -f -- *.dmg *.rpm *.deb *.tar.gz *.tar.xz
+rm -f -- *.dmg *.rpm *.deb *.tar.gz *.tar.xz *.exe
 
 # Should we even build the code?
 if ${SCRIPT_DIR}/../check_for_changes dev-docs-only || ${SCRIPT_DIR}/../check_for_changes user-docs-only; then
