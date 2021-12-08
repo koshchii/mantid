@@ -16,16 +16,23 @@
 #                 (mantid repo)
 #
 # Possible flags:
-#   --build-framework: Runs the system tests from being compiled or ran
-#   --build-qt:
-#   --build-qt: runs conda-build
+#   --build-framework: build the framework package using conda-build
+#   --build-qt: build the qt package using conda-build
+#   --build-workbench: build the workbench package using conda-build
 #
 
 # Setup expected variables
 WORKSPACE=$1
 shift
+if [[ $OSTYPE == "msys"* ]]; then
+    WORKSPACE=${WORKSPACE////\\}
+fi
 EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
-EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/conda
+if [[ $OSTYPE == "msys" ]]; then
+    EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/condabin/mamba.bat
+else
+    EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/mamba
+fi
 CONDA_ENV_NAME=mantid-developer
 RECIPES_DIR=$WORKSPACE/conda-recipes
 SCRIPT_DIR=$WORKSPACE/buildconfig/Jenkins/Conda/
@@ -67,13 +74,14 @@ $SCRIPT_DIR/download-and-install-mambaforge $EXPECTED_MAMBAFORGE_PATH $EXPECTED_
 $EXPECTED_CONDA_PATH env remove -n $CONDA_ENV_NAME
 
 # Create env with conda-build installed
-$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build conda-verify
+$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build conda-verify -y
 
 # Activate Conda environment
 . $WORKSPACE/mambaforge/etc/profile.d/conda.sh
 conda activate $CONDA_ENV_NAME
 
 # Clone the recipes
+cd $WORKSPACE
 if [[ -d conda-recipes ]]; then
     rm -rf conda-recipes
 fi
