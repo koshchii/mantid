@@ -35,7 +35,7 @@ if [[ $OSTYPE == "msys" ]]; then
 else
     EXPECTED_CONDA_PATH=$EXPECTED_MAMBAFORGE_PATH/bin/mamba
 fi
-CONDA_ENV_NAME=mantid-developer
+CONDA_ENV_NAME=mantid-conda-build-env
 RECIPES_DIR=$WORKSPACE/conda-recipes
 SCRIPT_DIR=$WORKSPACE/buildconfig/Jenkins/Conda/
 
