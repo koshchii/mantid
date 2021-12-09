@@ -13,7 +13,8 @@
 #
 # Expected args:
 #   1. WORKSPACE: path to the workspace/source code that this should run inside
-#                 (mantid repo)
+#                 (mantid repo). Windows Caveat: Only use / for this arguement do
+#                 not use \\ or \ in the path.
 #
 # Possible flags:
 #   --build-framework: build the framework package using conda-build
@@ -86,6 +87,7 @@ $EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build conda-verify -y
 conda activate $CONDA_ENV_NAME
 
 # Clone the recipes
+cd $WORKSPACE
 if [[ -d conda-recipes ]]; then
     rm -rf conda-recipes
 fi

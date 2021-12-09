@@ -11,7 +11,8 @@
 # buildscript /jenkins/workspace_dir/ linux-ci --enable-systemtests --enable-coverage --enable-docs
 #
 # Expected args:
-#   1. WORKSPACE: path to the workspace/source code that this should run inside
+#   1. WORKSPACE: path to the workspace/source code that this should run inside, Windows Caveat: Only use / for 
+#                 this arguement do not use \\ or \ in the path.
 #   2. CMAKE_PRESET: the CMake preset that should be ran to generate the cmake files for this CI job
 #
 # Possible flags:
