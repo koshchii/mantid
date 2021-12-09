@@ -26,6 +26,8 @@ WORKSPACE=$1
 shift
 if [[ $OSTYPE == "msys"* ]]; then
     WORKSPACE=${WORKSPACE////\\}
+    # Allow paths to be checkout with longer file names than 260 characters
+    git config --system core.longpaths true
 fi
 EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
 if [[ $OSTYPE == "msys" ]]; then
