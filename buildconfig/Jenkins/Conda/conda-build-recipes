@@ -26,8 +26,11 @@ WORKSPACE=$1
 shift
 if [[ $OSTYPE == "msys"* ]]; then
     WORKSPACE=${WORKSPACE////\\}
-    # Allow paths to be checkout with longer file names than 260 characters
-    git config --system core.longpaths true
+    # Require git settings so that paths can be checked out with longer file names than 260 characters
+    if [[ ! $(git config --system --get core.longpaths) == true ]]; then
+        echo "This windows machine is not configured properly, please run this command as an admin: git config --system core.longpaths true"
+        exit 1
+    fi
 fi
 EXPECTED_MAMBAFORGE_PATH=$WORKSPACE/mambaforge # Install into the WORKSPACE_DIR
 if [[ $OSTYPE == "msys" ]]; then
@@ -83,7 +86,6 @@ $EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build conda-verify -y
 conda activate $CONDA_ENV_NAME
 
 # Clone the recipes
-cd $WORKSPACE
 if [[ -d conda-recipes ]]; then
     rm -rf conda-recipes
 fi
