@@ -297,36 +297,79 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
 
   // detector
   m_file->openGroup("Det1", "NXdetector");
+
+  // detector dimensions
+  m_det_num_rows = *get_value<decltype(m_det_num_rows)>(*m_file, "nrows");
+  m_det_num_cols = *get_value<decltype(m_det_num_cols)>(*m_file, "ncols");
+
   // in mm
-  t_real det_height = 441; // TODO: get this from the file
+  t_real det_pixel_height = *get_value<t_real>(*m_file, "height");
+
+  // there's a bug that just puts 0 as heigth value
+  if (std::abs(det_pixel_height) < std::numeric_limits<t_real>::epsilon())
+    det_pixel_height = 0.4f;
+
+  // in mm
+  t_real det_height = det_pixel_height * t_real(m_det_num_rows);
+
   // in mm
   m_dist_sample_det = *get_value<decltype(m_dist_sample_det)>(*m_file, "sample_distance");
+
   // in deg
   m_det_angular_width = *get_value<decltype(m_det_angular_width)>(*m_file, "angular_width");
   m_det_angular_height = std::abs(std::atan(det_height / m_dist_sample_det));
   m_file->closeGroup();
 
   m_log.information() << "Detector: "
-                      << "angular width=" << m_det_angular_width << ", sample-detector distance=" << m_dist_sample_det
-                      << std::endl;
+                      << "dimensions=" << m_det_num_rows << "x" << m_det_num_cols << ", "
+                      << "angular width=" << m_det_angular_width << ", "
+                      << "sample-detector distance=" << m_dist_sample_det << std::endl;
 
   m_det_angular_width = m_det_angular_width / 180.f * t_real(M_PI);
+
+  // detector zero position
+  m_file->openGroup("gamma", "NXpositioner");
+  m_det_gamma_deg = *get_value<decltype(m_det_gamma_deg)>(*m_file, "value");
+  std::int32_t gamma_cw = *get_value<std::int32_t>(*m_file, "clockwise");
+  if (gamma_cw)
+    m_det_gamma_deg = -m_det_gamma_deg;
+  std::int32_t gamma_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
+  std::int32_t gamma_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
+  std::int32_t gamma_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
+  m_file->closeGroup();
+
+  // get detector rotation axis
+  m_det_gamma_axis = get_axis_index(gamma_dir_x, gamma_dir_y, gamma_dir_z);
+
+  m_log.information() << "Detector zero position: "
+                      << "gamma=" << m_det_gamma_deg << ", axis: " << m_det_gamma_axis << std::endl;
 
   // initial crystal angles
   m_file->openGroup(SAMPLE_CHI_NAME, "NXpositioner");
   m_chi_deg = *get_value<decltype(m_chi_deg)>(*m_file, "value");
+  std::int32_t chi_cw = *get_value<std::int32_t>(*m_file, "clockwise");
+  if (chi_cw)
+    m_chi_deg = -m_chi_deg;
   std::int32_t chi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t chi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t chi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
   m_file->closeGroup();
+
   m_file->openGroup(SAMPLE_OMEGA_NAME, "NXpositioner");
   m_omega_deg = *get_value<decltype(m_omega_deg)>(*m_file, "value");
+  std::int32_t omega_cw = *get_value<std::int32_t>(*m_file, "clockwise");
+  if (omega_cw)
+    m_omega_deg = -m_omega_deg;
   std::int32_t omega_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t omega_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t omega_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
   m_file->closeGroup();
+
   m_file->openGroup(SAMPLE_PHI_NAME, "NXpositioner");
   m_phi_deg = *get_value<decltype(m_phi_deg)>(*m_file, "value");
+  std::int32_t phi_cw = *get_value<std::int32_t>(*m_file, "clockwise");
+  if (phi_cw)
+    m_phi_deg = -m_phi_deg;
   std::int32_t phi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t phi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t phi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
@@ -715,10 +758,11 @@ void LoadILLSingleCrystal::exec() {
     if (create_event_workspace) {
       t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
 
-      // TODO: find zero positions on detector
       // in-plane scattering angle
       t_real twotheta = pix_coord[0] / t_real(m_detector_data_dims[0]) * m_det_angular_width;
-      twotheta -= m_det_angular_width * 0.5f;
+      // rotate to detector zero position
+      // twotheta -= m_det_angular_width * 0.5f;
+      twotheta += m_det_gamma_deg;
 
       // out-of-plane scattering angle
       t_real angle_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;

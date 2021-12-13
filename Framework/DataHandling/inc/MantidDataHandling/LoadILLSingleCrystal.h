@@ -66,6 +66,10 @@ private:
   t_real m_chi_deg, m_omega_deg, m_phi_deg;
   int m_chi_axis, m_omega_axis, m_phi_axis;
 
+  t_real m_det_gamma_deg;
+  int m_det_gamma_axis;
+
+  std::int32_t m_det_num_rows, m_det_num_cols;
   t_real m_dist_sample_det;
   t_real m_det_angular_width, m_det_angular_height;
   // --------------------------------------------------------------------------
