@@ -72,12 +72,13 @@ fi
 
 if [[ $OSTYPE == "msys"* ]]; then
     WINDOWS_BUILD_OPTIONS="--config Release"
+    WINDOWS_TEST_OPTIONS="-C Release"
 fi
 
 # Run unit tests
 cd $WORKSPACE/build
 if [[ $ENABLE_UNIT_TESTS == true ]]; then
-    run_with_xvfb ctest -j$BUILD_THREADS --no-compress-output -T Test --schedule-random --output-on-failure
+    run_with_xvfb ctest -j$BUILD_THREADS --no-compress-output -T Test --schedule-random --output-on-failure $WINDOWS_TEST_OPTIONS
     terminate_xvfb_sessions
 fi
 
@@ -97,6 +98,6 @@ if [[ $ENABLE_SYSTEM_TESTS == true ]]; then
     echo "usagereports.enabled = 0" >> $userprops
     echo "CheckMantidVersion.OnStartup = 0" >> $userprops
 
-    run_with_xvfb $WORKSPACE/build/systemtest -j$BUILD_THREADS
+    run_with_xvfb $WORKSPACE/build/systemtest -j$BUILD_THREADS $WINDOWS_TEST_OPTIONS
     terminate_xvfb_sessions
 fi
