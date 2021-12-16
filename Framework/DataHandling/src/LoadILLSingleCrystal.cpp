@@ -238,21 +238,23 @@ template <class t_real> static void B_matrix(const t_real *cell, const t_real *a
   B[8] = sc / (cell[2] * rr);
 }
 
-/** position on spherical detector
+/** get the normalised kf for a spherical detector
  */
-template <class t_real> static void get_spherical_pos(t_real theta, t_real phi, t_real *vec) {
+template <class t_real> static void get_kf_spherical_det(t_real theta, t_real phi, t_real *vec) {
   theta = -theta;
   theta += t_real(M_PI) * t_real(0.5);
   phi += t_real(M_PI) * t_real(0.5);
 
-  vec[0] = std::cos(phi) * std::sin(theta);
-  vec[1] = std::sin(phi) * std::sin(theta);
+  const t_real sin_theta = std::sin(theta);
+
+  vec[0] = std::cos(phi) * sin_theta;
+  vec[1] = std::sin(phi) * sin_theta;
   vec[2] = std::cos(theta);
 }
 
-/** position on cylindrical detector
+/** get the normalised kf for a cylindrical detector
  */
-template <class t_real> static void get_cylindrical_pos(t_real z, t_real phi, t_real rad, t_real *vec) {
+template <class t_real> static void get_kf_cylindrical_det(t_real z, t_real phi, t_real rad, t_real *vec) {
   phi += t_real(M_PI) * t_real(0.5);
 
   vec[0] = rad * std::cos(phi);
@@ -264,6 +266,21 @@ template <class t_real> static void get_cylindrical_pos(t_real z, t_real phi, t_
   vec[1] /= len;
   vec[2] /= len;
 }
+
+/** get the normalised kf for a flat detector
+ */
+template <class t_real> static void get_kf_flat_det(t_real z, t_real phi, t_real rad, t_real *vec) {
+
+  vec[0] = rad * std::tan(-phi);
+  vec[1] = rad;
+  vec[2] = z;
+
+  t_real len = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+  vec[0] /= len;
+  vec[1] /= len;
+  vec[2] /= len;
+}
+
 //----------------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------------
@@ -351,6 +368,18 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   m_det_num_rows = *get_value<decltype(m_det_num_rows)>(*m_file, "nrows");
   m_det_num_cols = *get_value<decltype(m_det_num_cols)>(*m_file, "ncols");
 
+  // detector type
+  std::string det_type_str = *get_value<std::string>(*m_file, "type");
+  m_det_type = 0;
+  if (det_type_str == "cylindrical")
+    m_det_type = 0;
+  else if (det_type_str == "spherical")
+    m_det_type = 1;
+  else if (det_type_str == "flat")
+    m_det_type = 2;
+  else
+    m_log.warning() << "Unknown detector type, assuming cylindrical." << std::endl;
+
   // in mm
   t_real det_pixel_height = *get_value<t_real>(*m_file, "height");
 
@@ -370,6 +399,7 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   m_file->closeGroup();
 
   m_log.information() << "Detector: "
+                      << "type=" << det_type_str << ", "
                       << "dimensions=" << m_det_num_rows << "x" << m_det_num_cols << ", "
                       << "angular width=" << m_det_angular_width << ", "
                       << "sample-detector distance=" << m_dist_sample_det << std::endl;
@@ -830,8 +860,18 @@ void LoadILLSingleCrystal::exec() {
       // convert pixels to Q coordinates and insert events
       t_real ki[3] = {0, 1, 0};
       t_real kf[3] = {0, 1, 0};
-      // get_spherical_pos(angle_oop, twotheta, kf);
-      get_cylindrical_pos(pos_oop, twotheta, m_dist_sample_det, kf);
+      switch (m_det_type) {
+      case 0:
+        get_kf_cylindrical_det(pos_oop, twotheta, m_dist_sample_det, kf);
+        break;
+      case 1:
+        get_kf_spherical_det(angle_oop, twotheta, kf);
+        break;
+      case 2:
+        get_kf_flat_det(pos_oop, twotheta, m_dist_sample_det, kf);
+        break;
+      }
+
       t_real Q_coord[3] = {(ki[0] - kf[0]) * wavenumber, (ki[1] - kf[1]) * wavenumber, (ki[2] - kf[2]) * wavenumber};
 
       // rotate by sample euler angles
