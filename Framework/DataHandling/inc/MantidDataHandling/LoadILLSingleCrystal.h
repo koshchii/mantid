@@ -71,6 +71,7 @@ private:
 
   std::int32_t m_det_num_rows, m_det_num_cols;
   t_real m_dist_sample_det;
+  t_real m_det_height;
   t_real m_det_angular_width, m_det_angular_height;
   // --------------------------------------------------------------------------
 

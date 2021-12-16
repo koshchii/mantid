@@ -36,11 +36,6 @@
 #include "MantidGeometry/MDGeometry/MDFrameFactory.h"
 #include "MantidGeometry/MDGeometry/UnknownFrame.h"
 
-// sample angle names
-#define SAMPLE_CHI_NAME "chi"
-#define SAMPLE_OMEGA_NAME "omega"
-#define SAMPLE_PHI_NAME "phi"
-
 /*
  @class LoadILLSingleCrystal
  @author T. Weber, ILL
@@ -48,6 +43,11 @@
  */
 namespace Mantid {
 namespace DataHandling {
+
+// sample angle names
+#define SAMPLE_CHI_NAME "chi"
+#define SAMPLE_OMEGA_NAME "omega"
+#define SAMPLE_PHI_NAME "phi"
 
 // Register the algorithm into the AlgorithmFactory
 // DECLARE_ALGORITHM(LoadILLSingleCrystal);
@@ -214,7 +214,56 @@ static int get_axis_index(std::int32_t dir_x, std::int32_t dir_y, std::int32_t d
 
   return axis;
 }
+//----------------------------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------------------------
+/** B matrix (https://en.wikipedia.org/wiki/Fractional_coordinates)
+ * code from tlibs 2, doi: 10.5281/zenodo.5717779
+ */
+template <class t_real> static void B_matrix(const t_real *cell, const t_real *angles, t_real *B) {
+  const t_real ca = std::cos(angles[0] / t_real(180. * M_PI));
+  const t_real cb = std::cos(angles[1] / t_real(180. * M_PI));
+  const t_real cc = std::cos(angles[2] / t_real(180. * M_PI));
+  const t_real sc = std::sin(angles[2] / t_real(180. * M_PI));
+  const t_real rr = std::sqrt(t_real(1) + t_real(2) * ca * cb * cc - (ca * ca + cb * cb + cc * cc));
+
+  B[0] = t_real(1) / cell[0];
+  B[1] = 0;
+  B[2] = 0;
+  B[3] = t_real(-1) / cell[0] * cc / sc;
+  B[4] = 1.f / cell[1] * 1.f / sc;
+  B[5] = 0;
+  B[6] = (cc * ca - cb) / (cell[0] * sc * rr);
+  B[7] = (cb * cc - ca) / (cell[1] * sc * rr);
+  B[8] = sc / (cell[2] * rr);
+}
+
+/** position on spherical detector
+ */
+template <class t_real> static void get_spherical_pos(t_real theta, t_real phi, t_real *vec) {
+  theta = -theta;
+  theta += t_real(M_PI) * t_real(0.5);
+  phi += t_real(M_PI) * t_real(0.5);
+
+  vec[0] = std::cos(phi) * std::sin(theta);
+  vec[1] = std::sin(phi) * std::sin(theta);
+  vec[2] = std::cos(theta);
+}
+
+/** position on cylindrical detector
+ */
+template <class t_real> static void get_cylindrical_pos(t_real z, t_real phi, t_real rad, t_real *vec) {
+  phi += t_real(M_PI) * t_real(0.5);
+
+  vec[0] = rad * std::cos(phi);
+  vec[1] = rad * std::sin(phi);
+  vec[2] = z;
+
+  t_real len = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
+  vec[0] /= len;
+  vec[1] /= len;
+  vec[2] /= len;
+}
 //----------------------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------------------
@@ -310,14 +359,14 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
     det_pixel_height = 0.4f;
 
   // in mm
-  t_real det_height = det_pixel_height * t_real(m_det_num_rows);
+  m_det_height = det_pixel_height * t_real(m_det_num_rows);
 
   // in mm
   m_dist_sample_det = *get_value<decltype(m_dist_sample_det)>(*m_file, "sample_distance");
 
   // in deg
   m_det_angular_width = *get_value<decltype(m_det_angular_width)>(*m_file, "angular_width");
-  m_det_angular_height = std::abs(std::atan(det_height / m_dist_sample_det));
+  m_det_angular_height = std::abs(std::atan(m_det_height / m_dist_sample_det));
   m_file->closeGroup();
 
   m_log.information() << "Detector: "
@@ -412,6 +461,13 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
                       << ", gamma=" << m_cell_angles[2] << std::endl;
 
   m_UB = get_values<typename decltype(m_UB)::value_type>(*m_file, "orientation_matrix");
+
+  // calculate B matrix from given lattice
+  if (m_UB.size() != 9)
+    m_UB.resize(9);
+  // own calculation for verification
+  // B_matrix(m_cell, m_cell_angles, m_UB.data());
+
   m_log.information() << "UB matrix:\n"
                       << "\t" << std::setw(15) << m_UB[0] << std::setw(15) << m_UB[1] << std::setw(15) << m_UB[2]
                       << "\n"
@@ -607,7 +663,7 @@ void LoadILLSingleCrystal::exec() {
   // wavelength
   t_real wavelength = *get_value<t_real>(*m_file, "wavelength");
   t_real wavenumber = t_real(2. * M_PI) / wavelength;
-  m_log.information() << "Wavelength: " << wavelength << std::endl;
+  m_log.information() << "Wavelength: " << wavelength << ", wavenumber: " << wavenumber << std::endl;
 
   LoadInstrumentGroup();
   LoadSampleGroup();
@@ -762,18 +818,21 @@ void LoadILLSingleCrystal::exec() {
       t_real twotheta = pix_coord[0] / t_real(m_detector_data_dims[0]) * m_det_angular_width;
       // rotate to detector zero position
       // twotheta -= m_det_angular_width * 0.5f;
-      twotheta += m_det_gamma_deg;
+      twotheta += m_det_gamma_deg / t_real(180. * M_PI);
 
       // out-of-plane scattering angle
       t_real angle_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;
       angle_oop -= m_det_angular_height * 0.5f;
 
+      t_real pos_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_height;
+      pos_oop -= m_det_height * 0.5f;
+
       // convert pixels to Q coordinates and insert events
-      t_real Q_coord[3] = {
-          wavenumber * std::sin(angle_oop) * std::cos(twotheta),
-          wavenumber * std::sin(angle_oop) * std::sin(twotheta),
-          wavenumber * std::cos(angle_oop),
-      };
+      t_real ki[3] = {0, 1, 0};
+      t_real kf[3] = {0, 1, 0};
+      // get_spherical_pos(angle_oop, twotheta, kf);
+      get_cylindrical_pos(pos_oop, twotheta, m_dist_sample_det, kf);
+      t_real Q_coord[3] = {(ki[0] - kf[0]) * wavenumber, (ki[1] - kf[1]) * wavenumber, (ki[2] - kf[2]) * wavenumber};
 
       // rotate by sample euler angles
       // TODO: check order
@@ -809,7 +868,7 @@ void LoadILLSingleCrystal::exec() {
     std::size_t num_Qy_bins = getProperty("QyBins");
     std::size_t num_Qz_bins = getProperty("QzBins");
 
-    Geometry::QSample frame_Qx, frame_Qy, frame_Qz;
+    Geometry::QLab frame_Qx, frame_Qy, frame_Qz;
 
     std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
         std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, Qxminmax[0], Qxminmax[1], num_Qx_bins),
@@ -822,7 +881,7 @@ void LoadILLSingleCrystal::exec() {
     m_workspace_event->addDimension(dimensions_Q[0]);
     m_workspace_event->addDimension(dimensions_Q[1]);
     m_workspace_event->addDimension(dimensions_Q[2]);
-    m_workspace_event->setCoordinateSystem(Kernel::QSample);
+    m_workspace_event->setCoordinateSystem(Kernel::QLab);
     m_workspace_event->initialize();
 
     m_workspace_event->addExperimentInfo(info);
