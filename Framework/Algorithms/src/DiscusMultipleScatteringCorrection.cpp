@@ -55,11 +55,8 @@ void DiscusMultipleScatteringCorrection::init() {
                   "have X units of wavelength. This is used to supply the detector "
                   "positions and the x axis range to calculate corrections for");
 
-  auto wsQValidator = std::make_shared<CompositeValidator>();
-  wsQValidator->add<WorkspaceUnitValidator>("MomentumTransfer");
-
-  declareProperty(std::make_unique<WorkspaceProperty<>>("SofqWorkspace", "", Direction::Input, wsQValidator),
-                  "The name of the workspace containing S'(q).  The input "
+  declareProperty(std::make_unique<WorkspaceProperty<>>("StructureFactorWorkspace", "", Direction::Input),
+                  "The name of the workspace containing S'(q) or S'(q, w).  For elastic calculations, the input "
                   "workspace must contain a single spectrum and "
                   "have X units of momentum transfer.");
   declareProperty(std::make_unique<WorkspaceProperty<WorkspaceGroup>>("OutputWorkspace", "", Direction::Output),
@@ -70,6 +67,8 @@ void DiscusMultipleScatteringCorrection::init() {
                   "will also include an additional workspace for a calculation with a "
                   "single scattering event where the absorption post scattering has been "
                   "set to zero");
+  auto wsQValidator = std::make_shared<CompositeValidator>();
+  wsQValidator->add<WorkspaceUnitValidator>("MomentumTransfer");
   declareProperty(std::make_unique<WorkspaceProperty<>>("ScatteringCrossSection", "", Direction::Input,
                                                         PropertyMode::Optional, wsQValidator),
                   "A workspace containing the scattering cross section as a function of "
@@ -142,13 +141,27 @@ std::map<std::string, std::string> DiscusMultipleScatteringCorrection::validateI
   const std::string emodeStr = getProperty("EMode");
   auto emode = Kernel::DeltaEMode::fromString(emodeStr);
 
-  MatrixWorkspace_sptr SQWS = getProperty("SofqWorkspace");
-  if ((emode == Kernel::DeltaEMode::Elastic) && (SQWS->getNumberHistograms() != 1)) {
-    issues["SofqWorkspace"] = "S(Q) workspace must contain a single spectrum for elastic mode";
+  MatrixWorkspace_sptr SQWS = getProperty("StructureFactorWorkspace");
+  if (emode == Kernel::DeltaEMode::Elastic) {
+    if (SQWS->getNumberHistograms() != 1) {
+      issues["StructureFactorWorkspace"] = "S(Q) workspace must contain a single spectrum for elastic mode";
+    }
+
+    if (SQWS->getAxis(0)->unit()->unitID() != "MomentumTransfer") {
+      issues["StructureFactorWorkspace"] = "S(Q) workspace must have units of MomentumTransfer";
+    }
+  } else {
+    std::set<std::string> axisUnits;
+    axisUnits.insert(SQWS->getAxis(0)->unit()->unitID());
+    axisUnits.insert(SQWS->getAxis(1)->unit()->unitID());
+    if (axisUnits != std::set<std::string>{"DeltaE", "MomentumTransfer"}) {
+      issues["StructureFactorWorkspace"] = "S(Q, w) workspace must have units of Energy Transfer and MomentumTransfer";
+    }
   }
+
   auto y = SQWS->y(0);
   if (std::any_of(y.cbegin(), y.cend(), [](const auto yval) { return (yval < 0); })) {
-    issues["SofqWorkspace"] = "S(Q) workspace must have all y >= 0";
+    issues["StructureFactorWorkspace"] = "S(Q) workspace must have all y >= 0";
   }
 
   const int nlambda = getProperty("NumberOfWavelengthPoints");
@@ -165,6 +178,17 @@ std::map<std::string, std::string> DiscusMultipleScatteringCorrection::validateI
   return issues;
 }
 
+void DiscusMultipleScatteringCorrection::convertWsToPoints(MatrixWorkspace_sptr &ws) {
+  if (ws->isHistogramData()) {
+    auto pointDataAlgorithm = this->createChildAlgorithm("ConvertToPointData");
+    pointDataAlgorithm->initialize();
+    pointDataAlgorithm->setProperty("InputWorkspace", ws);
+    pointDataAlgorithm->setProperty("OutputWorkspace", "_");
+    pointDataAlgorithm->execute();
+    ws = pointDataAlgorithm->getProperty("OutputWorkspace");
+  }
+}
+
 /**
  * Execution code
  */
@@ -176,22 +200,25 @@ void DiscusMultipleScatteringCorrection::exec() {
     throw std::runtime_error("This algorithm explicitly stores named output workspaces in the ADS so must be run with "
                              "AlwaysStoreInADS set to true");
   const MatrixWorkspace_sptr inputWS = getProperty("InputWorkspace");
-  MatrixWorkspace_sptr SQWS = getProperty("SofqWorkspace");
+  MatrixWorkspace_sptr SQWS = getProperty("StructureFactorWorkspace");
   // avoid repeated conversion of bin edges to points inside loop by converting to point data
-  if (SQWS->isHistogramData()) {
-    auto pointDataAlgorithm = this->createChildAlgorithm("ConvertToPointData");
-    pointDataAlgorithm->initialize();
-    pointDataAlgorithm->setProperty("InputWorkspace", SQWS);
-    pointDataAlgorithm->setProperty("OutputWorkspace", "_");
-    pointDataAlgorithm->execute();
-    SQWS = pointDataAlgorithm->getProperty("OutputWorkspace");
+  convertWsToPoints(SQWS);
+  // if S(Q,w) has been supplied transpose it so Q is along the x axis of each spectrum (so same as S(Q))
+  if (SQWS->getAxis(1)->unit()->unitID() == "MomentumTransfer") {
+    auto transposeAlgorithm = this->createChildAlgorithm("Transpose");
+    transposeAlgorithm->initialize();
+    transposeAlgorithm->setProperty("InputWorkspace", SQWS);
+    transposeAlgorithm->setProperty("OutputWorkspace", "_");
+    transposeAlgorithm->execute();
+    SQWS = transposeAlgorithm->getProperty("OutputWorkspace");
+    // .. and convert the new x axis to points as well
+    convertWsToPoints(SQWS);
   }
 
   MatrixWorkspace_sptr sigmaSSWS = getProperty("ScatteringCrossSection");
 
   double kincmin, kincmax;
   inputWS->getXMinMax(kincmin, kincmax);
-  auto SQHist = SQWS->histogram(0);
 
   const auto inputNbins = static_cast<int>(inputWS->blocksize());
   int nlambda = getProperty("NumberOfWavelengthPoints");
@@ -389,18 +416,20 @@ MatrixWorkspace_sptr DiscusMultipleScatteringCorrection::prepareCumulativeProbFo
                                                                                    const double kinc) {
 
   std::vector<double> IOfQYFull, qValuesFull, wIndices;
-  double qMaxPreviousRow = 0.;
+  double IOfQMaxPreviousRow = 0.;
   // loop through the S(Q) spectra for the different energy transfer values
   for (int iW = 0; iW < SQ->getNumberHistograms(); iW++) {
     std::vector<double> qValues = SQ->histogram(iW).readX();
     std::vector<double> SQValues = SQ->histogram(iW).readY();
+    auto kf = getKf(SQ, iW, kinc);
+    auto [qmin, qrange] = getKinematicRange(kf, kinc);
     // add terminating points at 0 and 2k before multiplying by Q so no extrapolation problems
-    if (qValues.front() > 0.) {
-      qValues.insert(qValues.begin(), iW == 0 ? 0. : std::numeric_limits<double>::epsilon());
+    if (qValues.front() > qmin) {
+      qValues.insert(qValues.begin(), qmin);
       SQValues.insert(SQValues.begin(), SQValues.front());
     }
-    if (qValues.back() < 2 * kinc) {
-      qValues.push_back(2 * kinc);
+    if (qValues.back() < qmin + qrange) {
+      qValues.push_back(qmin + qrange);
       SQValues.push_back(SQValues.back());
     }
     // add some extra points to help the Q.S(Q) integral get the right answer
@@ -418,18 +447,16 @@ MatrixWorkspace_sptr DiscusMultipleScatteringCorrection::prepareCumulativeProbFo
 
     auto QSQ = Mantid::HistogramData::Histogram(Mantid::HistogramData::Points(qValues),
                                                 Mantid::HistogramData::Frequencies(QSQValues));
-    auto kf = getKf(SQ, iW, kinc);
-    auto [qmin, qrange] = getKinematicRange(kf, kinc);
+
     auto IOfQ = integrateCumulative(QSQ, qmin, qmin + qrange);
     auto IOfQX = IOfQ->dataX();
     auto IOfQY = IOfQ->dataY();
 
     qValuesFull.insert(qValuesFull.end(), IOfQX.begin(), IOfQX.end());
     wIndices.insert(wIndices.end(), IOfQX.size(), iW);
-    // create a pseudo x coordinate which is the qvalues from each w row reset to zero and appended to previous row
-    std::transform(IOfQX.begin(), IOfQX.end(), IOfQX.begin(),
-                   [qMaxPreviousRow, qmin = IOfQX.front()](double d) -> double { return d - qmin + qMaxPreviousRow; });
-    qMaxPreviousRow = qMaxPreviousRow + qrange;
+    std::transform(IOfQY.begin(), IOfQY.end(), IOfQY.begin(),
+                   [IOfQMaxPreviousRow](double d) -> double { return d + IOfQMaxPreviousRow; });
+    IOfQMaxPreviousRow = IOfQMaxPreviousRow + IOfQY.back();
     IOfQYFull.insert(IOfQYFull.end(), IOfQY.begin(), IOfQY.end());
   }
   auto IOfQYAt2K = IOfQYFull.back();
@@ -768,8 +795,17 @@ void DiscusMultipleScatteringCorrection::q_dir(Geometry::Track &track, const Mat
     SQ = interpolateFlat(SOfQ->histogram(iW), QQ);
     weight = weight * scatteringXSection;
   } else {
-
-    auto iW = rng.nextInt(0, static_cast<int>(SOfQ->getNumberHistograms() - 1));
+    // the energy transfer is always capped at a negative value corresponding to energy going from ki to 0
+    // Note - this is still the case for indirect because on a multiple scatter the kf isn't kfixed
+    double wMin = -kinc * kinc * PhysicalConstants::E_mev_toNeutronWavenumberSq;
+    size_t iWMin = 0.;
+    for (auto i = 0; i < SOfQ->getAxis(1)->length(); i++) {
+      if (wMin < SOfQ->getAxis(1)->getValue(i)) {
+        iWMin = i;
+        break;
+      }
+    }
+    auto iW = rng.nextInt(iWMin, static_cast<int>(SOfQ->getNumberHistograms() - 1));
     kf = getKf(SOfQ, iW, kinc);
     auto [qmin, qrange] = getKinematicRange(kf, kinc);
     QQ = qmin + qrange * rng.nextValue();

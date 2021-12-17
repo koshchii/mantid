@@ -75,7 +75,7 @@ public:
     alg->initialize();
     alg->setRethrows(true);
     TS_ASSERT(alg->isInitialized());
-    TS_ASSERT_THROWS_NOTHING(alg->setProperty("SofqWorkspace", SofQWorkspace));
+    TS_ASSERT_THROWS_NOTHING(alg->setProperty("StructureFactorWorkspace", SofQWorkspace));
     alg->setPropertyValue("OutputWorkspace", "MuscatResults");
     // input workspace has single bin - centred at 1 Angstrom, so kinc=2*pi=6.28 inverse Angstroms
     // DiscusMultipleScatteringCorrection will sample q between 0 and 2k (12.56)
@@ -367,7 +367,7 @@ public:
     SofQWorkspaceTwoSp->getAxis(0)->unit() = UnitFactory::Instance().create("MomentumTransfer");
     alg.initialize();
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", inputWorkspace));
-    TS_ASSERT_THROWS_NOTHING(alg.setProperty("SofqWorkspace", SofQWorkspaceTwoSp));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("StructureFactorWorkspace", SofQWorkspaceTwoSp));
     const int NSCATTERINGS = 2;
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NumberScatterings", NSCATTERINGS));
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NeutronPathsSingle", 1));
@@ -380,7 +380,7 @@ public:
     SofQWorkspaceNegative->getAxis(0)->unit() = UnitFactory::Instance().create("MomentumTransfer");
     TS_ASSERT_THROWS_NOTHING(alg.initialize());
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", inputWorkspace));
-    TS_ASSERT_THROWS_NOTHING(alg.setProperty("SofqWorkspace", SofQWorkspaceNegative));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("StructureFactorWorkspace", SofQWorkspaceNegative));
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NumberScatterings", NSCATTERINGS));
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NeutronPathsSingle", 1));
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NeutronPathsMultiple", 1));
@@ -397,7 +397,7 @@ public:
     SofQWorkspaceZero->getAxis(0)->unit() = UnitFactory::Instance().create("MomentumTransfer");
     alg.initialize();
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("InputWorkspace", inputWorkspace));
-    TS_ASSERT_THROWS_NOTHING(alg.setProperty("SofqWorkspace", SofQWorkspaceZero));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("StructureFactorWorkspace", SofQWorkspaceZero));
     const int NSCATTERINGS = 2;
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NumberScatterings", NSCATTERINGS));
     TS_ASSERT_THROWS_NOTHING(alg.setProperty("NeutronPathsSingle", 1));
@@ -415,7 +415,7 @@ public:
     alg.initialize();
     auto inputWorkspace = SetupFlatPlateWorkspace(1, 1, 1.0, 1, THICKNESS);
     alg.setProperty("InputWorkspace", inputWorkspace);
-    alg.setProperty("SofqWorkspace", SofQWorkspace);
+    alg.setProperty("StructureFactorWorkspace", SofQWorkspace);
     alg.setPropertyValue("OutputWorkspace", "MuscatResults");
     TS_ASSERT_THROWS(alg.execute(), const std::runtime_error &);
   }
@@ -428,7 +428,7 @@ private:
     alg->initialize();
     alg->setRethrows(true);
     TS_ASSERT(alg->isInitialized());
-    TS_ASSERT_THROWS_NOTHING(alg->setProperty("SofqWorkspace", SofQWorkspace));
+    TS_ASSERT_THROWS_NOTHING(alg->setProperty("StructureFactorWorkspace", SofQWorkspace));
     alg->setPropertyValue("OutputWorkspace", "MuscatResults");
     return alg;
   }

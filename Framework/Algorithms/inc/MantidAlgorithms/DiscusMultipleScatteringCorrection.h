@@ -97,6 +97,7 @@ private:
   void correctForWorkspaceNameClash(std::string &wsName);
   void setWorkspaceName(const MatrixWorkspace_sptr &ws, std::string wsName);
   double getKf(const MatrixWorkspace_sptr &SOfQ, const int iW, const double kinc);
+  void convertWsToPoints(MatrixWorkspace_sptr &ws);
   std::tuple<double, double> getKinematicRange(double kf, double ki);
   MatrixWorkspace_sptr prepareCumulativeProbForQ(const MatrixWorkspace_sptr &SQ, const double kinc);
   long long m_callsToInterceptSurface{0};
