@@ -138,7 +138,6 @@ set(MtdVersion_WC_LAST_CHANGED_DATETIME 0)
 set(MtdVersion_WC_LAST_CHANGED_SHA Unknown)
 set(MtdVersion_WC_LAST_CHANGED_BRANCHNAME Unknown)
 set(NOT_GIT_REPO "Not")
-message(WARNING "Git found: ${GIT_FOUND}")
 
 if(GIT_FOUND)
   # Get the last revision
@@ -149,7 +148,6 @@ if(GIT_FOUND)
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-  message(WARNING ${NOT_GIT_REPO})
   if(NOT NOT_GIT_REPO) # i.e This is a git repository! "git describe" was originally used to produce this variable and
                        # this prefixes the short SHA1 with a 'g'. We keep the same format here now that we use rev-parse
     set(MtdVersion_WC_LAST_CHANGED_SHA "g${GIT_SHA_HEAD}")
