@@ -75,12 +75,13 @@ fi
 if [[ $OSTYPE == "msys"* ]]; then
     WINDOWS_BUILD_OPTIONS="--config Release"
     WINDOWS_TEST_OPTIONS="-C Release"
+    WINDOWS_ENV_SETUP="PYTHONPATH=$CONDA_PREFIX"
 fi
 
 # Run unit tests
 cd $WORKSPACE/build
 if [[ $ENABLE_UNIT_TESTS == true ]]; then
-    run_with_xvfb ctest -j$BUILD_THREADS --no-compress-output -T Test --schedule-random --output-on-failure $WINDOWS_TEST_OPTIONS
+    $WINDOWS_ENV_SETUP run_with_xvfb ctest -j$BUILD_THREADS --no-compress-output -T Test --schedule-random --output-on-failure $WINDOWS_TEST_OPTIONS
     terminate_xvfb_sessions
 fi
 
