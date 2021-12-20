@@ -2,7 +2,10 @@
 # Configure required dependencies if necessary
 # ######################################################################################################################
 # Find git for everything
-find_package(Git 1.9.5 REQUIRED)
+if(WIN32)
+  set(_git_requires 1.9.5)
+endif()
+find_package(Git ${_git_requires})
 
 if(MSVC AND NOT CONDA_ENV)
   # Git LFS does not work properly with <= 1.9
