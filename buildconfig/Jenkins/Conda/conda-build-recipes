@@ -9,7 +9,7 @@
 # conda-build-recipes WORKSPACE [options]
 #
 # Example command to build all of the packages:
-# conda-build-recipes $WORKSPACE --build-framework --build-qt --build-workbench
+# conda-build-recipes $WORKSPACE --build-mantid --build-qt --build-workbench
 #
 # Expected args:
 #   1. WORKSPACE: path to the workspace/source code that this should run inside
@@ -17,12 +17,12 @@
 #                 not use \\ or \ in the path.
 #
 # Possible flags:
-#   --build-framework: build the framework package using conda-build
+#   --build-mantid: build the mantid package using conda-build
 #   --build-qt: build the qt package using conda-build
 #   --build-workbench: build the workbench package using conda-build
 #
 # Possible parameters:
-#   --clobber-yml: clobber the meta yaml files of each package build with conda-build
+#   --clobber-yml: clobber the meta yaml files of each package build with conda-build, provide an absolute path to the uteyml file
 #
 
 # Setup expected variables
@@ -47,7 +47,7 @@ RECIPES_DIR=$WORKSPACE/conda-recipes
 SCRIPT_DIR=$WORKSPACE/buildconfig/Jenkins/Conda/
 
 # Parse flags
-ENABLE_BUILD_FRAMEWORK=false
+ENABLE_BUILD_MANTID=false
 ENABLE_BUILD_QT=false
 ENABLE_BUILD_WORKBENCH=false
 
@@ -55,7 +55,7 @@ ENABLE_BUILD_WORKBENCH=false
 while [ ! $# -eq 0 ]
 do
     case "$1" in
-        --build-framework) ENABLE_BUILD_FRAMEWORK=true ;;
+        --build-mantid) ENABLE_BUILD_MANTID=true ;;
         --build-qt) ENABLE_BUILD_QT=true ;;
         --build-workbench) ENABLE_BUILD_WORKBENCH=true ;;
         --clobber-yml)
@@ -71,11 +71,11 @@ done
 
 # Build dependencies for requested packages
 if [[ $ENABLE_BUILD_QT  == true ]]; then
-    ENABLE_BUILD_FRAMEWORK=true
+    ENABLE_BUILD_MANTID=true
 fi
 
 if [[ $ENABLE_WORKBENCH  == true ]]; then
-    ENABLE_BUILD_FRAMEWORK=true
+    ENABLE_BUILD_MANTID=true
     ENABLE_BUILD_QT=true
 fi
 
@@ -103,19 +103,19 @@ git clone https://github.com/mantidproject/conda-recipes.git
 cd $RECIPES_DIR/recipes/
 
 if [[ $OSTYPE == "msys" ]]; then
-    WINDOWS_BUILD_OPTIONS="--no-build-id" # Install into the WORKSPACE_DIR
+    WINDOWS_BUILD_OPTIONS="--no-build-id" # Do not use build id as it makes the path too long (>260 chars) for CMake (Legacy Windows API issue)
 fi
 
-if [[ $ENABLE_BUILD_FRAMEWORK == true ]]; then
-    conda build ./mantid-framework/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
+if [[ $ENABLE_BUILD_MANTID == true ]]; then
+    conda build ./mantid/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
 
 
 if [[ $ENABLE_BUILD_QT == true ]]; then
-    conda build ./mantid-qt/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
+    conda build ./mantidqt/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
 
 
 if [[ $ENABLE_BUILD_WORKBENCH == true ]]; then
-    conda build ./mantid-workbench/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
+    conda build ./mantidworkbench/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi

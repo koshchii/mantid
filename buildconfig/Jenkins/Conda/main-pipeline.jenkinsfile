@@ -19,7 +19,7 @@ def build_and_test_win(){
 }
 
 def conda_build_UNIX(){
-    sh "$WORKSPACE/buildconfig/Jenkins/Conda/conda-build-recipes $WORKSPACE --build-framework --build-qt --build-workbench"
+    sh "$WORKSPACE/buildconfig/Jenkins/Conda/conda-build-recipes $WORKSPACE --build-mantid --build-qt --build-workbench"
 }
 
 def conda_build_linux() {
@@ -35,7 +35,7 @@ def conda_build_macos() {
 }
 
 def conda_build_win(){
-    bat "\"C:\\Program Files\\git\\bin\\bash.exe\" -c \"$WORKSPACE/buildconfig/Jenkins/Conda/conda-build-recipes $WORKSPACE --build-framework --build-qt --build-workbench\""
+    bat "\"C:\\Program Files\\git\\bin\\bash.exe\" -c \"$WORKSPACE/buildconfig/Jenkins/Conda/conda-build-recipes $WORKSPACE --build-mantid --build-qt --build-workbench\""
     archive:
         includes: "mambaforge/envs/mantid-developer/conda-bld/win-64/*.tar.bz2"
 }
