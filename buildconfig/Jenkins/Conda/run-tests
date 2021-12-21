@@ -73,7 +73,7 @@ if [[ ${USE_CORE_DUMPS} == true ]]; then
 fi
 
 if [[ $OSTYPE == "msys"* ]]; then
-    WINDOWS_BUILD_OPTIONS="--config Release"
+    WINDOWS_BUILD_OPTIONS="--config Release --timeout 500" # Allow longer running tests as sometimes on windows it just takes that long
     WINDOWS_TEST_OPTIONS="-C Release"
     export PYTHONHOME=$CONDA_PREFIX
 fi
