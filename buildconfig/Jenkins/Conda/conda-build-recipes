@@ -102,16 +102,20 @@ git clone https://github.com/mantidproject/conda-recipes.git
 # Run conda build on framework
 cd $RECIPES_DIR/recipes/
 
+if [[ $OSTYPE == "msys" ]]; then
+    WINDOWS_BUILD_OPTIONS="--no-build-id" # Install into the WORKSPACE_DIR
+fi
+
 if [[ $ENABLE_BUILD_FRAMEWORK == true ]]; then
-    conda build ./mantid-framework/ $CLOBBER_FILE
+    conda build ./mantid-framework/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
 
 
 if [[ $ENABLE_BUILD_QT == true ]]; then
-    conda build ./mantid-qt/ $CLOBBER_FILE
+    conda build ./mantid-qt/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
 
 
 if [[ $ENABLE_BUILD_WORKBENCH == true ]]; then
-    conda build ./mantid-workbench/ $CLOBBER_FILE
+    conda build ./mantid-workbench/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
