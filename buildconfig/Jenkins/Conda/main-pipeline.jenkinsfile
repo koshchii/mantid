@@ -15,7 +15,7 @@ def build_and_test_macos() {
 
 def build_and_test_win(){
     git_clone()
-    bat "\"C:\\Program Files\\git\\bin\\bash.exe\" -c \"C:/Jenkins/workspace/main_nightly_deployment_prototype/buildconfig/Jenkins/Conda/conda-buildscript C:/Jenkins/workspace/main_nightly_deployment_prototype win --enable-systemtests --enable-docs --enable-doctests --enable-dev-docs --clean-build --clean-external-projects\""
+    bat "\"C:\\Program Files\\git\\bin\\bash.exe\" -c \"C:/Jenkins/workspace/main_nightly_deployment_prototype/buildconfig/Jenkins/Conda/conda-buildscript C:/Jenkins/workspace/main_nightly_deployment_prototype win --enable-systemtests --enable-docs --clean-build --clean-external-projects\""
 }
 
 def conda_build_UNIX(){
