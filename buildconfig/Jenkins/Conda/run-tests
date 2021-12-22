@@ -73,15 +73,16 @@ if [[ ${USE_CORE_DUMPS} == true ]]; then
 fi
 
 if [[ $OSTYPE == "msys"* ]]; then
-    WINDOWS_BUILD_OPTIONS="--config Release --timeout 500" # Allow longer running tests as sometimes on windows it just takes that long
+    WINDOWS_BUILD_OPTIONS="--config Release"
     WINDOWS_TEST_OPTIONS="-C Release"
+    WINDOWS_UNITTEST_TIMEOUT_OPTIONS="--timeout 500"
     export PYTHONHOME=$CONDA_PREFIX
 fi
 
 # Run unit tests
 cd $WORKSPACE/build
 if [[ $ENABLE_UNIT_TESTS == true ]]; then
-    run_with_xvfb ctest -j$BUILD_THREADS --no-compress-output -T Test --schedule-random --output-on-failure $WINDOWS_TEST_OPTIONS
+    run_with_xvfb ctest -j$BUILD_THREADS --no-compress-output -T Test --schedule-random --output-on-failure $WINDOWS_TEST_OPTIONS $WINDOWS_UNITTEST_TIMEOUT_OPTIONS
     terminate_xvfb_sessions
 fi
 
