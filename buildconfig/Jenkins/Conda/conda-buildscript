@@ -11,7 +11,7 @@
 # buildscript /jenkins/workspace_dir/ linux-ci --enable-systemtests --enable-coverage --enable-docs
 #
 # Expected args:
-#   1. WORKSPACE: path to the workspace/source code that this should run inside, Windows Caveat: Only use / for 
+#   1. WORKSPACE: path to the workspace/source code that this should run inside, Windows Caveat: Only use / for
 #                 this arguement do not use \\ or \ in the path.
 #   2. CMAKE_PRESET: the CMake preset that should be ran to generate the cmake files for this CI job
 #
@@ -55,11 +55,15 @@ else
 fi
 
 CONDA_ENV_NAME="mantid-developer"
-if [[ $OSTYPE == 'darwin'* ]]; then
-    BUILD_THREADS="$(sysctl -n hw.logicalcpu)"
-else
-    BUILD_THREADS="$(grep -c ^processor /proc/cpuinfo)" # Not physical but logical cores, includes hyper threaded.
+
+if [-z "$BUILD_THREADS" ]; then
+    if [[ $OSTYPE == 'darwin'* ]]; then
+        BUILD_THREADS="$(sysctl -n hw.logicalcpu)"
+    else
+        BUILD_THREADS="$(grep -c ^processor /proc/cpuinfo)" # Not physical but logical cores, includes hyper threaded.
+    fi
 fi
+
 XVFB_SERVER_NUM=101
 BUILD_DIR=$WORKSPACE/build
 
