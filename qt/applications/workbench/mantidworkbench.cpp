@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdlib>
 #include <string>
 #include <vector>
 
@@ -55,7 +56,12 @@ inline std::string absolutePath(const char *path, const fs::path &base) {
  * Return the absolute path to the Python executable
  * @param base Directory to serve as base for absolute paths
  */
+#if defined(CONDA_ENV)
+inline std::string pythonExecutable(const fs::path &dirOfExe) { return absolutePath(PYTHON_EXECUTABLE_PATH, std::getenv("CONDA_PREFIX")
+}
+#else
 inline std::string pythonExecutable(const fs::path &dirOfExe) { return absolutePath(PYTHON_EXECUTABLE_PATH, dirOfExe); }
+#endif
 
 /**
  * Given a list of existing executable/arguments append those
@@ -99,6 +105,7 @@ void appendArguments(ExeArgs *exeArgs, int argc, char **argv) {
 decltype(boost::this_process::environment()) childEnvironment(const fs::path &dirOfExe) {
   auto env = boost::this_process::environment();
 
+#if !defined(CONDA_ENV)
   auto insertAtFront = [&env](const auto &name, const auto &value) {
     const auto existingValue = env[name];
     env[name] = value;
@@ -111,6 +118,9 @@ decltype(boost::this_process::environment()) childEnvironment(const fs::path &di
 #if defined(QT_PLUGIN_PATH)
   env["QT_PLUGIN_PATH"] = absolutePath(QT_PLUGIN_PATH, dirOfExe);
 #endif
+
+#endif
+
   // It was observed on Qt >= 5.12 that the QtWebEngineProcess would fail to
   // load the icudtl.dat resources due to Chromium sandboxing restrictions. It
   // would appear there is no more fine-grained way to control the restrictions:
