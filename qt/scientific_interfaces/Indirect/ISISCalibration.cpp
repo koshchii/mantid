@@ -127,13 +127,8 @@ ISISCalibration::ISISCalibration(IndirectDataReduction *idrUI, QWidget *parent)
   auto resPeak = m_uiForm.ppResolution->addRangeSelector("ResPeak");
   resPeak->setColour(Qt::red);
 
-  // SIGNAL/SLOT CONNECTIONS
   // Update instrument information when a new instrument config is selected
   connect(this, SIGNAL(newInstrumentConfiguration()), this, SLOT(setDefaultInstDetails()));
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-  connect(resPeak, SIGNAL(rangeChanged(double, double)), resBackground, SLOT(setRange(double, double)));
-#endif
 
   // Update property map when a range selector is moved
   connect(calPeak, SIGNAL(minValueChanged(double)), this, SLOT(calMinChanged(double)));
