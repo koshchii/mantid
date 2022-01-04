@@ -58,13 +58,23 @@ function(add_sphinx_build_target builder math_renderer)
     set(sphinx_options ${sphinx_options} -t ${ARGV3})
   endif()
 
+  set(target_dependencies)
+
+  if(MANTID_FRAMEWORK_LIB STREQUAL "BUILD")
+    set(target_dependencies ${target_dependencies} Framework)
+  endif()
+
+  if(MANTID_QT_LIB STREQUAL "BUILD")
+    set(target_dependencies ${target_dependencies} mantidqt)
+  endif()
+
   add_custom_target(
     ${target_name}
     COMMAND
       ${CMAKE_COMMAND} -E env SCREENSHOTS_DIR=${SCREENSHOTS_DIR} DIAGRAMS_DIR=${DIAGRAMS_DIR}
       DOT_EXECUTABLE=${DOT_EXECUTABLE} MATH_EXT=${math_renderer} ENABLE_PLOTDIRECTIVE=${ENABLE_PLOTDIRECTIVE} ${runner}
       ${runner_args} -m ${SPHINX_MAIN} ${sphinx_options} ${SPHINX_CONF_DIR} ${output_dir}
-    DEPENDS Framework mantidqt ${SPHINX_CONF_DIR}/conf.py ${conf_builder}
+    DEPENDS ${target_dependencies} ${SPHINX_CONF_DIR}/conf.py ${conf_builder}
     COMMENT "Building ${builder} documentation using ${math_renderer}"
   )
   # Group within VS and exclude from whole build
