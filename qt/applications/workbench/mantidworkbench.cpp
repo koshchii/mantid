@@ -57,7 +57,8 @@ inline std::string absolutePath(const char *path, const fs::path &base) {
  * @param base Directory to serve as base for absolute paths
  */
 #if defined(CONDA_ENV)
-inline std::string pythonExecutable(const fs::path &dirOfExe) { return absolutePath(PYTHON_EXECUTABLE_PATH, std::getenv("CONDA_PREFIX");
+inline std::string pythonExecutable(const fs::path &dirOfExe) {
+  return absolutePath(PYTHON_EXECUTABLE_PATH, std::getenv("CONDA_PREFIX"));
 }
 #else
 inline std::string pythonExecutable(const fs::path &dirOfExe) { return absolutePath(PYTHON_EXECUTABLE_PATH, dirOfExe); }
