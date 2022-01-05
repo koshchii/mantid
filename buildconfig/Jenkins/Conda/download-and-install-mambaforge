@@ -13,7 +13,7 @@ CLEAN_BUILD=$3
 
 # Only supporting x86 at this time for the build process
 if [[ $OSTYPE == 'msys'* ]]; then
-    MAMBAFORGE_SCRIPT_NAME=Mambaforge-Windows-x86_64.exe 
+    MAMBAFORGE_SCRIPT_NAME=Mambaforge-Windows-x86_64.exe
 else
     MAMBAFORGE_SCRIPT_NAME=Mambaforge-$(uname)-x86_64.sh
 fi
@@ -21,6 +21,7 @@ URL=https://github.com/conda-forge/miniforge/releases/latest/download/$MAMBAFORG
 
 if [[ $CLEAN_BUILD  == true ]]; then
     rm -rf $EXPECTED_MAMBAFORGE_PATH
+    rm $MAMBAFORGE_SCRIPT_NAME
 fi
 
 # Ensure conda is installed
