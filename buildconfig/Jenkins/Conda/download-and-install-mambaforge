@@ -21,7 +21,9 @@ URL=https://github.com/conda-forge/miniforge/releases/latest/download/$MAMBAFORG
 
 if [[ $CLEAN_BUILD  == true ]]; then
     rm -rf $EXPECTED_MAMBAFORGE_PATH
-    rm $MAMBAFORGE_SCRIPT_NAME
+    if [[ -f $MAMBAFORGE_SCRIPT_NAME ]]; then
+        rm $MAMBAFORGE_SCRIPT_NAME
+    fi
 fi
 
 # Ensure conda is installed
