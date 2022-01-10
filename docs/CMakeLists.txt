@@ -42,11 +42,9 @@ function(add_sphinx_build_target builder math_renderer)
     set(runner ${Python_EXECUTABLE})
   else()
     set(runner ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/mantidpython$<$<BOOL:${WIN32}>:.bat>)
-  endif()
-
-  if(NOT CONDA_ENV)
     set(runner_args "--classic")
   endif()
+
   if(ARGC GREATER 2)
     set(target_name ${ARGV2})
   else()
