@@ -78,7 +78,7 @@ void appendArguments(ExeArgs *exeArgs, int argc, char **argv) {
     return;
 
   const auto startupArgsSize{exeArgs->size()};
-#if defined(__APPLE__)
+#if defined(__APPLE__) && !defined(CONDA_ENV)
   // On first launch of quarantined apps launchd passes a command line parameter
   // of the form -psn_0_XXXXXX to the application. We discard this otherwise
   // workbench's argparse will choke on it.
