@@ -86,7 +86,7 @@ $SCRIPT_DIR/download-and-install-mambaforge $EXPECTED_MAMBAFORGE_PATH $EXPECTED_
 $EXPECTED_CONDA_PATH env remove -n $CONDA_ENV_NAME
 
 # Create env with conda-build installed
-$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME conda-build conda-verify -y
+$EXPECTED_CONDA_PATH create -n $CONDA_ENV_NAME boa conda-verify -y
 
 # Activate Conda environment
 . $WORKSPACE/mambaforge/etc/profile.d/conda.sh
@@ -107,15 +107,15 @@ if [[ $OSTYPE == "msys" ]]; then
 fi
 
 if [[ $ENABLE_BUILD_MANTID == true ]]; then
-    conda build ./mantid/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
+    conda mambabuild ./mantid/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
 
 
 if [[ $ENABLE_BUILD_QT == true ]]; then
-    conda build ./mantidqt/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
+    conda mambabuild ./mantidqt/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
 
 
 if [[ $ENABLE_BUILD_WORKBENCH == true ]]; then
-    conda build ./mantidworkbench/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
+    conda mambabuild ./mantidworkbench/ $CLOBBER_FILE $WINDOWS_BUILD_OPTIONS
 fi
