@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdlib>
+#include <iostream>
 #include <string>
 #include <vector>
 
@@ -57,7 +58,7 @@ inline std::string absolutePath(const char *path, const fs::path &base) {
  * @param base Directory to serve as base for absolute paths
  */
 #if defined(CONDA_ENV)
-inline std::string pythonExecutable(const fs::path &dirOfExe) {
+inline std::string pythonExecutable(const fs::path &) {
   return absolutePath(PYTHON_EXECUTABLE_PATH, std::getenv("CONDA_PREFIX"));
 }
 #else
@@ -103,7 +104,7 @@ void appendArguments(ExeArgs *exeArgs, int argc, char **argv) {
  * @return A boost::process::environment type to pass to
  * boost::process::system
  */
-decltype(boost::this_process::environment()) childEnvironment(const fs::path &dirOfExe) {
+decltype(boost::this_process::environment()) childEnvironment([[maybe_unused]] const fs::path &dirOfExe) {
   auto env = boost::this_process::environment();
 
 #if !defined(CONDA_ENV)
@@ -140,7 +141,13 @@ decltype(boost::this_process::environment()) childEnvironment(const fs::path &di
 int startWorkbench(const fs::path &dirOfExe, int argc, char **argv) {
   ExeArgs startupWorkbench{"-m", WORKBENCH_MAIN};
   appendArguments(&startupWorkbench, argc, argv);
-  return bp::system(pythonExecutable(dirOfExe), startupWorkbench, childEnvironment(dirOfExe));
+  try {
+    return bp::system(pythonExecutable(dirOfExe), startupWorkbench, childEnvironment(dirOfExe));
+  } catch (const bp::process_error &exc) {
+    std::cerr << "Running " << pythonExecutable(dirOfExe) << "-m " << WORKBENCH_MAIN << "\n";
+    std::cerr << "Caught system_error with code " << exc.code() << " meaning " << exc.what() << "\n";
+    return 1;
+  }
 }
 
 /**
@@ -157,7 +164,13 @@ void showErrorReporter(const fs::path &dirOfExe, const int workbenchExitCode) {
       "--application", ERRORREPORTS_APP_NAME,
       "--exitcode", std::to_string(workbenchExitCode)};
   // clang-format on
-  bp::system(pythonExecutable(dirOfExe), startErrorReporter);
+  try {
+    bp::system(pythonExecutable(dirOfExe), startErrorReporter);
+  } catch (const bp::process_error &exc) {
+    std::cerr << "Running " << pythonExecutable(dirOfExe) << "-m " << ERRORREPORTS_MAIN << "--application"
+              << ERRORREPORTS_APP_NAME << "--exitcode" << std::to_string(workbenchExitCode) << "\n";
+    std::cerr << "Caught system_error with code " << exc.code() << " meaning " << exc.what() << "\n";
+  }
 }
 
 } // namespace
