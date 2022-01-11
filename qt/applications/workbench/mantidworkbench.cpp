@@ -54,12 +54,14 @@ inline std::string absolutePath(const char *path, const fs::path &base) {
 }
 
 /**
- * Return the absolute path to the Python executable
+ * Return the path to the Python executable
  * @param base Directory to serve as base for absolute paths
  */
 #if defined(CONDA_ENV)
 inline std::string pythonExecutable(const fs::path &) {
-  return absolutePath(PYTHON_EXECUTABLE_PATH, std::getenv("CONDA_PREFIX"));
+  // We assume the conda environement is activated and python will be found
+  // on the PATH
+  return PYTHON_EXECUTABLE_PATH;
 }
 #else
 inline std::string pythonExecutable(const fs::path &dirOfExe) { return absolutePath(PYTHON_EXECUTABLE_PATH, dirOfExe); }
