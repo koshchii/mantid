@@ -38,7 +38,7 @@ endif()
 # Add a sphinx build target to build documentation builder - Name of the sphinx builder: html, qthelp etc target_name -
 # Optional target name. Default=docs-${builder}
 function(add_sphinx_build_target builder math_renderer)
-  if(CONDA_ENV)
+  if(CONDA_BUILD)
     set(runner ${Python_EXECUTABLE})
   else()
     set(runner ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/mantidpython$<$<BOOL:${WIN32}>:.bat>)
