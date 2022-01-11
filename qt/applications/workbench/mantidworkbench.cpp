@@ -109,7 +109,7 @@ void appendArguments(ExeArgs *exeArgs, int argc, char **argv) {
 decltype(boost::this_process::environment()) childEnvironment([[maybe_unused]] const fs::path &dirOfExe) {
   auto env = boost::this_process::environment();
 
-#if !defined(CONDA_ENV)
+#if !defined(CONDA_ENV) or defined(CONDA_BUILD)
   auto insertAtFront = [&env](const auto &name, const auto &value) {
     const auto existingValue = env[name];
     env[name] = value;
