@@ -40,12 +40,12 @@ def conda_build_win(){
         includes: "mambaforge/envs/mantid-developer/conda-bld/win-64/*.tar.bz2"
 }
 
-def deploy_packages() {
-    sh "echo 'Deploy packages!'"
-}
-
 pipeline {
     agent none
+    environment {
+        ANACONDA_TOKEN = credentials('Anaconda-Pasarus')
+        ANACONDA_CHANNEL = 'Pasarus'
+    }
     stages {
         stage('Build and Test'){
             parallel {
@@ -83,13 +83,13 @@ pipeline {
                         conda_build_linux()
                     }
                 }
-                stage('conda-build Windows [WIP]') {
+                stage('conda-build Windows') {
                     agent { label 'conda-build-win' }
                     steps {
                         conda_build_win()
                     }
                 }
-                stage('conda-build MacOSX [WIP]') {
+                stage('conda-build MacOSX') {
                     agent { label 'conda-build-osx' }
                     steps {
                         conda_build_macos()
@@ -99,7 +99,10 @@ pipeline {
         }
         stage ('Deploy packages'){
             steps{
-                deploy_packages()
+                agent { label 'conda-build-linux' } // Use linux for simplicity with shell scripts
+                // Copy all artifacts including mantid, ending with .tar.bz2 into $WORKSPACE from the current job, using ${JOB_NAME} and the current ${BUILD_NUMBER}
+                copyArtifacts filter: 'mantid*.tar.bz2', fingerprintArtifacts: true, projectName: '${JOB_NAME}', selector: specific('${BUILD_NUMBER}')
+                sh "$WORKSPACE/buildconfig/Jenkins/Conda/publish-to-anaconda $WORKSPACE $ANACONDA_TOKEN $ANACONDA_CHANNEL $WORKSPACE/mantid-*.tar.bz2 $WORKSPACE/mantidqt-*.tar.bz2 $WORKSPACE/mantidworkbench-*.tar.bz2"
             }
         }
     }
