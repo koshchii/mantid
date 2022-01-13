@@ -42,10 +42,6 @@ def conda_build_win(){
 
 pipeline {
     agent none
-    environment {
-        ANACONDA_TOKEN = credentials('Anaconda-Pasarus')
-        ANACONDA_CHANNEL = 'Pasarus'
-    }
     stages {
         stage('Build and Test'){
             parallel {
@@ -100,6 +96,10 @@ pipeline {
         stage ('Deploy packages'){
             steps{
                 agent { label 'conda-build-linux' } // Use linux for simplicity with shell scripts
+                environment {
+                    ANACONDA_TOKEN = credentials('Anaconda-Pasarus')
+                    ANACONDA_CHANNEL = 'Pasarus'
+                }
                 // Copy all artifacts including mantid, ending with .tar.bz2 into $WORKSPACE from the current job, using ${JOB_NAME} and the current ${BUILD_NUMBER}
                 copyArtifacts filter: 'mantid*.tar.bz2', fingerprintArtifacts: true, projectName: '${JOB_NAME}', selector: specific('${BUILD_NUMBER}')
                 sh "$WORKSPACE/buildconfig/Jenkins/Conda/publish-to-anaconda $WORKSPACE $ANACONDA_TOKEN $ANACONDA_CHANNEL $WORKSPACE/mantid-*.tar.bz2 $WORKSPACE/mantidqt-*.tar.bz2 $WORKSPACE/mantidworkbench-*.tar.bz2"
