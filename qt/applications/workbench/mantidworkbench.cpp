@@ -8,6 +8,7 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/process/detail/traits/wchar_t.hpp>
 #include <boost/process/env.hpp>
+#include <boost/process/search_path.hpp>
 #include <boost/process/system.hpp>
 
 #include <algorithm>
@@ -40,6 +41,17 @@ using ExeArgs = std::vector<std::string>;
 namespace {
 
 /**
+ * Return the path to the Python executable
+ * @param base Directory to serve as base for absolute paths
+ */
+#if defined(CONDA_ENV)
+inline std::string pythonExecutable(const fs::path &) {
+  // We assume the conda environement is activated and python will be found
+  // on the PATH
+  return bp::search_path(PYTHON_EXECUTABLE_PATH).generic_string();
+}
+#else
+/**
  * Check the given path and make it absolute if it is relative. The base
  * is taken as the directory given
  * @param path A filesystem path as a string
@@ -53,17 +65,6 @@ inline std::string absolutePath(const char *path, const fs::path &base) {
   return abspath.generic_string();
 }
 
-/**
- * Return the path to the Python executable
- * @param base Directory to serve as base for absolute paths
- */
-#if defined(CONDA_ENV)
-inline std::string pythonExecutable(const fs::path &) {
-  // We assume the conda environement is activated and python will be found
-  // on the PATH
-  return PYTHON_EXECUTABLE_PATH;
-}
-#else
 inline std::string pythonExecutable(const fs::path &dirOfExe) { return absolutePath(PYTHON_EXECUTABLE_PATH, dirOfExe); }
 #endif
 
@@ -109,7 +110,7 @@ void appendArguments(ExeArgs *exeArgs, int argc, char **argv) {
 decltype(boost::this_process::environment()) childEnvironment([[maybe_unused]] const fs::path &dirOfExe) {
   auto env = boost::this_process::environment();
 
-#if !defined(CONDA_ENV) || defined(CONDA_BUILD)
+#if !defined(CONDA_ENV)
   auto insertAtFront = [&env](const auto &name, const auto &value) {
     const auto existingValue = env[name];
     env[name] = value;
@@ -146,8 +147,11 @@ int startWorkbench(const fs::path &dirOfExe, int argc, char **argv) {
   try {
     return bp::system(pythonExecutable(dirOfExe), startupWorkbench, childEnvironment(dirOfExe));
   } catch (const bp::process_error &exc) {
-    std::cerr << "Running " << pythonExecutable(dirOfExe) << "-m " << WORKBENCH_MAIN << "\n";
-    std::cerr << "Caught system_error with code " << exc.code() << " meaning " << exc.what() << "\n";
+    std::cerr << "Running " << pythonExecutable(dirOfExe) << " ";
+    for (const auto &arg : startupWorkbench) {
+      std::cerr << arg << " ";
+    }
+    std::cerr << "\nCaught system_error with code " << exc.code() << " meaning " << exc.what() << "\n";
     return 1;
   }
 }
@@ -169,9 +173,11 @@ void showErrorReporter(const fs::path &dirOfExe, const int workbenchExitCode) {
   try {
     bp::system(pythonExecutable(dirOfExe), startErrorReporter);
   } catch (const bp::process_error &exc) {
-    std::cerr << "Running " << pythonExecutable(dirOfExe) << "-m " << ERRORREPORTS_MAIN << "--application"
-              << ERRORREPORTS_APP_NAME << "--exitcode" << std::to_string(workbenchExitCode) << "\n";
-    std::cerr << "Caught system_error with code " << exc.code() << " meaning " << exc.what() << "\n";
+    std::cerr << "Running " << pythonExecutable(dirOfExe) << " ";
+    for (const auto &arg : startErrorReporter) {
+      std::cerr << arg << " ";
+    }
+    std::cerr << "\nCaught system_error with code " << exc.code() << " meaning " << exc.what() << "\n";
   }
 }
 
