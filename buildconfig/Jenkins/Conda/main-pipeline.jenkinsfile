@@ -25,19 +25,19 @@ def conda_build_UNIX(){
 def conda_build_linux() {
     conda_build_UNIX()
     archive:
-        includes: "mambaforge/envs/mantid-developer/conda-bld/linux-64/*.tar.bz2"
+        includes: "mambaforge/envs/mantid-conda-build-env/conda-bld/linux-64/*.tar.bz2"
 }
 
 def conda_build_macos() {
     conda_build_UNIX()
     archive:
-        includes: "mambaforge/envs/mantid-developer/conda-bld/osx-64/*.tar.bz2"
+        includes: "mambaforge/envs/mantid-conda-build-env/conda-bld/osx-64/*.tar.bz2"
 }
 
 def conda_build_win(){
     bat "\"C:\\Program Files\\git\\bin\\bash.exe\" -c \"C:/Jenkins/workspace/main_nightly_deployment_prototype/buildconfig/Jenkins/Conda/conda-build-recipes $WORKSPACE --build-mantid --build-qt --build-workbench\""
     archive:
-        includes: "mambaforge/envs/mantid-developer/conda-bld/win-64/*.tar.bz2"
+        includes: "mambaforge/envs/mantid-conda-build-env/conda-bld/win-64/*.tar.bz2"
 }
 
 pipeline {
