@@ -64,9 +64,11 @@ private:
   std::vector<t_real> m_UB;
 
   t_real m_chi_deg, m_omega_deg, m_phi_deg;
+  t_real m_chi_offs_deg, m_omega_offs_deg, m_phi_offs_deg;
   int m_chi_axis, m_omega_axis, m_phi_axis;
 
   t_real m_det_gamma_deg;
+  t_real m_det_gamma_offs_deg;
   int m_det_gamma_axis;
 
   int m_det_type;

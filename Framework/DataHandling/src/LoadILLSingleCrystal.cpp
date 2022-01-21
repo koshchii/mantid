@@ -269,10 +269,10 @@ template <class t_real> static void get_kf_cylindrical_det(t_real z, t_real phi,
 
 /** get the normalised kf for a flat detector
  */
-template <class t_real> static void get_kf_flat_det(t_real z, t_real phi, t_real rad, t_real *vec) {
+template <class t_real> static void get_kf_flat_det(t_real z, t_real phi, t_real dist, t_real *vec) {
 
-  vec[0] = rad * std::tan(-phi);
-  vec[1] = rad;
+  vec[0] = dist * std::tan(-phi);
+  vec[1] = dist;
   vec[2] = z;
 
   t_real len = std::sqrt(vec[0] * vec[0] + vec[1] * vec[1] + vec[2] * vec[2]);
@@ -409,6 +409,7 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   // detector zero position
   m_file->openGroup("gamma", "NXpositioner");
   m_det_gamma_deg = *get_value<decltype(m_det_gamma_deg)>(*m_file, "value");
+  m_det_gamma_offs_deg = *get_value<decltype(m_det_gamma_offs_deg)>(*m_file, "offset_value");
   std::int32_t gamma_cw = *get_value<std::int32_t>(*m_file, "clockwise");
   if (gamma_cw)
     m_det_gamma_deg = -m_det_gamma_deg;
@@ -426,6 +427,7 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   // initial crystal angles
   m_file->openGroup(SAMPLE_CHI_NAME, "NXpositioner");
   m_chi_deg = *get_value<decltype(m_chi_deg)>(*m_file, "value");
+  m_chi_offs_deg = *get_value<decltype(m_chi_offs_deg)>(*m_file, "offset_value");
   std::int32_t chi_cw = *get_value<std::int32_t>(*m_file, "clockwise");
   if (chi_cw)
     m_chi_deg = -m_chi_deg;
@@ -436,6 +438,7 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
 
   m_file->openGroup(SAMPLE_OMEGA_NAME, "NXpositioner");
   m_omega_deg = *get_value<decltype(m_omega_deg)>(*m_file, "value");
+  m_omega_offs_deg = *get_value<decltype(m_omega_offs_deg)>(*m_file, "offset_value");
   std::int32_t omega_cw = *get_value<std::int32_t>(*m_file, "clockwise");
   if (omega_cw)
     m_omega_deg = -m_omega_deg;
@@ -446,6 +449,7 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
 
   m_file->openGroup(SAMPLE_PHI_NAME, "NXpositioner");
   m_phi_deg = *get_value<decltype(m_phi_deg)>(*m_file, "value");
+  m_phi_offs_deg = *get_value<decltype(m_phi_offs_deg)>(*m_file, "offset_value");
   std::int32_t phi_cw = *get_value<std::int32_t>(*m_file, "clockwise");
   if (phi_cw)
     m_phi_deg = -m_phi_deg;
@@ -841,6 +845,10 @@ void LoadILLSingleCrystal::exec() {
     t_real omega = t_real(m_omega_deg * M_PI / 180.);
     t_real phi = t_real(m_phi_deg * M_PI / 180.);
 
+    chi += t_real(m_chi_offs_deg * M_PI / 180.);
+    omega += t_real(m_omega_offs_deg * M_PI / 180.);
+    phi += t_real(m_phi_offs_deg * M_PI / 180.);
+
     if (create_event_workspace) {
       t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
 
@@ -849,6 +857,7 @@ void LoadILLSingleCrystal::exec() {
       // rotate to detector zero position
       // twotheta -= m_det_angular_width * 0.5f;
       twotheta += m_det_gamma_deg / t_real(180. * M_PI);
+      twotheta += m_det_gamma_offs_deg / t_real(180. * M_PI);
 
       // out-of-plane scattering angle
       t_real angle_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;
@@ -875,10 +884,11 @@ void LoadILLSingleCrystal::exec() {
       t_real Q_coord[3] = {(ki[0] - kf[0]) * wavenumber, (ki[1] - kf[1]) * wavenumber, (ki[2] - kf[2]) * wavenumber};
 
       // rotate by sample euler angles
-      // TODO: check order
-      rotate_around_axis(m_omega_axis, Q_coord[0], Q_coord[1], Q_coord[2], omega);
+      // see here for the order of the euler rotations and the senses of the angles:
+      // https://code.ill.fr/scientific-software/crysfml/-/blob/master/Src/CFML_Geometry_SXTAL.f90
+      rotate_around_axis(m_phi_axis, Q_coord[0], Q_coord[1], Q_coord[2], -phi);
       rotate_around_axis(m_chi_axis, Q_coord[0], Q_coord[1], Q_coord[2], chi);
-      rotate_around_axis(m_phi_axis, Q_coord[0], Q_coord[1], Q_coord[2], phi);
+      rotate_around_axis(m_omega_axis, Q_coord[0], Q_coord[1], Q_coord[2], -omega);
 
       // calculate Q ranges
       Qxminmax[0] = std::min(Q_coord[0], Qxminmax[0]);
