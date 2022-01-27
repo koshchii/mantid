@@ -18,7 +18,9 @@
 #include "MantidAPI/Sample.h"
 #include "MantidAPI/WorkspaceFactory.h"
 
+#include "MantidKernel/MDUnit.h"
 #include "MantidKernel/OptionalBool.h"
+#include "MantidKernel/UnitLabelTypes.h"
 
 #include "MantidDataObjects/MDEvent.h"
 #include "MantidDataObjects/MDEventWorkspace.h"
@@ -295,6 +297,8 @@ void LoadILLSingleCrystal::init() {
   declareProperty(
       std::make_unique<Kernel::PropertyWithValue<bool>>("CreateEventWorkspace", false, Kernel::Direction::Input),
       "Create the workspace with Q events.");
+  declareProperty(std::make_unique<Kernel::PropertyWithValue<bool>>("EventsInRLU", false, Kernel::Direction::Input),
+                  "Q events are in rlu coordinates.");
 
   declareProperty(std::make_unique<Kernel::PropertyWithValue<std::size_t>>("QxBins", 64, Kernel::Direction::Input),
                   "Number of bins along the Qx direction.");
@@ -396,6 +400,7 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   // in deg
   m_det_angular_width = *get_value<decltype(m_det_angular_width)>(*m_file, "angular_width");
   m_det_angular_height = std::abs(std::atan(m_det_height / m_dist_sample_det));
+  m_det_sense = 1.;
   m_file->closeGroup();
 
   m_log.information() << "Detector: "
@@ -411,8 +416,11 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   m_det_gamma_deg = *get_value<decltype(m_det_gamma_deg)>(*m_file, "value");
   m_det_gamma_offs_deg = *get_value<decltype(m_det_gamma_offs_deg)>(*m_file, "offset_value");
   std::int32_t gamma_cw = *get_value<std::int32_t>(*m_file, "clockwise");
-  if (gamma_cw)
+  if (gamma_cw) {
     m_det_gamma_deg = -m_det_gamma_deg;
+    m_det_gamma_offs_deg = -m_det_gamma_offs_deg;
+    m_det_sense = -1.;
+  }
   std::int32_t gamma_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t gamma_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t gamma_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
@@ -429,8 +437,10 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   m_chi_deg = *get_value<decltype(m_chi_deg)>(*m_file, "value");
   m_chi_offs_deg = *get_value<decltype(m_chi_offs_deg)>(*m_file, "offset_value");
   std::int32_t chi_cw = *get_value<std::int32_t>(*m_file, "clockwise");
-  if (chi_cw)
+  if (chi_cw) {
     m_chi_deg = -m_chi_deg;
+    m_chi_offs_deg = -m_chi_offs_deg;
+  }
   std::int32_t chi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t chi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t chi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
@@ -440,8 +450,10 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   m_omega_deg = *get_value<decltype(m_omega_deg)>(*m_file, "value");
   m_omega_offs_deg = *get_value<decltype(m_omega_offs_deg)>(*m_file, "offset_value");
   std::int32_t omega_cw = *get_value<std::int32_t>(*m_file, "clockwise");
-  if (omega_cw)
+  if (omega_cw) {
     m_omega_deg = -m_omega_deg;
+    m_omega_offs_deg = -m_omega_offs_deg;
+  }
   std::int32_t omega_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t omega_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t omega_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
@@ -451,8 +463,10 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
   m_phi_deg = *get_value<decltype(m_phi_deg)>(*m_file, "value");
   m_phi_offs_deg = *get_value<decltype(m_phi_offs_deg)>(*m_file, "offset_value");
   std::int32_t phi_cw = *get_value<std::int32_t>(*m_file, "clockwise");
-  if (phi_cw)
+  if (phi_cw) {
     m_phi_deg = -m_phi_deg;
+    m_phi_offs_deg = -m_phi_offs_deg;
+  }
   std::int32_t phi_dir_x = *get_value<std::int32_t>(*m_file, "dir_x");
   std::int32_t phi_dir_y = *get_value<std::int32_t>(*m_file, "dir_y");
   std::int32_t phi_dir_z = *get_value<std::int32_t>(*m_file, "dir_z");
@@ -494,21 +508,36 @@ bool LoadILLSingleCrystal::LoadInstrumentGroup() {
                       << ", alpha=" << m_cell_angles[0] << ", beta=" << m_cell_angles[1]
                       << ", gamma=" << m_cell_angles[2] << std::endl;
 
-  m_UB = get_values<typename decltype(m_UB)::value_type>(*m_file, "orientation_matrix");
+  std::vector<t_real> UB = get_values<t_real>(*m_file, "orientation_matrix");
 
   // calculate B matrix from given lattice
-  if (m_UB.size() != 9)
-    m_UB.resize(9);
+  if (UB.size() != 9)
+    UB.resize(9);
   // own calculation for verification
-  // B_matrix(m_cell, m_cell_angles, m_UB.data());
+  // B_matrix(m_cell, m_cell_angles, UB.data());
+
+  for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+      m_UB(i, j) = UB[i * 3 + j];
+  // m_UB *= 2.*M_PI;
+  bool inv_ok = false;
+  m_UB.computeInverseWithCheck(m_UB_inv, inv_ok);
 
   m_log.information() << "UB matrix:\n"
-                      << "\t" << std::setw(15) << m_UB[0] << std::setw(15) << m_UB[1] << std::setw(15) << m_UB[2]
-                      << "\n"
-                      << "\t" << std::setw(15) << m_UB[3] << std::setw(15) << m_UB[4] << std::setw(15) << m_UB[5]
-                      << "\n"
-                      << "\t" << std::setw(15) << m_UB[6] << std::setw(15) << m_UB[7] << std::setw(15) << m_UB[8]
-                      << std::endl;
+                      << "\t" << std::setw(15) << m_UB(0, 0) << std::setw(15) << m_UB(0, 1) << std::setw(15)
+                      << m_UB(0, 2) << "\n"
+                      << "\t" << std::setw(15) << m_UB(1, 0) << std::setw(15) << m_UB(1, 1) << std::setw(15)
+                      << m_UB(1, 2) << "\n"
+                      << "\t" << std::setw(15) << m_UB(2, 0) << std::setw(15) << m_UB(2, 1) << std::setw(15)
+                      << m_UB(2, 2) << std::endl;
+
+  m_log.information() << "Inverse UB matrix (ok=" << std::boolalpha << inv_ok << "):\n"
+                      << "\t" << std::setw(15) << m_UB_inv(0, 0) << std::setw(15) << m_UB_inv(0, 1) << std::setw(15)
+                      << m_UB_inv(0, 2) << "\n"
+                      << "\t" << std::setw(15) << m_UB_inv(1, 0) << std::setw(15) << m_UB_inv(1, 1) << std::setw(15)
+                      << m_UB_inv(1, 2) << "\n"
+                      << "\t" << std::setw(15) << m_UB_inv(2, 0) << std::setw(15) << m_UB_inv(2, 1) << std::setw(15)
+                      << m_UB_inv(2, 2) << std::endl;
 
   m_file->closeGroup(); // SingleCrystalSettings
   m_file->closeGroup(); // instrument
@@ -669,6 +698,8 @@ void LoadILLSingleCrystal::exec() {
   if (getProperty("OutputEventWorkspace").operator std::string() == "")
     create_event_workspace = false;
 
+  bool rlu_coords = getProperty("EventsInRLU");
+
   // get input file name
   m_filename = getPropertyValue("Filename");
 
@@ -775,8 +806,9 @@ void LoadILLSingleCrystal::exec() {
   auto instr = workspace_instr->getInstrument();
   info->setInstrument(instr);
 
-  for (std::size_t i = 0; i < m_UB.size(); ++i)
-    info->mutableRun().addProperty("Sample_UB_" + std::to_string(i), m_UB[i]);
+  for (int i = 0; i < m_UB.innerSize(); ++i)
+    for (int j = 0; j < m_UB.outerSize(); ++j)
+      info->mutableRun().addProperty("Sample_UB_" + std::to_string(i) + "_" + std::to_string(j), m_UB(i, j));
 
   Geometry::CrystalStructure crys(
       // unit cell
@@ -790,6 +822,11 @@ void LoadILLSingleCrystal::exec() {
 
   auto lattice = std::make_unique<Geometry::OrientedLattice>(m_cell[0], m_cell[1], m_cell[2], m_cell_angles[0],
                                                              m_cell_angles[1], m_cell_angles[2]);
+  Kernel::Matrix<double> UB_cpy(3, 3);
+  for (int i = 0; i < 3; ++i)
+    for (int j = 0; j < 3; ++j)
+      UB_cpy[i][j] = static_cast<double>(m_UB(i, j));
+  lattice->setUB(UB_cpy);
   info->mutableSample().setOrientedLattice(std::move(lattice));
 
   m_workspace_histo->addExperimentInfo(info);
@@ -845,19 +882,19 @@ void LoadILLSingleCrystal::exec() {
     t_real omega = t_real(m_omega_deg * M_PI / 180.);
     t_real phi = t_real(m_phi_deg * M_PI / 180.);
 
-    chi += t_real(m_chi_offs_deg * M_PI / 180.);
-    omega += t_real(m_omega_offs_deg * M_PI / 180.);
-    phi += t_real(m_phi_offs_deg * M_PI / 180.);
+    // chi += t_real(m_chi_offs_deg * M_PI / 180.);
+    // omega += t_real(m_omega_offs_deg * M_PI / 180.);
+    // phi += t_real(m_phi_offs_deg * M_PI / 180.);
 
     if (create_event_workspace) {
       t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
 
       // in-plane scattering angle
-      t_real twotheta = pix_coord[0] / t_real(m_detector_data_dims[0]) * m_det_angular_width;
+      t_real twotheta = m_det_sense * pix_coord[0] / t_real(m_detector_data_dims[0]) * m_det_angular_width;
       // rotate to detector zero position
-      // twotheta -= m_det_angular_width * 0.5f;
+      // twotheta -= m_det_sense * m_det_angular_width * 0.5f;
       twotheta += m_det_gamma_deg / t_real(180. * M_PI);
-      twotheta += m_det_gamma_offs_deg / t_real(180. * M_PI);
+      // twotheta += m_det_gamma_offs_deg / t_real(180. * M_PI);
 
       // out-of-plane scattering angle
       t_real angle_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;
@@ -881,14 +918,25 @@ void LoadILLSingleCrystal::exec() {
         break;
       }
 
-      t_real Q_coord[3] = {(ki[0] - kf[0]) * wavenumber, (ki[1] - kf[1]) * wavenumber, (ki[2] - kf[2]) * wavenumber};
+      t_real Q_sign = -1.;
+      t_real Q_coord[3] = {Q_sign * (ki[0] - kf[0]) * wavenumber, Q_sign * (ki[1] - kf[1]) * wavenumber,
+                           Q_sign * (ki[2] - kf[2]) * wavenumber};
 
-      // rotate by sample euler angles
+      // rotate by sample euler angles (inverted angles and order)
       // see here for the order of the euler rotations and the senses of the angles:
       // https://code.ill.fr/scientific-software/crysfml/-/blob/master/Src/CFML_Geometry_SXTAL.f90
-      rotate_around_axis(m_phi_axis, Q_coord[0], Q_coord[1], Q_coord[2], -phi);
-      rotate_around_axis(m_chi_axis, Q_coord[0], Q_coord[1], Q_coord[2], chi);
       rotate_around_axis(m_omega_axis, Q_coord[0], Q_coord[1], Q_coord[2], -omega);
+      rotate_around_axis(m_chi_axis, Q_coord[0], Q_coord[1], Q_coord[2], -chi);
+      rotate_around_axis(m_phi_axis, Q_coord[0], Q_coord[1], Q_coord[2], -phi);
+
+      if (rlu_coords) {
+        // multiplying by UB^(-1) leads to rlu coordinates
+        Eigen::Vector3f Q(Q_coord[0], Q_coord[1], Q_coord[2]);
+        Q = m_UB_inv * Q;
+        Q_coord[0] = Q[0];
+        Q_coord[1] = Q[1];
+        Q_coord[2] = Q[2];
+      }
 
       // calculate Q ranges
       Qxminmax[0] = std::min(Q_coord[0], Qxminmax[0]);
@@ -919,11 +967,19 @@ void LoadILLSingleCrystal::exec() {
     std::size_t num_Qz_bins = getProperty("QzBins");
 
     Geometry::QLab frame_Qx, frame_Qy, frame_Qz;
+    Kernel::ReciprocalLatticeUnit rlu_unit(Kernel::Units::Symbol::RLU);
+    Geometry::HKL frame_h(&rlu_unit), frame_k(&rlu_unit), frame_l(&rlu_unit);
+    Geometry::MDFrame *frame_x =
+        rlu_coords ? static_cast<Geometry::MDFrame *>(&frame_h) : static_cast<Geometry::MDFrame *>(&frame_Qx);
+    Geometry::MDFrame *frame_y =
+        rlu_coords ? static_cast<Geometry::MDFrame *>(&frame_k) : static_cast<Geometry::MDFrame *>(&frame_Qy);
+    Geometry::MDFrame *frame_z =
+        rlu_coords ? static_cast<Geometry::MDFrame *>(&frame_l) : static_cast<Geometry::MDFrame *>(&frame_Qz);
 
     std::vector<Mantid::Geometry::MDHistoDimension_sptr> dimensions_Q{{
-        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", frame_Qx, Qxminmax[0], Qxminmax[1], num_Qx_bins),
-        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", frame_Qy, Qyminmax[0], Qyminmax[1], num_Qy_bins),
-        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", frame_Qz, Qzminmax[0], Qzminmax[1], num_Qz_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qx", "Qx", *frame_x, Qxminmax[0], Qxminmax[1], num_Qx_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qy", "Qy", *frame_y, Qyminmax[0], Qyminmax[1], num_Qy_bins),
+        std::make_shared<Geometry::MDHistoDimension>("Qz", "Qz", *frame_z, Qzminmax[0], Qzminmax[1], num_Qz_bins),
     }};
 
     m_workspace_event = std::make_shared<t_eventworkspace>(API::NoNormalization, API::NoNormalization);
@@ -931,7 +987,10 @@ void LoadILLSingleCrystal::exec() {
     m_workspace_event->addDimension(dimensions_Q[0]);
     m_workspace_event->addDimension(dimensions_Q[1]);
     m_workspace_event->addDimension(dimensions_Q[2]);
-    m_workspace_event->setCoordinateSystem(Kernel::QLab);
+    if (rlu_coords)
+      m_workspace_event->setCoordinateSystem(Kernel::HKL);
+    else
+      m_workspace_event->setCoordinateSystem(Kernel::QLab);
     m_workspace_event->initialize();
 
     m_workspace_event->addExperimentInfo(info);

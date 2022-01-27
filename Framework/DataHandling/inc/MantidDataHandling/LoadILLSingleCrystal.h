@@ -14,6 +14,7 @@
 #include "MantidKernel/NexusDescriptor.h"
 #include "MantidKernel/System.h"
 
+#include <Eigen/Eigen>
 #include <nexus/NeXusFile.hpp>
 
 namespace Mantid {
@@ -61,7 +62,7 @@ private:
 
   t_real m_cell[3];
   t_real m_cell_angles[3];
-  std::vector<t_real> m_UB;
+  Eigen::Matrix<t_real, 3, 3> m_UB, m_UB_inv;
 
   t_real m_chi_deg, m_omega_deg, m_phi_deg;
   t_real m_chi_offs_deg, m_omega_offs_deg, m_phi_offs_deg;
@@ -76,6 +77,7 @@ private:
   std::int32_t m_det_num_rows, m_det_num_cols;
   t_real m_det_height;
   t_real m_det_angular_width, m_det_angular_height;
+  t_real m_det_sense;
   // --------------------------------------------------------------------------
 
   // --------------------------------------------------------------------------
