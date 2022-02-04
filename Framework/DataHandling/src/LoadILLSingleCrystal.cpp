@@ -709,7 +709,6 @@ void LoadILLSingleCrystal::exec() {
   m_file = std::make_unique<NeXus::File>(m_filename, NXACC_READ);
   if (!m_file)
     throw Kernel::Exception::FileError("Cannot open Nexus file ", m_filename);
-
   // --------------------------------------------------------------------------
   // load root group
   m_file->openGroup("/entry0", "NXentry");
@@ -737,6 +736,8 @@ void LoadILLSingleCrystal::exec() {
   LoadDataScanGroup();
 
   m_file->closeGroup(); // entry0
+  m_file->close();
+  m_file.reset();
   // --------------------------------------------------------------------------
 
   // create histogram workspace
@@ -966,9 +967,10 @@ void LoadILLSingleCrystal::exec() {
     std::size_t num_Qy_bins = getProperty("QyBins");
     std::size_t num_Qz_bins = getProperty("QzBins");
 
-    Geometry::QLab frame_Qx, frame_Qy, frame_Qz;
-    Kernel::ReciprocalLatticeUnit rlu_unit(Kernel::Units::Symbol::RLU);
-    Geometry::HKL frame_h(&rlu_unit), frame_k(&rlu_unit), frame_l(&rlu_unit);
+    static Geometry::QLab frame_Qx, frame_Qy, frame_Qz;
+    static Kernel::ReciprocalLatticeUnit rlu_unit(Kernel::Units::Symbol::RLU);
+    static Geometry::HKL frame_h(&rlu_unit), frame_k(&rlu_unit), frame_l(&rlu_unit);
+
     Geometry::MDFrame *frame_x =
         rlu_coords ? static_cast<Geometry::MDFrame *>(&frame_h) : static_cast<Geometry::MDFrame *>(&frame_Qx);
     Geometry::MDFrame *frame_y =
