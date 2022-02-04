@@ -180,6 +180,186 @@ public:
     TS_ASSERT(algF.isExecuted());
   }
 
+  static void simpleRunPeak(bool shouldPass, std::vector<double> peakRadius, bool cyl, bool ellip) {
+    std::vector<double> bkgInnerRadius;
+    std::vector<double> bkgOuterRadius;
+    if (ellip) {
+      bkgInnerRadius = {1.0, 1.0, 1.0};
+      bkgOuterRadius = {1.0, 1.0, 1.0};
+    } else {
+      bkgInnerRadius = {1.0};
+      bkgOuterRadius = {1.0};
+    }
+    simpleRun(shouldPass, peakRadius, bkgInnerRadius, bkgOuterRadius, cyl, ellip);
+  }
+
+  static void simpleRunBkgInner(bool shouldPass, std::vector<double> bkgInnerRadius, bool cyl, bool ellip) {
+    std::vector<double> peakRadius;
+    std::vector<double> bkgOuterRadius;
+    if (ellip) {
+      peakRadius = {1.0, 1.0, 1.0};
+      bkgOuterRadius = {1.0, 1.0, 1.0};
+    } else {
+      peakRadius = {1.0};
+      bkgOuterRadius = {1.0};
+    }
+    simpleRun(shouldPass, peakRadius, bkgInnerRadius, bkgOuterRadius, cyl, ellip);
+  }
+
+  static void simpleRunBkgOuter(bool shouldPass, std::vector<double> bkgOuterRadius, bool cyl, bool ellip) {
+    std::vector<double> peakRadius;
+    std::vector<double> bkgInnerRadius;
+    if (ellip) {
+      peakRadius = {1.0, 1.0, 1.0};
+      bkgInnerRadius = {1.0, 1.0, 1.0};
+    } else {
+      peakRadius = {1.0};
+      bkgInnerRadius = {1.0};
+    }
+    simpleRun(shouldPass, peakRadius, bkgInnerRadius, bkgOuterRadius, cyl, ellip);
+  }
+
+  //-------------------------------------------------------------------------------
+  /** Setup simple algorithm*/
+  static void simpleRun(bool shouldPass, std::vector<double> peakRadius, std::vector<double> bkgInnerRadius,
+                        std::vector<double> bkgOuterRadius, bool cyl = false, bool ellip = false) {
+    createMDEW();
+    /* Create 3 overlapping shells so that density goes like this:
+     * r < 1 : density 1.0
+     * 1 < r < 2 : density 1/2
+     * 2 < r < 3 : density 1/3
+     */
+    addPeak(1000, 0., 0., 0., 1.0);
+    addPeak(1000 * 4, 0., 0., 0.,
+            2.0); // 8 times the volume / 4 times the counts = 1/2 density
+    addPeak(1000 * 9, 0., 0., 0.,
+            3.0); // 27 times the volume / 9 times the counts = 1/3 density
+
+    // --- Make a fake PeaksWorkspace ---
+    PeaksWorkspace_sptr peakWS(new PeaksWorkspace());
+    Instrument_sptr inst = ComponentCreationHelper::createTestInstrumentCylindrical(5);
+    peakWS->addPeak(Peak(inst, 1, 1.0, V3D(0., 0., 0.)));
+    TS_ASSERT_EQUALS(peakWS->getPeak(0).getIntensity(), 0.0);
+    AnalysisDataService::Instance().addOrReplace("IntegratePeaksMD2Test_peaks", peakWS);
+
+    IntegratePeaksMD2 alg;
+    TS_ASSERT_THROWS_NOTHING(alg.initialize())
+    TS_ASSERT(alg.isInitialized())
+    TS_ASSERT_THROWS_NOTHING(alg.setPropertyValue("InputWorkspace", "IntegratePeaksMD2Test_MDEWS"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("PeakRadius", peakRadius));
+    TS_ASSERT_THROWS_NOTHING(alg.setPropertyValue("PeaksWorkspace", "IntegratePeaksMD2Test_peaks"));
+    TS_ASSERT_THROWS_NOTHING(alg.setPropertyValue("OutputWorkspace", "IntegratePeaksMD2Test_Output"));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("BackgroundInnerRadius", bkgInnerRadius));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("BackgroundOuterRadius", bkgOuterRadius));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("Ellipsoid", ellip));
+    TS_ASSERT_THROWS_NOTHING(alg.setProperty("Cylinder", cyl));
+    if (shouldPass) {
+      TS_ASSERT_THROWS_NOTHING(alg.execute());
+    } else {
+      TS_ASSERT_THROWS(alg.execute(), const std::runtime_error &);
+    }
+  }
+  /** In the following validation tests, three validation principles must be met:
+      (where radius can be peak/BackgroundInner/BackgroundOuter)
+   A) radius vector has 1 or 3 values
+   B) radius vector size 1 for sphere/cylinder, size 3 for ellipsoid
+      (sphere implied when ellipsoid=false and cylinder=false)
+   C) ellipsoid and cylinder cannot both be true
+   */
+  // Peak Radius
+  void test_validationPeak1ValueSphere() { simpleRunPeak(true, {1.0}, false, false); }
+  void test_validationPeak1ValueCylinder() { simpleRunPeak(true, {1.0}, true, false); }
+  void test_validationPeak1ValueEllipsoid() {
+    simpleRunPeak(false, {1.0}, false, true);
+  } // fail B // This test shows a problem in the code
+  void test_validationPeak1ValueEllipsoidAndCylinder() { simpleRunPeak(false, {1.0}, true, true); } // fail C
+
+  void test_validationPeak2ValuesSphere() { simpleRunPeak(false, {1.0, 1.0}, false, false); }             // fail A
+  void test_validationPeak2ValuesCylinder() { simpleRunPeak(false, {1.0, 1.0}, true, false); }            // fail A
+  void test_validationPeak2ValuesEllipsoid() { simpleRunPeak(false, {1.0, 1.0}, false, true); }           // fail A
+  void test_validationPeak2ValuesEllipsoidAndCylinder() { simpleRunPeak(false, {1.0, 1.0}, true, true); } // fail A + C
+
+  void test_validationPeak3ValuesSphere() { simpleRunPeak(false, {1.0, 1.0, 1.0}, false, false); }  // fail B
+  void test_validationPeak3ValuesCylinder() { simpleRunPeak(false, {1.0, 1.0, 1.0}, true, false); } // fail B
+  void test_validationPeak3ValuesEllipsoid() { simpleRunPeak(true, {1.0, 1.0, 1.0}, false, true); }
+  void test_validationPeak3ValuesEllipsoidAndCylinder() { simpleRunPeak(false, {1.0, 1.0, 1.0}, true, true); } // fail C
+
+  void test_validationPeak4ValuesSphere() { simpleRunPeak(false, {1.0, 1.0, 1.0, 1.0}, false, false); }   // fail A
+  void test_validationPeak4ValuesCylinder() { simpleRunPeak(false, {1.0, 1.0, 1.0, 1.0}, true, false); }  // fail A
+  void test_validationPeak4ValuesEllipsoid() { simpleRunPeak(false, {1.0, 1.0, 1.0, 1.0}, false, true); } // fail A
+  void test_validationPeak4ValuesEllipsoidAndCylinder() {
+    simpleRunPeak(false, {1.0, 1.0, 1.0, 1.0}, true, true);
+  } // fail A + C
+
+  // Background Inner Radius
+  void test_validationBkgInner1ValueSphere() { simpleRunBkgInner(true, {1.0}, false, false); }
+  void test_validationBkgInner1ValueCylinder() { simpleRunBkgInner(true, {1.0}, true, false); }
+  void test_validationBkgInner1ValueEllipsoid() {
+    simpleRunBkgInner(false, {1.0}, false, true);
+  } // fail B // This test shows a problem in the code
+  void test_validationBkgInner1ValueEllipsoidAndCylinder() { simpleRunBkgInner(false, {1.0}, true, true); } // fail C
+
+  void test_validationBkgInner2ValuesSphere() { simpleRunBkgInner(false, {1.0, 1.0}, false, false); }   // fail A
+  void test_validationBkgInner2ValuesCylinder() { simpleRunBkgInner(false, {1.0, 1.0}, true, false); }  // fail A
+  void test_validationBkgInner2ValuesEllipsoid() { simpleRunBkgInner(false, {1.0, 1.0}, false, true); } // fail A
+  void test_validationBkgInner2ValuesEllipsoidAndCylinder() {
+    simpleRunBkgInner(false, {1.0, 1.0}, true, true);
+  } // fail A + C
+
+  void test_validationBkgInner3ValuesSphere() { simpleRunBkgInner(false, {1.0, 1.0, 1.0}, false, false); }  // fail B
+  void test_validationBkgInner3ValuesCylinder() { simpleRunBkgInner(false, {1.0, 1.0, 1.0}, true, false); } // fail B
+  void test_validationBkgInner3ValuesEllipsoid() { simpleRunBkgInner(true, {1.0, 1.0, 1.0}, false, true); }
+  void test_validationBkgInner3ValuesEllipsoidAndCylinder() {
+    simpleRunBkgInner(false, {1.0, 1.0, 1.0}, true, true);
+  } // fail C
+
+  void test_validationBkgInner4ValuesSphere() {
+    simpleRunBkgInner(false, {1.0, 1.0, 1.0, 1.0}, false, false);
+  } // fail A
+  void test_validationBkgInner4ValuesCylinder() {
+    simpleRunBkgInner(false, {1.0, 1.0, 1.0, 1.0}, true, false);
+  } // fail A
+  void test_validationBkgInner4ValuesEllipsoid() {
+    simpleRunBkgInner(false, {1.0, 1.0, 1.0, 1.0}, false, true);
+  } // fail A
+  void test_validationBkgInner4ValuesEllipsoidAndCylinder() {
+    simpleRunBkgInner(false, {1.0, 1.0, 1.0, 1.0}, true, true);
+  } // fail A + C
+
+  // Background Outer Radius
+  void test_validationBkgOuter1ValueSphere() { simpleRunBkgOuter(true, {1.0}, false, false); }
+  void test_validationBkgOuter1ValueCylinder() { simpleRunBkgOuter(true, {1.0}, true, false); }
+  void test_validationBkgOuter1ValueEllipsoid() {
+    simpleRunBkgOuter(false, {1.0}, false, true);
+  } // fail B // This test shows a problem in the code
+  void test_validationBkgOuter1ValueEllipsoidAndCylinder() { simpleRunBkgOuter(false, {1.0}, true, true); } // fail C
+
+  void test_validationBkgOuter2ValuesSphere() { simpleRunBkgOuter(false, {1.0, 1.0}, false, false); }   // fail A
+  void test_validationBkgOuter2ValuesCylinder() { simpleRunBkgOuter(false, {1.0, 1.0}, true, false); }  // fail A
+  void test_validationBkgOuter2ValuesEllipsoid() { simpleRunBkgOuter(false, {1.0, 1.0}, false, true); } // fail A
+  void test_validationBkgOuter2ValuesEllipsoidAndCylinder() {
+    simpleRunBkgOuter(false, {1.0, 1.0}, true, true);
+  } // fail A + C
+
+  void test_validationBkgOuter3ValuesSphere() { simpleRunBkgOuter(false, {1.0, 1.0, 1.0}, false, false); }  // fail B
+  void test_validationBkgOuter3ValuesCylinder() { simpleRunBkgOuter(false, {1.0, 1.0, 1.0}, true, false); } // fail B
+  void test_validationBkgOuter3ValuesEllipsoid() { simpleRunBkgOuter(true, {1.0, 1.0, 1.0}, false, true); }
+  void test_validationBkgOuter3ValuesEllipsoidAndCylinder() {
+    simpleRunBkgOuter(false, {1.0, 1.0, 1.0}, true, true);
+  } // fail C
+
+  void test_validationBkgOuter4ValuesSphere() {
+    simpleRunBkgOuter(false, {1.0, 1.0, 1.0, 1.0}, false, false);
+  } // fail A
+  void test_validationBkgOuter4ValuesCylinder() {
+    simpleRunBkgOuter(false, {1.0, 1.0, 1.0, 1.0}, true, false);
+  } // fail A
+  void test_validationBkgOuter4ValuesEllipsoid() {
+    simpleRunBkgOuter(false, {1.0, 1.0, 1.0, 1.0}, false, true);
+  } // fail A
+  void test_validationBkgOuter4ValuesEllipsoidAndCylinder() {
+    simpleRunBkgOuter(false, {1.0, 1.0, 1.0, 1.0}, true, true);
+  } // fail A + C
   //-------------------------------------------------------------------------------
   /** Full test using faked-out peak data */
   void test_exec() {
@@ -1145,6 +1325,7 @@ public:
   ~IntegratePeaksMD2TestPerformance() override {
     AnalysisDataService::Instance().remove("IntegratePeaksMD2Test_MDEWS");
     AnalysisDataService::Instance().remove("IntegratePeaksMD2Test_peaks");
+    AnalysisDataService::Instance().remove("IntegratePeaksMD2Test_Output");
   }
 
   void setUp() override {}
