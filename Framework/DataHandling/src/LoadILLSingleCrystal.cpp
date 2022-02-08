@@ -833,6 +833,10 @@ void LoadILLSingleCrystal::exec() {
   m_workspace_histo->addExperimentInfo(info);
   m_workspace_histo->setTitle(title);
 
+  // std::cout << "gonio matrices:\n";
+  // for(const auto& gonio : info->mutableRun().getGoniometerMatrices())
+  //  std::cout << gonio << std::endl;
+
   // minimum and maximum Qs
   t_real Qxminmax[2] = {std::numeric_limits<t_real>::max(), std::numeric_limits<t_real>::lowest()};
   t_real Qyminmax[2] = {std::numeric_limits<t_real>::max(), std::numeric_limits<t_real>::lowest()};
@@ -879,16 +883,17 @@ void LoadILLSingleCrystal::exec() {
       }
     }
 
-    t_real chi = t_real(m_chi_deg * M_PI / 180.);
-    t_real omega = t_real(m_omega_deg * M_PI / 180.);
-    t_real phi = t_real(m_phi_deg * M_PI / 180.);
-
-    // chi += t_real(m_chi_offs_deg * M_PI / 180.);
-    // omega += t_real(m_omega_offs_deg * M_PI / 180.);
-    // phi += t_real(m_phi_offs_deg * M_PI / 180.);
-
-    if (create_event_workspace) {
+    // if the intensity is non-negligible, add it to the event workspace
+    if (create_event_workspace && intensity >= std::numeric_limits<Mantid::signal_t>::epsilon()) {
       t_real pix_coord[2] = {t_real(cur_x), t_real(cur_y)};
+
+      t_real chi = t_real(m_chi_deg * M_PI / 180.);
+      t_real omega = t_real(m_omega_deg * M_PI / 180.);
+      t_real phi = t_real(m_phi_deg * M_PI / 180.);
+
+      // chi += t_real(m_chi_offs_deg * M_PI / 180.);
+      // omega += t_real(m_omega_offs_deg * M_PI / 180.);
+      // phi += t_real(m_phi_offs_deg * M_PI / 180.);
 
       // in-plane scattering angle
       t_real twotheta = m_det_sense * pix_coord[0] / t_real(m_detector_data_dims[0]) * m_det_angular_width;
