@@ -67,6 +67,7 @@ class AbstractInst(object):
                run_number_string,
                do_van_normalisation,
                do_absorb_corrections,
+               do_paalman_pings,
                sample_details=None):
         """
         Focuses the user specified run - should be called by the concrete instrument
@@ -79,6 +80,7 @@ class AbstractInst(object):
                            perform_vanadium_norm=do_van_normalisation,
                            instrument=self,
                            absorb=do_absorb_corrections,
+                           paalman_pings=do_paalman_pings,
                            sample_details=sample_details)
 
     def mask_prompt_pulses_if_necessary(self, ws_list):

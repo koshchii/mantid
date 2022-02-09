@@ -35,6 +35,7 @@ class Polaris(AbstractInst):
         return self._focus(run_number_string=self._inst_settings.run_number,
                            do_van_normalisation=self._inst_settings.do_van_normalisation,
                            do_absorb_corrections=self._inst_settings.do_absorb_corrections,
+                           do_paalman_pings=self._inst_settings.do_paalman_pings,
                            sample_details=self._sample_details)
 
     def create_vanadium(self, **kwargs):
