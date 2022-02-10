@@ -850,7 +850,8 @@ void LoadILLSingleCrystal::exec() {
 
   // copy the detector data to the workspace
   std::int64_t last_scan_step = -1;
-  API::Progress progress(this, 0., create_event_workspace ? 0.5 : 1., m_detector_data.size() / frame_size);
+  API::Progress progress(this, 0., create_event_workspace ? 0.5 : 1.,
+                         static_cast<std::size_t>(m_detector_data.size() / frame_size));
   bool cancelled = false;
 
   for (std::size_t idx = 0; idx < m_detector_data.size(); ++idx) {
