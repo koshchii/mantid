@@ -323,7 +323,7 @@ MatrixWorkspace_uptr MonteCarloAbsorption::doSimulation(const MatrixWorkspace &i
 
   PARALLEL_FOR_IF(Kernel::threadSafe(simulationWS))
   for (int64_t i = 0; i < nhists; ++i) {
-    PARALLEL_START_INTERUPT_REGION
+    PARALLEL_START_INTERRUPT_REGION
 
     auto &outE = simulationWS.mutableE(i);
     // The input was cloned so clear the errors out
@@ -386,9 +386,9 @@ MatrixWorkspace_uptr MonteCarloAbsorption::doSimulation(const MatrixWorkspace &i
 
     prog.report(reportMsg);
 
-    PARALLEL_END_INTERUPT_REGION
+    PARALLEL_END_INTERRUPT_REGION
   }
-  PARALLEL_CHECK_INTERUPT_REGION
+  PARALLEL_CHECK_INTERRUPT_REGION
 
   if (useSparseInstrument) {
     interpolateFromSparse(*outputWS, *sparseWS, interpolateOpt);
@@ -419,30 +419,26 @@ std::unique_ptr<IBeamProfile> MonteCarloAbsorption::createBeamProfile(const Inst
                                                                       const IObject &sample) const {
   const auto frame = instrument.getReferenceFrame();
   const auto source = instrument.getSource();
-  double beamWidth(-1.0), beamHeight(-1.0), beamRadius(-1.0);
 
   std::string beamShapeParam = source->getParameterAsString("beam-shape");
   if (beamShapeParam == "Slit") {
     auto beamWidthParam = source->getNumberParameter("beam-width");
     auto beamHeightParam = source->getNumberParameter("beam-height");
     if (beamWidthParam.size() == 1 && beamHeightParam.size() == 1) {
-      beamWidth = beamWidthParam[0];
-      beamHeight = beamHeightParam[0];
-      return std::make_unique<RectangularBeamProfile>(*frame, source->getPos(), beamWidth, beamHeight);
+      return std::make_unique<RectangularBeamProfile>(*frame, source->getPos(), beamWidthParam[0], beamHeightParam[0]);
     }
   } else if (beamShapeParam == "Circle") {
     auto beamRadiusParam = source->getNumberParameter("beam-radius");
     if (beamRadiusParam.size() == 1) {
-      beamRadius = beamRadiusParam[0];
-      return std::make_unique<CircularBeamProfile>(*frame, source->getPos(), beamRadius);
+      return std::make_unique<CircularBeamProfile>(*frame, source->getPos(), beamRadiusParam[0]);
     }
   } // revert to sample dimensions if no return by this point
   if (!sample.hasValidShape())
     throw std::invalid_argument("Cannot determine beam profile without a sample shape");
   const auto bbox = sample.getBoundingBox().width();
   const auto bboxCentre = sample.getBoundingBox().centrePoint();
-  beamWidth = 2 * bboxCentre[frame->pointingHorizontal()] + bbox[frame->pointingHorizontal()];
-  beamHeight = 2 * bboxCentre[frame->pointingUp()] + bbox[frame->pointingUp()];
+  const double beamWidth = 2 * bboxCentre[frame->pointingHorizontal()] + bbox[frame->pointingHorizontal()];
+  const double beamHeight = 2 * bboxCentre[frame->pointingUp()] + bbox[frame->pointingUp()];
   return std::make_unique<RectangularBeamProfile>(*frame, source->getPos(), beamWidth, beamHeight);
 }
 
@@ -452,19 +448,21 @@ void MonteCarloAbsorption::interpolateFromSparse(MatrixWorkspace &targetWS, cons
   const auto refFrame = targetWS.getInstrument()->getReferenceFrame();
   PARALLEL_FOR_IF(Kernel::threadSafe(targetWS, sparseWS))
   for (int64_t i = 0; i < static_cast<decltype(i)>(spectrumInfo.size()); ++i) {
-    PARALLEL_START_INTERUPT_REGION
-    double lat, lon;
-    std::tie(lat, lon) = spectrumInfo.geographicalAngles(i);
-    const auto spatiallyInterpHisto = sparseWS.bilinearInterpolateFromDetectorGrid(lat, lon);
-    if (spatiallyInterpHisto.size() > 1) {
-      auto targetHisto = targetWS.histogram(i);
-      interpOpt.applyInPlace(spatiallyInterpHisto, targetHisto);
-      targetWS.setHistogram(i, targetHisto);
-    } else {
-      targetWS.mutableY(i) = spatiallyInterpHisto.y().front();
+    PARALLEL_START_INTERRUPT_REGION
+    if (spectrumInfo.hasDetectors(i)) {
+      double lat, lon;
+      std::tie(lat, lon) = spectrumInfo.geographicalAngles(i);
+      const auto spatiallyInterpHisto = sparseWS.bilinearInterpolateFromDetectorGrid(lat, lon);
+      if (spatiallyInterpHisto.size() > 1) {
+        auto targetHisto = targetWS.histogram(i);
+        interpOpt.applyInPlace(spatiallyInterpHisto, targetHisto);
+        targetWS.setHistogram(i, targetHisto);
+      } else {
+        targetWS.mutableY(i) = spatiallyInterpHisto.y().front();
+      }
     }
-    PARALLEL_END_INTERUPT_REGION
+    PARALLEL_END_INTERRUPT_REGION
   }
-  PARALLEL_CHECK_INTERUPT_REGION
+  PARALLEL_CHECK_INTERRUPT_REGION
 }
 } // namespace Mantid::Algorithms

@@ -22,8 +22,7 @@ import mantid.api
 import mantid.kernel
 from mantid.api import MultipleExperimentInfos, MatrixWorkspace
 from mantid.dataobjects import EventWorkspace, MDHistoWorkspace, Workspace2D
-from mantid.plots.legend import convert_color_to_hex
-from mantid.plots.utility import MantidAxType
+from mantid.plots.utility import convert_color_to_hex, MantidAxType
 
 
 # Helper functions for data extraction from a Mantid workspace and plot functionality
@@ -350,7 +349,7 @@ def get_spectrum(workspace, wkspIndex, normalize_by_bin_width, withDy=False, wit
 
 def get_bin_indices(workspace):
     """
-    Find the bins' indices, without these of the monitors if there is some.
+    Find the bins' indices, without those of the monitors if there are some.
     (ie every detector which is not a monitor)
 
     :param workspace: a Workspace2D or an EventWorkspace
@@ -394,7 +393,7 @@ def get_bin_indices(workspace):
 
 def get_bins(workspace, bin_index, withDy=False):
     """
-    Extract a requested bin from each spectrum
+    Extract a requested bin from each spectrum, except if they correspond to monitors
 
     :param workspace: a Workspace2D or an EventWorkspace
     :param bin_index: the index of a bin
