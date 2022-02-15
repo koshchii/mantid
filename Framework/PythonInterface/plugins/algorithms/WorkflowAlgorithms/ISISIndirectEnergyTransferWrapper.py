@@ -138,12 +138,16 @@ class ISISIndirectEnergyTransferWrapper(DataProcessorAlgorithm):
 
         self._output_x_units = self.getPropertyValue('UnitX')
         self._output_workspace = self.getPropertyValue('OutputWorkspace')
+        self._group_sample_changer = False
 
     def PyExec(self):
         self._setup()
-        self._reduce_data()
-
-        self.setProperty('OutputWorkspace', get_ads_workspace(self._output_workspace))
+        if self._group_sample_changer:
+            workspace_list = self._reduce_data_two()
+            self.setProperty('OutputWorkspace', get_ads_workspace(workspace_list[0]))
+        else:
+            self._reduce_data()
+            self.setProperty('OutputWorkspace', get_ads_workspace(self._output_workspace))
 
     def _reduce_data(self):
         reduction_algorithm = self.createChildAlgorithm(name='ISISIndirectEnergyTransfer', startProgress=0.1,
@@ -170,6 +174,35 @@ class ISISIndirectEnergyTransferWrapper(DataProcessorAlgorithm):
                 reduction_algorithm.setProperty(key, value)
 
         reduction_algorithm.execute()
+
+    def _reduce_data_two(self):
+        reduction_algorithm = self.createChildAlgorithm(name='ISISIndirectEnergyTransferTwo', startProgress=0.1,
+                                                        endProgress=1.0, enableLogging=False)
+        reduction_algorithm.enableHistoryRecordingForChild(False)
+
+        ws_name_base = self._output_workspace.replace("_Reduced", "")
+
+        args = {"InputFiles": self._data_files, "SumFiles": self._sum_files, "LoadLogFiles": self._sum_files,
+                "CalibrationWorkspace": self._calibration_workspace, "Instrument": self._instrument_name,
+                "Analyser": self._analyser, "Reflection": self._reflection, "SpectraRange": self._spectra_range,
+                "BackgroundRange": self._background_range, "RebinString": self._rebin_string,
+                "ScaleFactor": self._scale_factor, "FoldMultipleFrames": self._fold_multiple_frames,
+                "GroupingMethod": self._grouping_method, "GroupingWorkspace": self._grouping_workspace,
+                "GroupingString": self._grouping_string, "MapFile": self._grouping_map_file,
+                "UnitX": self._output_x_units, "OutputWorkspaceBaseName": ws_name_base}
+
+        if self._efixed != Property.EMPTY_DBL:
+            args["Efixed"] = self._efixed
+
+        if self._detailed_balance != Property.EMPTY_DBL:
+            args["DetailedBalance"] = self._detailed_balance
+
+        for key, value in args.items():
+            if value is not None:
+                reduction_algorithm.setProperty(key, value)
+
+        reduction_algorithm.execute()
+        return(reduction_algorithm.getProperty('OutputWorkspaceList')).value
 
 
 # Register algorithm with Mantid

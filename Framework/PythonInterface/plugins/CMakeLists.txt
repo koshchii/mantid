@@ -226,6 +226,7 @@ set(PYTHON_PLUGINS
     algorithms/WorkflowAlgorithms/ILL_utilities.py
     algorithms/WorkflowAlgorithms/ISISIndirectDiffractionReduction.py
     algorithms/WorkflowAlgorithms/ISISIndirectEnergyTransfer.py
+    algorithms/WorkflowAlgorithms/ISISIndirectEnergyTransferTwo.py
     algorithms/WorkflowAlgorithms/ISISIndirectEnergyTransferWrapper.py
     algorithms/WorkflowAlgorithms/IndirectAnnulusAbsorption.py
     algorithms/WorkflowAlgorithms/IndirectAnnulusAbsorption2.py
