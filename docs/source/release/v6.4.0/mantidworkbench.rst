@@ -8,6 +8,7 @@ Mantid Workbench Changes
 New and Improved
 ----------------
 - New general setting: `Provide auto-completion suggestions in the script editor` for making auto-completion optional in the script editor
+- Nex option in the instrument viewer to see basic detector data in a tooltip when hovering.
 
 Bugfixes
 --------
