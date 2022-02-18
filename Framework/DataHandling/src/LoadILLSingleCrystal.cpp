@@ -779,37 +779,38 @@ void LoadILLSingleCrystal::exec() {
   }
 
   // set the metadata
-  auto info = std::make_shared<API::ExperimentInfo>();
-  info->mutableRun().addProperty("Filename", m_filename);
-  info->mutableRun().addProperty("Instrument", m_instr_name);
-  info->mutableRun().addProperty("Wavelength", wavelength);
-  info->mutableRun().addProperty("Wavenumber", wavenumber);
-  info->mutableRun().addProperty("Numor", numor);
-  info->mutableRun().addProperty("Monitor", m_monitor_sum);
-  info->mutableRun().addProperty("Sample_a", m_cell[0]);
-  info->mutableRun().addProperty("Sample_b", m_cell[1]);
-  info->mutableRun().addProperty("Sample_c", m_cell[2]);
-  info->mutableRun().addProperty("Sample_alpha", m_cell_angles[0]);
-  info->mutableRun().addProperty("Sample_beta", m_cell_angles[1]);
-  info->mutableRun().addProperty("Sample_gamma", m_cell_angles[2]);
+  auto exp_info = std::make_shared<API::ExperimentInfo>();
+  exp_info->mutableRun().addProperty("Filename", m_filename);
+  exp_info->mutableRun().addProperty("Instrument", m_instr_name);
+  exp_info->mutableRun().addProperty("Wavelength", wavelength);
+  exp_info->mutableRun().addProperty("Wavenumber", wavenumber);
+  exp_info->mutableRun().addProperty("Numor", numor);
+  exp_info->mutableRun().addProperty("Monitor", m_monitor_sum);
+  exp_info->mutableRun().addProperty("Sample_a", m_cell[0]);
+  exp_info->mutableRun().addProperty("Sample_b", m_cell[1]);
+  exp_info->mutableRun().addProperty("Sample_c", m_cell[2]);
+  exp_info->mutableRun().addProperty("Sample_alpha", m_cell_angles[0]);
+  exp_info->mutableRun().addProperty("Sample_beta", m_cell_angles[1]);
+  exp_info->mutableRun().addProperty("Sample_gamma", m_cell_angles[2]);
 
   // set the metadata units
-  info->mutableRun().getProperty("Wavelength")->setUnits("Angstrom");
-  info->mutableRun().getProperty("Wavenumber")->setUnits("1/Angstrom");
-  info->mutableRun().getProperty("Sample_a")->setUnits("Angstrom");
-  info->mutableRun().getProperty("Sample_b")->setUnits("Angstrom");
-  info->mutableRun().getProperty("Sample_c")->setUnits("Angstrom");
-  info->mutableRun().getProperty("Sample_alpha")->setUnits("degree");
-  info->mutableRun().getProperty("Sample_beta")->setUnits("degree");
-  info->mutableRun().getProperty("Sample_gamma")->setUnits("degree");
+  exp_info->mutableRun().getProperty("Wavelength")->setUnits("Angstrom");
+  exp_info->mutableRun().getProperty("Wavenumber")->setUnits("1/Angstrom");
+  exp_info->mutableRun().getProperty("Sample_a")->setUnits("Angstrom");
+  exp_info->mutableRun().getProperty("Sample_b")->setUnits("Angstrom");
+  exp_info->mutableRun().getProperty("Sample_c")->setUnits("Angstrom");
+  exp_info->mutableRun().getProperty("Sample_alpha")->setUnits("degree");
+  exp_info->mutableRun().getProperty("Sample_beta")->setUnits("degree");
+  exp_info->mutableRun().getProperty("Sample_gamma")->setUnits("degree");
 
   // set the loaded instrument infos, needed by PredictPeaks.cpp
   auto instr = workspace_instr->getInstrument();
-  info->setInstrument(instr);
+  const Geometry::DetectorInfo &det_info = workspace_instr->detectorInfo();
+  exp_info->setInstrument(instr);
 
   for (int i = 0; i < m_UB.innerSize(); ++i)
     for (int j = 0; j < m_UB.outerSize(); ++j)
-      info->mutableRun().addProperty("Sample_UB_" + std::to_string(i) + "_" + std::to_string(j), m_UB(i, j));
+      exp_info->mutableRun().addProperty("Sample_UB_" + std::to_string(i) + "_" + std::to_string(j), m_UB(i, j));
 
   Geometry::CrystalStructure crys(
       // unit cell
@@ -819,7 +820,7 @@ void LoadILLSingleCrystal::exec() {
       Geometry::SpaceGroupFactory::Instance().createSpaceGroup("P 1"),
       // dummy scatterer
       Geometry::CompositeBraggScatterer::create(Geometry::IsotropicAtomBraggScattererParser("")()));
-  info->mutableSample().setCrystalStructure(crys);
+  exp_info->mutableSample().setCrystalStructure(crys);
 
   auto lattice = std::make_unique<Geometry::OrientedLattice>(m_cell[0], m_cell[1], m_cell[2], m_cell_angles[0],
                                                              m_cell_angles[1], m_cell_angles[2]);
@@ -828,13 +829,13 @@ void LoadILLSingleCrystal::exec() {
     for (int j = 0; j < 3; ++j)
       UB_cpy[i][j] = static_cast<double>(m_UB(i, j));
   lattice->setUB(UB_cpy);
-  info->mutableSample().setOrientedLattice(std::move(lattice));
+  exp_info->mutableSample().setOrientedLattice(std::move(lattice));
 
-  m_workspace_histo->addExperimentInfo(info);
+  m_workspace_histo->addExperimentInfo(exp_info);
   m_workspace_histo->setTitle(title);
 
   // std::cout << "gonio matrices:\n";
-  // for(const auto& gonio : info->mutableRun().getGoniometerMatrices())
+  // for(const auto& gonio : exp_info->mutableRun().getGoniometerMatrices())
   //  std::cout << gonio << std::endl;
 
   // minimum and maximum Qs
@@ -844,6 +845,8 @@ void LoadILLSingleCrystal::exec() {
 
   // size of one detector image in pixels
   std::int64_t frame_size = m_detector_data_dims[1] * m_detector_data_dims[2];
+  assert(m_det_num_cols == m_detector_data_dims[1]);
+  assert(m_det_num_rows == m_detector_data_dims[2]);
 
   std::vector<t_event> events;
   events.reserve(m_detector_data.size());
@@ -853,13 +856,20 @@ void LoadILLSingleCrystal::exec() {
   API::Progress progress(this, 0., create_event_workspace ? 0.5 : 1.,
                          static_cast<std::size_t>(m_detector_data.size() / frame_size));
   bool cancelled = false;
+  bool det_data_row_major = false; // TODO: check
 
   for (std::size_t idx = 0; idx < m_detector_data.size(); ++idx) {
     // completed all pixels of a frame?
     std::int64_t cur_scan_step = idx / frame_size;
     std::int64_t cur_frame_step = idx % frame_size;
-    std::int64_t cur_y = cur_frame_step / m_detector_data_dims[1];
-    std::int64_t cur_x = cur_frame_step % m_detector_data_dims[1];
+    std::int64_t cur_x, cur_y;
+    if (det_data_row_major) {
+      cur_x = cur_frame_step % m_detector_data_dims[1];
+      cur_y = cur_frame_step / m_detector_data_dims[1];
+    } else {
+      cur_x = cur_frame_step / m_detector_data_dims[2];
+      cur_y = cur_frame_step % m_detector_data_dims[2];
+    }
 
     // save pixels in histogram workspace
     Mantid::signal_t intensity = m_detector_data[idx];
@@ -904,24 +914,31 @@ void LoadILLSingleCrystal::exec() {
       // twotheta += m_det_gamma_offs_deg / t_real(180. * M_PI);
 
       // out-of-plane scattering angle
-      t_real angle_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;
-      angle_oop -= m_det_angular_height * 0.5f;
+      t_real azimuth = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_angular_height;
+      azimuth -= m_det_angular_height * 0.5f;
 
-      t_real pos_oop = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_height;
-      pos_oop -= m_det_height * 0.5f;
+      t_real pos_azimuth = pix_coord[1] / t_real(m_detector_data_dims[1]) * m_det_height;
+      pos_azimuth -= m_det_height * 0.5f;
+
+      /*double twotheta_2 = det_info.twoTheta(cur_frame_step);
+      double azimuth_2 = det_info.azimuthal(cur_frame_step);
+      std::cout << twotheta/M_PI*180. << " " << twotheta_2/M_PI*180. << "  "
+        << azimuth/M_PI*180. << " " << azimuth_2/M_PI*180. << std::endl;
+      twotheta = t_real(twotheta_2);
+      azimuth = t_real(azimuth_2);*/
 
       // convert pixels to Q coordinates and insert events
       t_real ki[3] = {0, 1, 0};
       t_real kf[3] = {0, 1, 0};
       switch (m_det_type) {
       case 0:
-        get_kf_cylindrical_det(pos_oop, twotheta, m_dist_sample_det, kf);
+        get_kf_cylindrical_det(pos_azimuth, twotheta, m_dist_sample_det, kf);
         break;
       case 1:
-        get_kf_spherical_det(angle_oop, twotheta, kf);
+        get_kf_spherical_det(azimuth, twotheta, kf);
         break;
       case 2:
-        get_kf_flat_det(pos_oop, twotheta, m_dist_sample_det, kf);
+        get_kf_flat_det(pos_azimuth, twotheta, m_dist_sample_det, kf);
         break;
       }
 
@@ -1001,7 +1018,7 @@ void LoadILLSingleCrystal::exec() {
       m_workspace_event->setCoordinateSystem(Kernel::QLab);
     m_workspace_event->initialize();
 
-    m_workspace_event->addExperimentInfo(info);
+    m_workspace_event->addExperimentInfo(exp_info);
     m_workspace_event->setTitle(title);
 
     // add all events
