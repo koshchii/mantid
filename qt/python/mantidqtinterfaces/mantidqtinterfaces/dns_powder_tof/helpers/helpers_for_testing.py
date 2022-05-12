@@ -7,6 +7,7 @@
 import numpy as np
 from mantidqtinterfaces.dns_powder_tof.data_structures.object_dict import \
     ObjectDict
+from mantid.simpleapi import BinMD, FakeMDEventData, CreateMDWorkspace
 
 datasetdic = [{
     'file_number': '774714',
@@ -231,7 +232,7 @@ def get_fake_tof_options():
     return tof_opt
 
 
-#OKcomment: not used anywhere
+# OKcomment: not used anywhere
 def get_fake_elastic_sc_options():
     el_opt = {
         'a': 2,
@@ -250,7 +251,7 @@ def get_fake_elastic_sc_options():
     return el_opt
 
 
-#OKcomment: not used anywhere
+# OKcomment: not used anywhere
 def get_fake_tof_errors():  # matches data 1,2 above
     return {
         'channel_widths': [2.0, 1.6],
@@ -260,7 +261,7 @@ def get_fake_tof_errors():  # matches data 1,2 above
     }
 
 
-#OKcomment: not used anywhere
+# OKcomment: not used anywhere
 def get_fake_elastic_datadic():
     return {
         'knso': {
@@ -322,3 +323,17 @@ def get_fake_elastic_sc_dataset():
         'error': np.transpose(
             np.asarray([[14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]))
     }
+
+
+def get_fake_MD_workspace_unique(name='test', factor=1):
+    ws = CreateMDWorkspace(Dimensions='3',
+                           EventType='MDEvent',
+                           Extents='4.7,124.8,-10,120,-1,1',
+                           Names='Scattering Angle,Omega,TOF',
+                           Units='degree,degree,us',
+                           OutputWorkspace='test')
+    FakeMDEventData(ws, UniformParams=str(-1000 * factor))
+    bws = BinMD(InputWorkspace=ws, AlignedDim0='Scattering Angle,4.7,124.8,5',
+                AlignedDim1='Omega,-10,120,5', AlignedDim2='TOF,-1,1,1',
+                OutputWorkspace=name)
+    return bws

@@ -24,6 +24,14 @@ from mantidqtinterfaces.dns_powder_tof.script_generator.\
 from mantidqtinterfaces.dns_powder_tof.xml_dump.xml_dump_widget import \
     DNSXMLDumpWidget
 
+# powder elastic
+from mantidqtinterfaces.dns_powder_elastic.options.elastic_powder_options_widget import \
+    DNSElasticPowderOptionsWidget
+from mantidqtinterfaces.dns_powder_elastic.plot.elastic_powder_plot_widget import \
+    DNSElasticPowderPlotWidget
+from mantidqtinterfaces.dns_powder_elastic.script_generator.elastic_powder_script_generator_widget import \
+    DNSElasticPowderScriptGeneratorWidget
+
 
 class DNSModus:
     """
@@ -40,7 +48,12 @@ class DNSModus:
             'powder_tof': [
                 'paths', 'file_selector', 'tof_powder_options',
                 'tof_powder_script_generator', 'xml_dump', 'plot_tof_powder'
-            ]
+            ],
+            'powder_elastic': [
+                'paths', 'file_selector', 'elastic_powder_options',
+                'elastic_powder_script_generator', 'xml_dump',
+                'plot_elastic_powder'
+            ],
         }
         # Yapf: disable
         self._widget_map = {
@@ -50,6 +63,13 @@ class DNSModus:
             'tof_powder_script_generator': DNSTofPowderScriptGeneratorWidget,
             'xml_dump': DNSXMLDumpWidget,
             'plot_tof_powder': DNSTofPowderPlotWidget,
+
+            # powder elastic
+            'elastic_powder_options': DNSElasticPowderOptionsWidget,
+            'elastic_powder_script_generator':
+                DNSElasticPowderScriptGeneratorWidget,
+            'plot_elastic_powder': DNSElasticPowderPlotWidget,
+
         }
         # Yapf: enable
 
