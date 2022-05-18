@@ -8,7 +8,7 @@
 
 def list_to_range(value_list):
     """
-    Converting a list of filenumbers to a string with a python range command
+    Converting a list of file_numbers to a string with a python range command
     """
     if len(value_list) > 3:
         increment = value_list[1] - value_list[0]
@@ -21,7 +21,7 @@ def list_to_range(value_list):
 
 def list_to_multirange(value_list):
     """
-    Creating a string with python range commands from list of filenumbers
+    Creating a string with python range commands from list of file_numbers
     """
     range_string = ''
     if len(value_list) > 5:

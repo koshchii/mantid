@@ -232,7 +232,7 @@ class DNSTofPowderScriptGeneratorModelTest(unittest.TestCase):
         self.assertEqual(len(testv), 2)
         self.assertEqual(testv[0], '# normalize')
 
-    def test_get_substract_empty_lines(self):
+    def test_get_subtract_empty_lines(self):
         self.model._bg_cor = 0
         testv = self.model._get_subtract_empty_lines()
         self.assertIsInstance(testv, list)
