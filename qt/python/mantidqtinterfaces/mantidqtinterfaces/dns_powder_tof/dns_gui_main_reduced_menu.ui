@@ -53,6 +53,7 @@
      </property>
      <addaction name="actionPowder_TOF"/>
      <addaction name="actionPowder_elastic"/>
+     <addaction name="actionSingle_Crystal_elastic"/>
     </widget>
     <addaction name="menuChange_Mode"/>
    </widget>
@@ -131,6 +132,11 @@
   <action name="actionSC_elastic">
    <property name="text">
     <string>Single crystal elastic</string>
+   </property>
+  </action>
+  <action name="actionSingle_Crystal_elastic">
+   <property name="text">
+    <string>Single Crystal elastic</string>
    </property>
   </action>
  </widget>
