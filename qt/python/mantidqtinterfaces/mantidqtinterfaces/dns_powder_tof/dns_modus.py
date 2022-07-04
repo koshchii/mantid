@@ -40,6 +40,10 @@ from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_widget i
 from mantidqtinterfaces.dns_sc_elastic.script_generator.elastic_sc_script_generator_widget import \
     DNSElasticSCScriptGeneratorWidget
 
+# simulation
+from mantidqtinterfaces.dns_simulation.simulation_widget import \
+    DNSSimulationWidget
+
 
 class DNSModus:
     """
@@ -68,6 +72,7 @@ class DNSModus:
                 'elastic_sc_script_generator', 'xml_dump',
                 'plot_elastic_sc'
             ],
+            'simulation': ['simulation'],
         }
         # Yapf: disable
         self._widget_map = {
@@ -89,6 +94,8 @@ class DNSModus:
             'elastic_sc_script_generator': DNSElasticSCScriptGeneratorWidget,
             'plot_elastic_sc': DNSElasticSCPlotWidget,
 
+            # simulation
+            'simulation': DNSSimulationWidget,
         }
         # Yapf: enable
 
