@@ -54,6 +54,7 @@
      <addaction name="actionPowder_TOF"/>
      <addaction name="actionPowder_elastic"/>
      <addaction name="actionSingle_Crystal_elastic"/>
+     <addaction name="actionSimulation"/>
     </widget>
     <addaction name="menuChange_Mode"/>
    </widget>
@@ -99,11 +100,6 @@
     <string>Simulation</string>
    </property>
   </action>
-  <action name="actionSingle_crystal_elastic">
-   <property name="text">
-    <string>Single Crystal elastic</string>
-   </property>
-  </action>
   <action name="actionPowder_elastic">
    <property name="text">
     <string>Powder elastic</string>
@@ -127,11 +123,6 @@
   <action name="actionDNS_website">
    <property name="text">
     <string>DNS website</string>
-   </property>
-  </action>
-  <action name="actionSC_elastic">
-   <property name="text">
-    <string>Single crystal elastic</string>
    </property>
   </action>
   <action name="actionSingle_Crystal_elastic">
