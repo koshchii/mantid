@@ -75,7 +75,7 @@
      <item row="3" column="0">
       <widget class="QLabel" name="l_sc_sam_start">
        <property name="text">
-        <string>start</string>
+        <string>Start</string>
        </property>
       </widget>
      </item>
@@ -95,21 +95,21 @@
      <item row="1" column="2">
       <widget class="QLabel" name="l_sc_det_end">
        <property name="text">
-        <string>end</string>
+        <string>End</string>
        </property>
       </widget>
      </item>
      <item row="3" column="2">
       <widget class="QLabel" name="l_sc_sam_end">
        <property name="text">
-        <string>end</string>
+        <string>End</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="l_sc_det_start">
        <property name="text">
-        <string>start</string>
+        <string>Start</string>
        </property>
       </widget>
      </item>
@@ -186,7 +186,7 @@
         </font>
        </property>
        <property name="text">
-        <string>Warning: omega offset not set</string>
+        <string>Warning: Omega Offset Not Set</string>
        </property>
       </widget>
      </item>
