@@ -4,23 +4,23 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
+
 from mantidqtinterfaces.dns_simulation.simulation_sub_common_presenter import \
     DNSSimulationSubCommonPresenter
 
 
 class DNSSimulationSubScPresenter(DNSSimulationSubCommonPresenter):
     """
-        Sub Widget to show Table of Relfections for Simulation
+    Sub Widget to show Table of Reflections for Simulation.
     """
-
     def __init__(self, parent=None, view=None, model=None):
         super().__init__(parent, view, model)
         self.view.sig_scplot_clicked.connect(self._sc_plot)
         self.view.sig_mouse_pos_changed.connect(self._set_hkl_pos_on_plot)
-
         self._sub_dict = None
 
     def process_request(self, sub_dict):
@@ -36,9 +36,9 @@ class DNSSimulationSubScPresenter(DNSSimulationSubCommonPresenter):
         q2 = self._sub_dict['hkl2_p_v']
         refls = self._sub_dict['inplane_refls']
         wavelength = self._sub_dict['wavelength']
-        orilat = self._sub_dict['orilat']
+        oriented_lattice = self._sub_dict['oriented_lattice']
 
-        line = self.model.create_dns_surface(orilat, q1, q2, wavelength,
+        line = self.model.create_dns_surface(oriented_lattice, q1, q2, wavelength,
                                              own_dict)
         self.view.start_sc_plot(line)
         self._scatter_plot(refls)
@@ -46,13 +46,13 @@ class DNSSimulationSubScPresenter(DNSSimulationSubCommonPresenter):
             q1, f"[{q2[0]:5.3f}, {q2[1]:5.3f}, {q2[2]:5.3f}]")
 
     def _scatter_plot(self, refls):
-        inten_max_min = self.model.get_min_max_int(refls)
+        intensity_max_min = self.model.get_min_max_int(refls)
         if refls.any():
             self.view.scatter_plot(
                 x=refls[:, 0],
                 y=refls[:, 1],
                 intensity=refls[:, 2],
-                inten_max_min=inten_max_min)
+                intensity_max_min=intensity_max_min)
             self._annotate_refl(refls)
 
     def _annotate_refl(self, refls):

@@ -4,28 +4,30 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
+
 from mantidqtinterfaces.dns_simulation.simulation_sub_common_presenter import \
     DNSSimulationSubCommonPresenter
 
 
 class DNSSimulationSubPowderPresenter(DNSSimulationSubCommonPresenter):
     """
-        Sub Widget to show Table of Relfections for Simulation
+    Sub Widget to show Table of Reflections for Simulation.
     """
 
     def __init__(self, parent=None, view=None, model=None):
         super().__init__(parent, view, model)
-        self.view.sig_powderplot_clicked.connect(self._powderplot)
+        self.view.sig_powder_plot_clicked.connect(self._powder_plot)
         self._sub_dict = None
 
     def process_request(self, sub_dict):
         self._sub_dict = sub_dict
-        self._powderplot()
+        self._powder_plot()
 
-    def _powderplot(self):
+    def _powder_plot(self):
         if self._sub_dict is None:
             return
         refls = self._sub_dict['refls']
@@ -36,9 +38,9 @@ class DNSSimulationSubPowderPresenter(DNSSimulationSubCommonPresenter):
         x, y = self.model.create_powder_profile(refls, start, end, shift)
         annotate_list = self.model.get_annotation_list(refls, start,
                                                        end, shift, y)
-        self.view.start_powderplot(x, y)
+        self.view.start_powder_plot(x, y)
         self._annotate_reflections(annotate_list)
-        self.view.finish_powderplot()
+        self.view.finish_powder_plot()
 
     def _annotate_reflections(self, refl_to_annotate):
         own_dict = self.get_option_dict()

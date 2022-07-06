@@ -4,9 +4,11 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS Simulation widget
+DNS Simulation widget.
 """
+
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_widget import \
     DNSWidget
 from mantidqtinterfaces.dns_simulation.simulation_model import \

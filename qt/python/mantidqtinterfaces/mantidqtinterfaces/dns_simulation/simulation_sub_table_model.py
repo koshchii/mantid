@@ -4,16 +4,16 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
 
 
 class DNSSimulationSubTableModel:
     """
-        Sub Widget to show Table of Relfections for Simulation
+    Sub Widget to show Table of Reflections for Simulation.
     """
-
     def __init__(self, parent):
         # pylint: disable=unused-argument
         super().__init__()

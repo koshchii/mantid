@@ -4,9 +4,11 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
+
 from mantidqt.utils.qt import load_ui
 
 from qtpy import QtCore, QtGui, QtWidgets
@@ -28,9 +30,8 @@ class MyTableWidgetItem(QTableWidgetItem):
 
 class DNSSimulationSubTableView(DNSView):
     """
-        Sub Widget to show Table of Relfections for Simulation
+    Sub Widget to show Table of Reflections for Simulation
     """
-
     def __init__(self, parent):
         super().__init__(parent)
         self._content = load_ui(__file__, 'simulation_table_widget.ui',
