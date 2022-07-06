@@ -4,9 +4,11 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
+
 from mantidqt.utils.qt import load_ui
 
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -22,9 +24,8 @@ from mantidqtinterfaces.dns_powder_tof.data_structures.dns_view import DNSView
 
 class DNSSimulationSubPowderView(DNSView):
     """
-        Sub widget for simulation powder plots
+    Sub widget for simulation powder plots.
     """
-
     def __init__(self, parent):
         super().__init__(parent)
         content = load_ui(__file__, 'simulation_powder_widget.ui',
@@ -37,35 +38,35 @@ class DNSSimulationSubPowderView(DNSView):
             'labels': content.cB_labels,
 
         }
-        powd_layout = content.powd_plot_layout
-        self._powd_static_canvas = FigureCanvas(
+        powder_layout = content.powder_plot_layout
+        self._powder_static_canvas = FigureCanvas(
             Figure(figsize=(5, 3), dpi=200))
-        self._powd_static_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                               QtWidgets.QSizePolicy.Expanding)
-        self._powd_toolbar = NavigationToolbar(self._powd_static_canvas, self)
-        powd_layout.addWidget(self._powd_toolbar)
-        powd_layout.addWidget(self._powd_static_canvas)
+        self._powder_static_canvas.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                                 QtWidgets.QSizePolicy.Expanding)
+        self._powder_toolbar = NavigationToolbar(self._powder_static_canvas, self)
+        powder_layout.addWidget(self._powder_toolbar)
+        powder_layout.addWidget(self._powder_static_canvas)
 
         # Signals
-        self._map['labels'].toggled.connect(self._powderplot_clicked)
-        content.pB_ps.clicked.connect(self._powderplot_clicked)
+        self._map['labels'].toggled.connect(self._powder_plot_clicked)
+        content.pB_ps.clicked.connect(self._powder_plot_clicked)
 
     # custom signals for presenter
-    sig_powderplot_clicked = Signal()
+    sig_powder_plot_clicked = Signal()
 
-    def _powderplot_clicked(self):
-        self.sig_powderplot_clicked.emit()
+    def _powder_plot_clicked(self):
+        self.sig_powder_plot_clicked.emit()
 
     def annotate_reflection(self, label, x, y):
         self._ax.annotate(label, (x, y), fontsize=10)
 
-    def start_powderplot(self, x, y):
-        self._powd_static_canvas.figure.clear()
-        self._ax = self._powd_static_canvas.figure.subplots()
+    def start_powder_plot(self, x, y):
+        self._powder_static_canvas.figure.clear()
+        self._ax = self._powder_static_canvas.figure.subplots()
         self._ax.plot(x, y, zorder=1)
-        self._ax.set_xlabel('2 theta', fontsize=14)
+        self._ax.set_xlabel('2$\\theta$', fontsize=14)
         self._ax.set_ylabel("Intensity (M*F2)", fontsize=14)
 
-    def finish_powderplot(self):
-        self._powd_toolbar.update()
+    def finish_powder_plot(self):
+        self._powder_toolbar.update()
         self._ax.figure.canvas.draw()

@@ -109,7 +109,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QVBoxLayout" name="powd_plot_layout"/>
+    <layout class="QVBoxLayout" name="powder_plot_layout"/>
    </item>
   </layout>
  </widget>

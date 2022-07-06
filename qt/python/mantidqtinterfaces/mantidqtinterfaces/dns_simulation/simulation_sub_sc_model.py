@@ -4,9 +4,11 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
+
 import numpy as np
 
 import mantidqtinterfaces.dns_simulation.simulation_helpers as sim_help
@@ -14,16 +16,15 @@ import mantidqtinterfaces.dns_simulation.simulation_helpers as sim_help
 
 class DNSSimulationSubScModel:
     """
-        Sub Widget to show Table of Relfections for Simulation
+    Sub Widget to show Table of Reflections for Simulation.
     """
-
     def __init__(self, parent):
         # pylint: disable=unused-argument
         super().__init__()
 
     @staticmethod
-    def create_dns_surface(orilat, q1, q2, wavelength, options):
-        return sim_help.return_dns_surface_shape(orilat, q1, q2, wavelength,
+    def create_dns_surface(oriented_lattice, q1, q2, wavelength, options):
+        return sim_help.return_dns_surface_shape(oriented_lattice, q1, q2, wavelength,
                                                  options)
 
     @staticmethod

@@ -5,8 +5,9 @@
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
 """
-DNS Simulation widget
+DNS Simulation widget.
 """
+
 from mantidqtinterfaces.dns_simulation.simulation_sub_table_model import \
     DNSSimulationSubTableModel
 from mantidqtinterfaces.dns_simulation.simulation_sub_table_presenter import \

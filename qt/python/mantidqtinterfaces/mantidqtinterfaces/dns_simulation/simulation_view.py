@@ -4,9 +4,11 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-DNS View for simulation elastic DNS data
+DNS View for simulation elastic DNS data.
 """
+
 from os.path import expanduser
 
 from qtpy.QtCore import Signal
@@ -29,7 +31,7 @@ class MyTableWidgetItem(QTableWidgetItem):
 
 class DNSSimulationView(DNSView):
     """
-        Widget that lets user select DNS data directories
+    Widget that lets user select DNS data directories.
     """
     NAME = "Simulation"
 
@@ -39,22 +41,22 @@ class DNSSimulationView(DNSView):
 
         # input signals
         self._content.pB_load_cif.clicked.connect(self._open_filename_dialog)
-        self._content.pB_clear_cif.clicked.connect(self._clearfilename)
-        self._content.dSB_a.valueChanged.connect(self._unitcellchanged)
-        self._content.dSB_c.valueChanged.connect(self._unitcellchanged)
-        self._content.dSB_b.valueChanged.connect(self._unitcellchanged)
-        self._content.dSB_alpha.valueChanged.connect(self._unitcellchanged)
-        self._content.dSB_beta.valueChanged.connect(self._unitcellchanged)
-        self._content.dSB_gamma.valueChanged.connect(self._unitcellchanged)
-        self._content.lE_Spacegroup.textEdited.connect(self._unitcellchanged)
+        self._content.pB_clear_cif.clicked.connect(self._clear_filename)
+        self._content.dSB_a.valueChanged.connect(self._unit_cell_changed)
+        self._content.dSB_c.valueChanged.connect(self._unit_cell_changed)
+        self._content.dSB_b.valueChanged.connect(self._unit_cell_changed)
+        self._content.dSB_alpha.valueChanged.connect(self._unit_cell_changed)
+        self._content.dSB_beta.valueChanged.connect(self._unit_cell_changed)
+        self._content.dSB_gamma.valueChanged.connect(self._unit_cell_changed)
+        self._content.lE_Spacegroup.textEdited.connect(self._unit_cell_changed)
         self._content.cB_inplane.toggled.connect(self._inplane_unique_switched)
         self._content.cB_unique.toggled.connect(self._inplane_unique_switched)
         self._content.dSB_sample_rot.valueChanged.connect(
-            self._sample_rotchanged)
+            self._sample_rot_changed)
         self._content.lE_hkl1.textEdited.connect(self._clear_d_tooltip)
         self._content.lE_hkl2.textEdited.connect(self._clear_d_tooltip)
         self._content.lE_hkl2_p.textEdited.connect(self._clear_d_tooltip)
-        self._content.cB_fix_omega.toggled.connect(self._fixomegaoffset)
+        self._content.cB_fix_omega.toggled.connect(self._fix_omega_offset)
         self._content.dSB_wavelength.valueChanged.connect(
             self._wavelength_changed)
         self._content.pB.clicked.connect(self._calculate_clicked)
@@ -86,42 +88,48 @@ class DNSSimulationView(DNSView):
 
     # custom signals for presenter
     sig_cif_set = Signal(str)
-    sig_unitcell_changed = Signal()
+    sig_unit_cell_changed = Signal()
     sig_inplane_unique_switched = Signal()
     sig_wavelength_changed = Signal()
     sig_calculate_clicked = Signal()
-    sig_fixomegaoffset = Signal()
+    sig_fix_omega_offset = Signal()
     sig_sample_rot_changed = Signal()
 
     # emitting custom signals for presenter
     def _calculate_clicked(self):
         self.sig_calculate_clicked.emit()
 
-    def _fixomegaoffset(self, checked):
+    def _fix_omega_offset(self, checked):
         self._map['omega_offset'].setEnabled(not checked)
         self._calculate_clicked()
 
     def _inplane_unique_switched(self):
         self.sig_inplane_unique_switched.emit()
 
-    def _unitcellchanged(self):
-        self.sig_unitcell_changed.emit()
+    def _unit_cell_changed(self):
+        self.sig_unit_cell_changed.emit()
 
     def _wavelength_changed(self):
         self.sig_wavelength_changed.emit()
 
     def _clear_d_tooltip(self):
-        """called if hkl changed but no new calculation of d was done"""
+        """
+        Called if hkl changed but no new calculation of d was done.
+        """
         self._map['hkl1'].setToolTip('')
         self._map['hkl2'].setToolTip('')
         self._map['hkl2_p'].setToolTip('')
 
-    def _clearfilename(self):
-        """removes cif filename"""
+    def _clear_filename(self):
+        """
+        Removes cif filename.
+        """
         self._content.lE_cif_filename.setText('')
 
     def _open_filename_dialog(self):
-        """open dialog to select ciffile and calls loadCif()"""
+        """
+        Open dialog to select cif file and calls loadCif().
+        """
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_name = QFileDialog.getOpenFileName(
@@ -138,7 +146,7 @@ class DNSSimulationView(DNSView):
             self._content.lE_cif_filename.setText(file_name)
             self.sig_cif_set.emit(file_name)
 
-    def _sample_rotchanged(self, _value):
+    def _sample_rot_changed(self, _value):
         self.sig_sample_rot_changed.emit()
 
     def set_d_tooltip(self, d_hkl1, d_hkl2, d_hkl2_p):
