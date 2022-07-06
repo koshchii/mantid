@@ -45,19 +45,19 @@
      <attribute name="horizontalHeaderCascadingSectionResizes">
       <bool>false</bool>
      </attribute>
-     <attribute name="horizontalHeaderDefaultSectionSize">
-      <number>120</number>
-     </attribute>
      <attribute name="horizontalHeaderMinimumSectionSize">
       <number>60</number>
+     </attribute>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>200</number>
      </attribute>
      <attribute name="horizontalHeaderStretchLastSection">
       <bool>false</bool>
      </attribute>
-     <attribute name="verticalHeaderDefaultSectionSize">
+     <attribute name="verticalHeaderMinimumSectionSize">
       <number>80</number>
      </attribute>
-     <attribute name="verticalHeaderMinimumSectionSize">
+     <attribute name="verticalHeaderDefaultSectionSize">
       <number>80</number>
      </attribute>
      <column>
@@ -77,17 +77,17 @@
      </column>
      <column>
       <property name="text">
-       <string>q</string>
+       <string>q, Å⁻¹</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>d</string>
+       <string>d, Å</string>
       </property>
      </column>
      <column>
       <property name="text">
-       <string>2theta</string>
+       <string>2θ, deg</string>
       </property>
      </column>
      <column>
@@ -107,7 +107,7 @@
      </column>
      <column>
       <property name="text">
-       <string>det_rot</string>
+       <string>det_rot, deg</string>
       </property>
      </column>
      <column>
@@ -117,7 +117,7 @@
      </column>
      <column>
       <property name="text">
-       <string>sample_rot</string>
+       <string>sample_rot, deg</string>
       </property>
      </column>
     </widget>

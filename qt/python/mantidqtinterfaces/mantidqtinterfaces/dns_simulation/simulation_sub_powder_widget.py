@@ -7,6 +7,7 @@
 """
 DNS Simulation widget
 """
+
 from mantidqtinterfaces.dns_simulation.simulation_sub_powder_presenter import \
     DNSSimulationSubPowderPresenter
 
@@ -20,7 +21,7 @@ from mantidqtinterfaces.dns_simulation.simulation_sub_powder_view import \
 class DNSSimulationSubPowderWidget:
     def __init__(self, parent):
         super().__init__()
-        self.name = "Powder diffraktorgram"
+        self.name = "Powder Diffractogram"
         self.view = DNSSimulationSubPowderView(parent=parent.view)
         self.model = DNSSimulationSubPowderModel(parent=self)
         self.presenter = DNSSimulationSubPowderPresenter(parent=self,

@@ -38,14 +38,14 @@
      <item row="1" column="2">
       <widget class="QLabel" name="l_ps_end">
        <property name="text">
-        <string>end</string>
+        <string>End</string>
        </property>
       </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="l_ps_start">
        <property name="text">
-        <string>start</string>
+        <string>Start</string>
        </property>
       </widget>
      </item>
@@ -89,7 +89,7 @@
      <item row="2" column="0">
       <widget class="QLabel" name="l_ps_shift">
        <property name="text">
-        <string>shift</string>
+        <string>Shift</string>
        </property>
       </widget>
      </item>
@@ -99,7 +99,7 @@
      <item row="2" column="2">
       <widget class="QCheckBox" name="cB_labels">
        <property name="text">
-        <string>labels</string>
+        <string>Labels</string>
        </property>
        <property name="checked">
         <bool>true</bool>

@@ -70,7 +70,7 @@
             <string>P 1</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -91,7 +91,7 @@
          <item row="25" column="0">
           <widget class="QLabel" name="l_omega_offset">
            <property name="text">
-            <string>omega offset</string>
+            <string>Omega Offset</string>
            </property>
           </widget>
          </item>
@@ -126,7 +126,7 @@
          <item row="3" column="1">
           <widget class="QDoubleSpinBox" name="dSB_wavelength">
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
             <double>0.010000000000000</double>
@@ -155,14 +155,14 @@
             </font>
            </property>
            <property name="text">
-            <string>Vectors in scattering plane</string>
+            <string>Vectors in Scattering Plane</string>
            </property>
           </widget>
          </item>
          <item row="25" column="1">
           <widget class="QDoubleSpinBox" name="dSB_omega_offset">
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
             <double>-720.000000000000000</double>
@@ -175,7 +175,7 @@
          <item row="16" column="1">
           <widget class="QLineEdit" name="lE_hkl2_p">
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="readOnly">
             <bool>true</bool>
@@ -185,7 +185,7 @@
          <item row="21" column="1">
           <widget class="QDoubleSpinBox" name="dSB_det_rot">
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
             <double>-30.000000000000000</double>
@@ -201,7 +201,7 @@
          <item row="18" column="0">
           <widget class="QCheckBox" name="cB_unique">
            <property name="text">
-            <string>show only unique</string>
+            <string>Show Only Unique</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -211,21 +211,21 @@
          <item row="0" column="1">
           <widget class="QPushButton" name="pB_load_cif">
            <property name="text">
-            <string>load cif</string>
+            <string>Load CIF</string>
            </property>
           </widget>
          </item>
          <item row="2" column="1">
           <widget class="QPushButton" name="pB_clear_cif">
            <property name="text">
-            <string>clear cif</string>
+            <string>Clear CIF</string>
            </property>
           </widget>
          </item>
          <item row="24" column="0" colspan="2">
           <widget class="QCheckBox" name="cB_fix_omega">
            <property name="text">
-            <string>fix omega offset</string>
+            <string>Fix Omega Offset</string>
            </property>
           </widget>
          </item>
@@ -266,12 +266,15 @@
          <item row="3" column="0">
           <widget class="QLabel" name="l_wavelength">
            <property name="text">
-            <string>Wavelength</string>
+            <string>Wavelength, Å</string>
            </property>
           </widget>
          </item>
          <item row="5" column="1">
           <widget class="QDoubleSpinBox" name="dSB_a">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
            <property name="minimum">
             <double>0.010000000000000</double>
            </property>
@@ -292,12 +295,15 @@
             <string/>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="6" column="1">
           <widget class="QDoubleSpinBox" name="dSB_b">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
            <property name="minimum">
             <double>0.010000000000000</double>
            </property>
@@ -311,6 +317,9 @@
          </item>
          <item row="7" column="1">
           <widget class="QDoubleSpinBox" name="dSB_c">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
            <property name="minimum">
             <double>0.010000000000000</double>
            </property>
@@ -325,7 +334,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="l_ki">
            <property name="text">
-            <string>k_i</string>
+            <string>k_i, Å⁻¹ </string>
            </property>
           </widget>
          </item>
@@ -335,7 +344,7 @@
             <string>1,1,1</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -349,7 +358,7 @@
          <item row="17" column="0" colspan="2">
           <widget class="QCheckBox" name="cB_inplane">
            <property name="text">
-            <string>show only inplane</string>
+            <string>Show Only Inplane</string>
            </property>
            <property name="checked">
             <bool>true</bool>
@@ -362,7 +371,7 @@
             <string>1,1,0</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -376,7 +385,7 @@
          <item row="23" column="1">
           <widget class="QDoubleSpinBox" name="dSB_sample_rot">
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="minimum">
             <double>-360.000000000000000</double>
@@ -388,6 +397,9 @@
          </item>
          <item row="10" column="1">
           <widget class="QDoubleSpinBox" name="dSB_gamma">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
            <property name="maximum">
             <double>360.000000000000000</double>
            </property>
@@ -398,6 +410,9 @@
          </item>
          <item row="8" column="1">
           <widget class="QDoubleSpinBox" name="dSB_alpha">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
            <property name="maximum">
             <double>360.000000000000000</double>
            </property>
@@ -408,6 +423,9 @@
          </item>
          <item row="9" column="1">
           <widget class="QDoubleSpinBox" name="dSB_beta">
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+           </property>
            <property name="maximum">
             <double>360.000000000000000</double>
            </property>
@@ -419,7 +437,7 @@
          <item row="22" column="1">
           <widget class="QSpinBox" name="SB_det_number">
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <property name="maximum">
             <number>23</number>
