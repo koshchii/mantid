@@ -32,7 +32,7 @@ class DNSSimulationSubPowderPresenterTest(unittest.TestCase):
     def setUpClass(cls):
         cls.parent = mock.Mock()
         cls.view = mock.create_autospec(DNSSimulationSubPowderView)
-        cls.view.sig_powderplot_clicked.connect = mock.Mock()
+        cls.view.sig_powder_plot_clicked.connect = mock.Mock()
 
         cls.model = mock.create_autospec(DNSSimulationSubPowderModel)
         cls.presenter = DNSSimulationSubPowderPresenter(parent=cls.parent,
@@ -50,7 +50,7 @@ class DNSSimulationSubPowderPresenterTest(unittest.TestCase):
         self.assertTrue(hasattr(self.presenter, '_sub_dict'))
 
     @patch('mantidqtinterfaces.dns_simulation.simulation_sub_powder_presenter.'
-           'DNSSimulationSubPowderPresenter._powderplot')
+           'DNSSimulationSubPowderPresenter._powder_plot')
     def test_process_request(self, mock_powderplot):
         self.presenter.process_request({})
         self.assertEqual(self.presenter._sub_dict, {})
@@ -64,16 +64,16 @@ class DNSSimulationSubPowderPresenterTest(unittest.TestCase):
                                             'shift': 1}
         self.model.create_powder_profile.return_value = 4, 5
         self.presenter._sub_dict = None
-        self.presenter._powderplot()
+        self.presenter._powder_plot()
         self.model.create_powder_profile.assert_not_called()
         self.presenter._sub_dict = {'refls': []}
-        self.presenter._powderplot()
+        self.presenter._powder_plot()
         self.model.create_powder_profile.assert_called_once_with([], 0, 3, 1)
         self.model.get_annotation_list.assert_called_once_with([], 0, 3, 1, 5)
-        self.view.start_powderplot.assert_called_once_with(4, 5)
+        self.view.start_powder_plot.assert_called_once_with(4, 5)
         mock_anno.assert_called_once_with(
             self.model.get_annotation_list.return_value)
-        self.view.finish_powderplot.assert_called_once()
+        self.view.finish_powder_plot.assert_called_once()
 
     def test__annotate_reflections(self):
         self.view.get_state.return_value = {'labels': False}
