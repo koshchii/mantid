@@ -44,7 +44,7 @@ class DNSSimulationSubTablePresenterTest(unittest.TestCase):
         self.assertTrue(hasattr(self.presenter, '_sub_dict'))
 
     @patch('mantidqtinterfaces.dns_simulation.simulation_sub_table_presenter.'
-           'DNSSimulationSubTablePresenter._writetable')
+           'DNSSimulationSubTablePresenter._write_table')
     def test_process_request(self, mock_wt):
         sub_dict = {'filtered_refls': [],
                     'tth_limit': [1, 2]}
@@ -52,9 +52,9 @@ class DNSSimulationSubTablePresenterTest(unittest.TestCase):
         mock_wt.assert_called_once_with([], [1, 2])
 
     def test__tableitemdclicked(self):
-        self.presenter._tableitemdclicked(-5, 10)
+        self.presenter._table_item_double_clicked(-5, 10)
         parent_presenter = self.parent.parent.presenter
-        backcall = parent_presenter.back_call_from_tableitem_clicked
+        backcall = parent_presenter.back_call_from_table_item_clicked
         backcall.assert_called_once_with(-5, 10)
 
     @patch('mantidqtinterfaces.dns_simulation.simulation_sub_table_presenter.'
@@ -75,7 +75,7 @@ class DNSSimulationSubTablePresenterTest(unittest.TestCase):
         refl.det_rot = 11
         refl.channel = 12
         refl.sample_rot = 13
-        self.presenter._writetable([refl], 5)
+        self.presenter._write_table([refl], 5)
         self.view.start_table.assert_called_once_with(1, 12)
         testcalls = [call(' 1 '), call(' 2 '), call(' 3 '), call(' 4.00 '),
                      call(' 5.00 '), call(' 6.00 '), call(' 8 '), call(' 9 '),

@@ -25,7 +25,7 @@ class DNSSimulationModelTest(unittest.TestCase):
         self.assertIsInstance(self.model, DNSSimulationModel)
         self.assertIsInstance(self.model, DNSObsModel)
         self.assertTrue(hasattr(self.model, '_sim_ws'))
-        self.assertTrue(hasattr(self.model, '_orilat'))
+        self.assertTrue(hasattr(self.model, '_oriented_lattice'))
         self.assertTrue(hasattr(self.model, '_refls'))
         self.assertTrue(hasattr(self.model, '_generator'))
         self.assertTrue(hasattr(self.model, '_cryst'))
@@ -80,7 +80,7 @@ class DNSSimulationModelTest(unittest.TestCase):
     @patch('mantidqtinterfaces.dns_simulation.simulation_model.'
            'OrientedLattice')
     def test__set_lattice(self, mock_ori, mock_v3d):
-        self.model._orilat = mock_ori
+        self.model._oriented_lattice = mock_ori
         self.model._non_rot_lat = mock_ori
         mock_v3d.return_value = 1
         self.model._set_lattice([1, 2, 3], [4, 5, 6])
@@ -136,7 +136,7 @@ class DNSSimulationModelTest(unittest.TestCase):
     @patch('mantidqtinterfaces.dns_simulation.simulation_model.'
            'sim_help.rotate_ub')
     def test_get_ub(self, mock_rotate, mock_ori):
-        self.model._orilat = mock_ori
+        self.model._oriented_lattice = mock_ori
         testv = self.model._get_ub(False, 100)
         self.assertEqual(testv, mock_ori.getUB.return_value)
         mock_ori.getUB.assert_called_once()
@@ -162,13 +162,13 @@ class DNSSimulationModelTest(unittest.TestCase):
                    'alpha': 90,
                    'beta': 90,
                    'gamma': 120,
-                   'cifset': False,
+                   'cif_set': False,
                    }
         testv = self.model.get_refls_and_set_orientation(options)
         self.assertEqual(len(testv), 29)
         first_dict = {'hkl': sim_help.list_to_v3d([1, 0, 4]), 'unique': True,
                       'q': 2.7253974323168175, 'fs': 1, 'd': 2.30541983810352,
-                      'tth': 120.34364613905412, 'fs_lc': 1, 'h': 1.0,
+                      'two_theta': 120.34364613905412, 'fs_lc': 1, 'h': 1.0,
                       'k': 0.0, 'l': 4.0,
                       'equivalents': [sim_help.list_to_v3d([1, 0, 4]),
                                       sim_help.list_to_v3d([1, -1, -4]),
@@ -194,8 +194,8 @@ class DNSSimulationModelTest(unittest.TestCase):
         self.assertEqual(testv, mock_cws.return_value)
 
     def test_get_orilat(self):
-        self.model._orilat = 1
-        testv = self.model.get_orilat()
+        self.model._oriented_lattice = 1
+        testv = self.model.get_oriented_lattice()
         self.assertEqual(testv, 1)
 
     @patch('mantidqtinterfaces.dns_simulation.simulation_model.'
@@ -215,7 +215,7 @@ class DNSSimulationModelTest(unittest.TestCase):
         mock_uc.assert_called_once()
         self.assertEqual(mock_orilat.call_count, 2)
         mock_orilat.assert_called_with(mock_uc.return_value)
-        self.assertIsNotNone(self.model._orilat)
+        self.assertIsNotNone(self.model._oriented_lattice)
         self.assertIsNotNone(self.model._non_rot_lat)
         self.assertIsInstance(testv, dict)
         self.assertEqual(
@@ -236,7 +236,7 @@ class DNSSimulationModelTest(unittest.TestCase):
     @patch('mantidqtinterfaces.dns_simulation.simulation_model.'
            'sim_help.return_qx_qx_inplane_refl')
     def test_return_reflections_in_map(self, mock_return_q):
-        self.model._orilat = 1
+        self.model._oriented_lattice = 1
         testv = self.model.return_reflections_in_map([1, 2, 3], [4, 5, 6], [])
         mock_return_q.assert_called_once_with(1, [1, 2, 3], [4, 5, 6], [])
         self.assertEqual(testv, mock_return_q.return_value)
@@ -292,19 +292,19 @@ class DNSSimulationModelTest(unittest.TestCase):
                    'alpha': 90,
                    'beta': 90,
                    'gamma': 120,
-                   'cifset': True,
+                   'cif_set': True,
                    'cif_filename': ''}
-        self.model._setcellfromparameters(options)
+        self.model._set_cell_from_parameters(options)
         mock_orilat.assert_not_called()
-        options['cifset'] = False
-        self.model._setcellfromparameters(options)
+        options['cif_set'] = False
+        self.model._set_cell_from_parameters(options)
         mock_uc.assert_called_once_with(1, 2, 3, 90, 90, 120, Unit=0)
         self.assertEqual(mock_orilat.call_count, 2)
         mock_orilat.assert_called_with(mock_uc.return_value)
         mock_cs.assert_called_once_with(mock_cellstr.return_value,
                                         mock_hm.return_value,
                                         "Si 0 0 1 1.0 0.01")
-        self.assertEqual(self.model._orilat, mock_orilat.return_value)
+        self.assertEqual(self.model._oriented_lattice, mock_orilat.return_value)
         self.assertEqual(self.model._non_rot_lat, mock_orilat.return_value)
         self.assertEqual(self.model._cryst, mock_cs.return_value)
 

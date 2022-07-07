@@ -32,7 +32,7 @@ class DNSSimulationPresenterTest(unittest.TestCase):
         cls.view = mock.create_autospec(DNSSimulationView)
         cls.model = mock.create_autospec(DNSSimulationModel)
         cls.view.sig_cif_set.connect = mock.Mock()
-        cls.view.sig_unitcell_changed.connect = mock.Mock()
+        cls.view.sig_unit_cell_changed.connect = mock.Mock()
         cls.view.sig_wavelength_changed.connect = mock.Mock()
         cls.view.sig_calculate_clicked.connect = mock.Mock()
         cls.view.sig_sample_rot_changed.connect = mock.Mock()
@@ -68,17 +68,17 @@ class DNSSimulationPresenterTest(unittest.TestCase):
     def test__get_sub_dict(self):
         self.presenter._refls = None
         self.model.return_reflections_in_map.return_value = [2]
-        self.model.get_orilat.return_value = 3
+        self.model.get_oriented_lattice.return_value = 3
         self.model.filter_refls.return_value = [1]
         self.parent.presenter.own_dict = {'inplane': True, 'unique': False}
         testv = self.presenter._get_sub_dict()
         self.model.return_reflections_in_map.assert_called_once_with(
             [1, 0, 0], [0, 1, 0], None)
-        self.model.get_orilat.assert_called_once()
+        self.model.get_oriented_lattice.assert_called_once()
         self.model.filter_refls.assert_called_once()
         subdict = {'filtered_refls': [1], 'tth_limit': 5, 'refls': None,
                    'hkl1_v': [1, 0, 0], 'hkl2_p_v': [0, 1, 0],
-                   'inplane_refls': [2], 'wavelength': 4, 'orilat': 3,
+                   'inplane_refls': [2], 'wavelength': 4, 'oriented_lattice': 3,
                    'oof_set': True}
         self.assertEqual(testv, subdict)
 
@@ -92,10 +92,10 @@ class DNSSimulationPresenterTest(unittest.TestCase):
 
     def test_back_call_from_tableitem_clicked(self):
         self.view.get_state.return_value['fix_omega'] = True
-        self.presenter.back_call_from_tableitem_clicked(-6, 25)
+        self.presenter.back_call_from_table_item_clicked(-6, 25)
         self.model.get_oof_from_ident.assert_not_called()
         self.view.get_state.return_value['fix_omega'] = False
-        self.presenter.back_call_from_tableitem_clicked(-6, 25)
+        self.presenter.back_call_from_table_item_clicked(-6, 25)
         self.model.get_oof_from_ident.assert_called_once_with(
             -6, 25, 20, -5)
         self.view.set_omega_offset.assert_called_once_with(
@@ -153,7 +153,7 @@ class DNSSimulationPresenterTest(unittest.TestCase):
         self.presenter._cif_set('123.cif')
         self.model.load_cif.assert_called_once_with('123.cif')
         self.view.set_state.assert_called_once_with({})
-        self.assertEqual(self.presenter.own_dict['cifset'], True)
+        self.assertEqual(self.presenter.own_dict['cif_set'], True)
 
     def test__d_tooltip(self):
         self.model.get_ds.return_value = 1, 2, 3
@@ -179,9 +179,9 @@ class DNSSimulationPresenterTest(unittest.TestCase):
         self.view.set_spacegroup.assert_called_once_with(114)
 
     def test_unitcell_changed(self):
-        self.presenter.own_dict['cifset'] = True
-        self.presenter._unitcell_changed()
-        self.assertFalse(self.presenter.own_dict['cifset'])
+        self.presenter.own_dict['cif_set'] = True
+        self.presenter._unit_cell_changed()
+        self.assertFalse(self.presenter.own_dict['cif_set'])
 
     def test_get_option_dict(self):
         testv = self.presenter.get_option_dict()

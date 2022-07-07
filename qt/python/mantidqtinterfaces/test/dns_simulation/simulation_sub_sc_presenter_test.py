@@ -71,7 +71,7 @@ class DNSSimulationSubScPresenterTest(unittest.TestCase):
                                     'hkl2_p_v': [0, 1, 0],
                                     'inplane_refls': [1],
                                     'wavelength': 4,
-                                    'orilat': 3}
+                                    'oriented_lattice': 3}
         self.presenter._sc_plot()
         self.model.create_dns_surface.assert_called_once_with(
             3, [1, 0, 0], [0, 1, 0], 4, {})
@@ -90,7 +90,7 @@ class DNSSimulationSubScPresenterTest(unittest.TestCase):
         self.presenter._scatter_plot(refls)
         self.model.get_min_max_int.assert_called_with(refls)
         self.view.scatter_plot.assert_called_once_with(
-            x=1, y=2, intensity=3, inten_max_min=[1, 2])
+            x=1, y=2, intensity=3, intensity_max_min=[1, 2])
 
     def test_annotate_refl(self):
         refls = np.asarray([[1, 2, 3, 4, 5, 6]])
