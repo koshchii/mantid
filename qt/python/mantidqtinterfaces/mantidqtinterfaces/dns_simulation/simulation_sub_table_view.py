@@ -52,6 +52,8 @@ class DNSSimulationSubTableView(DNSView):
                                               item.column() - 2).text())
 
     def _tableitemdclicked(self, item):
+        if item.column() != 11:
+            return
         dr = self._get_det_rot(item)
         sr = float(item.text())
         self.sig_table_item_clicked.emit(dr, sr)
