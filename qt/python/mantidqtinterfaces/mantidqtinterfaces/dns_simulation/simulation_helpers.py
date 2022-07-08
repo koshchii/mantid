@@ -97,7 +97,7 @@ def max_q(wavelength):
     Return maximum q at DNS for PA detector.
     """
     max_two_theta = 135.5
-    maximum_q = 2.0 * sin(radians(max_two_theta/ 2.0)) / wavelength
+    maximum_q = 4.0 * pi * sin(radians(max_two_theta/ 2.0)) / wavelength
     return maximum_q
 
 

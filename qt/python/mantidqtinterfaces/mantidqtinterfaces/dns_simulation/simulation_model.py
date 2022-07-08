@@ -77,8 +77,8 @@ class DNSSimulationModel(DNSObsModel):
         ref_filter = self._get_refl_filter(cif_filename)
         maximum_q = sim_help.max_q(wavelength)
         hkls_unique = self._generator.getUniqueHKLsUsingFilter(
-            1.0 / maximum_q, 100, ref_filter)
-        hkls = self._generator.getHKLsUsingFilter(1.0 / maximum_q, 100, ref_filter)
+            2.0 * np.pi / maximum_q, 100, ref_filter)
+        hkls = self._generator.getHKLsUsingFilter(2.0 * np.pi / maximum_q, 100, ref_filter)
         return [hkls, hkls_unique]
 
     def _get_q_d_val(self, hkls):
