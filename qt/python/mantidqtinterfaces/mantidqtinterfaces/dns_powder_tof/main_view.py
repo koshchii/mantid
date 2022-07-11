@@ -100,7 +100,7 @@ class DNSReductionGUIView(QMainWindow):
         self._clear_tabs()
 
     def get_view_for_tab_index(self, tab_index):
-        if tab_index <= len(self.subviews):
+        if self.subviews and tab_index <= len(self.subviews):
             return self.subviews[tab_index]
         return None
 

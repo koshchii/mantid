@@ -65,3 +65,7 @@ class DNSPathPresenter(DNSObserver):
                 self.view.set_data_path(dir_name)
             else:
                 self.view.set_path(sender + '_dir', dir_name)
+
+    def process_commandline_request(self, command_dict):
+        path = command_dict['files'][0]['path']
+        self.view.set_data_path(path)

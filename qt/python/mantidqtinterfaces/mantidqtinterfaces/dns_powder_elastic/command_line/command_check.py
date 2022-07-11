@@ -1,12 +1,14 @@
 import os
 
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_file import DNSFile
-from mantidqtinterfaces.dns_powder_tof.data_structures.object_dict import ObjectDict
+from mantidqtinterfaces.dns_powder_tof.data_structures.object_dict import \
+    ObjectDict
 
 
 class CommandLineReader(ObjectDict):
     """allows running data reduction with command line arguments
        accepts the same syntax as dnsplot"""
+
     def __init__(self):
         super().__init__()
         self.files = []
@@ -38,7 +40,7 @@ class CommandLineReader(ObjectDict):
             elif (command[1:] in ['nx', 'ny', 'cz'] and len(cla) >= index + 1):
                 self[command[1:]] = cla[index + 1]
             elif command[1:] in [
-                    'fr', 'v', 'b', 'powder', 'sep-nonmag', 'xyz', 'tof'
+                'fr', 'v', 'b', 'powder', 'sep-nonmag', 'xyz', 'tof'
             ]:
                 self[command[1:]] = True
         self['omega_offset'] = self['omega_offset'] = self.files[0].get(
@@ -49,6 +51,15 @@ class CommandLineReader(ObjectDict):
         self['flipping_ratio'] = self.pop('fr', False)
         self['separation_xyz'] = self.pop('xyz', False)
         self['separation_coh_inc'] = self.pop('sep-nonmag', False)
+        # for testing
+        if self['files'][0]['path'] == 'C:\\mantid_tof_olek\\mantid\\qt\\' \
+                                       'python\\mantidqtinterfaces\\' \
+                                       'mantidqtinterfaces':
+            if self.get('powder', False):
+                self['files'][0]['path'] = 'C://data//elastic_powder_testdata'
+            else:
+                self['files'][0]['path'] = 'C://data//mantid_test_hao'
+        return self
 
     def _parse_old_filenumbers(self, ffnmb, prefix, postfix, path):
         first_filen = prefix + ffnmb + postfix

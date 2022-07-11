@@ -9,13 +9,15 @@
 Common Presenter for DNS Script generators.
 """
 
-from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer import DNSObserver
+from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer import \
+    DNSObserver
 
 
 class DNSScriptGeneratorPresenter(DNSObserver):
     """
     Common Presenter for DNS Script generators.
     """
+
     def __init__(self, name=None, parent=None, view=None, model=None):
         super().__init__(parent=parent, name=name, view=view, model=model)
         # connect statements
@@ -106,3 +108,6 @@ class DNSScriptGeneratorPresenter(DNSObserver):
         else:
             self.raise_error('No script filepath set, script will not be '
                              'saved.')
+
+    def process_commandline_request(self, command_dict):
+        self._generate_script()

@@ -49,7 +49,7 @@ class DNSObserver():
         """
         Sets the view from the own parameter dictionary.
         """
-        self.view.set_state(self.own_dict) # own dict not from abo
+        self.view.set_state(self.own_dict)  # own dict not from abo
 
     def get_option_dict(self):
         """
@@ -77,3 +77,6 @@ class DNSObserver():
         """
         Run when the modus of the gui changes.
         """
+
+    def process_commandline_request(self, command_dict):
+        """run to process commandline reduction"""
