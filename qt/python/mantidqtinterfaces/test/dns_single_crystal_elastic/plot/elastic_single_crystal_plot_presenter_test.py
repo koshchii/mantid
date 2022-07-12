@@ -13,7 +13,7 @@ from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer \
     import DNSObserver
 from mantidqtinterfaces.dns_powder_tof.data_structures.object_dict \
     import ObjectDict
-from mantidqtinterfaces.dns_single_crystal_elastic.plot.\
+from mantidqtinterfaces.dns_single_crystal_elastic.plot. \
     elastic_single_crystal_plot_presenter import DNSElasticSCPlotPresenter
 from mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_view \
     import DNSElasticSCPlotView
@@ -21,7 +21,7 @@ from mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_p
     import DNSElasticSCPlotModel
 from mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_plot \
     import DNSScPlot
-from mantidqtinterfaces.dns_single_crystal_elastic.plot.\
+from mantidqtinterfaces.dns_single_crystal_elastic.plot. \
     elastic_single_crystal_plot_datalist import DNSDatalist
 
 
