@@ -13,7 +13,7 @@ from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer \
     import DNSObserver
 from mantidqtinterfaces.dns_powder_tof.data_structures.object_dict \
     import ObjectDict
-from mantidqtinterfaces.dns_sc_elastic.plot.\
+from mantidqtinterfaces.dns_sc_elastic.plot. \
     elastic_single_crystal_plot_presenter import DNSElasticSCPlotPresenter
 from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_view \
     import DNSElasticSCPlotView
@@ -21,7 +21,7 @@ from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_model \
     import DNSElasticSCPlotModel
 from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_plot \
     import DNSScPlot
-from mantidqtinterfaces.dns_sc_elastic.plot.\
+from mantidqtinterfaces.dns_sc_elastic.plot. \
     elastic_single_crystal_plot_datalist import DNSDatalist
 
 
@@ -580,3 +580,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         mock_get_current_xy_lim.assert_called_once_with(False)
         mock_get_current_z_lim.assert_called_once_with(1, 2, False)
         self.assertEqual(testv, (1, 2, 3, True))
+
+
+if __name__ == '__main__':
+    unittest.main()
