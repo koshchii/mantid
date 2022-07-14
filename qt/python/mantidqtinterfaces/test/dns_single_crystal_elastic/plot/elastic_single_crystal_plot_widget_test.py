@@ -11,14 +11,14 @@ from mantidqt.gui_helper import get_qapplication
 
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_widget import \
     DNSWidget
-from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_model \
+from mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_model \
     import \
     DNSElasticSCPlotModel
-from mantidqtinterfaces.dns_sc_elastic.plot. \
+from mantidqtinterfaces.dns_single_crystal_elastic.plot. \
     elastic_single_crystal_plot_presenter import DNSElasticSCPlotPresenter
-from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_view \
+from mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_view \
     import DNSElasticSCPlotView
-from mantidqtinterfaces.dns_sc_elastic. \
+from mantidqtinterfaces.dns_single_crystal_elastic. \
     plot.elastic_single_crystal_plot_widget import DNSElasticSCPlotWidget
 
 app, within_mantid = get_qapplication()
@@ -29,7 +29,7 @@ class DNSElasticSCPlotWidgetTest(unittest.TestCase):
     def setUpClass(cls):
         parent = mock.Mock()
         parent.view = None
-        cls.widget = DNSElasticSCPlotWidget('elastic_sc_plot', parent)
+        cls.widget = DNSElasticSCPlotWidget('elastic_single_crystal_plot', parent)
 
     def test___init__(self):
         self.assertIsInstance(self.widget, DNSElasticSCPlotWidget)

@@ -7,7 +7,7 @@
 
 import unittest
 
-from mantidqtinterfaces.dns_sc_elastic.helpers.converters import \
+from mantidqtinterfaces.dns_single_crystal_elastic.helpers.converters import \
     d_spacing_from_lattice
 
 
