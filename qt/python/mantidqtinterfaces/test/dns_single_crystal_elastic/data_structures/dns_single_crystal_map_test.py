@@ -8,14 +8,14 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 import numpy as np
-from mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map import \
+from mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map import \
     DNSScMap
 from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import \
-    get_fake_elastic_sc_dataset, \
-    get_fake_elastic_sc_options
+    get_fake_elastic_single_crystal_dataset, \
+    get_fake_elastic_single_crystal_options
 from mantidqtinterfaces.dns_powder_tof.data_structures.object_dict \
     import ObjectDict
-from mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map \
+from mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map \
     import (_get_mesh,
             _is_rectangular_mesh,
             _correct_rect_grid,
@@ -31,8 +31,8 @@ class DNSScMapTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        data_array = get_fake_elastic_sc_dataset()
-        options = get_fake_elastic_sc_options()
+        data_array = get_fake_elastic_single_crystal_dataset()
+        options = get_fake_elastic_single_crystal_options()
         ttheta = data_array['ttheta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
@@ -101,7 +101,7 @@ class DNSScMapTest(unittest.TestCase):
                 [[14.0, 17.0], [15.0, 18.0], [16.0, 19.0]])).all())
 
     def test__get_mesh(self):
-        data_array = get_fake_elastic_sc_dataset()
+        data_array = get_fake_elastic_single_crystal_dataset()
         ttheta = data_array['ttheta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
@@ -112,7 +112,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertTrue((testv[2] == np.array([8, 9, 12, 10, 13])).all())
 
     def test__is_rectangular_mesh(self):
-        data_array = get_fake_elastic_sc_dataset()
+        data_array = get_fake_elastic_single_crystal_dataset()
         ttheta = data_array['ttheta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
@@ -123,7 +123,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertFalse(testv)
 
     def test__correct_rect_grid(self):
-        data_array = get_fake_elastic_sc_dataset()
+        data_array = get_fake_elastic_single_crystal_dataset()
         ttheta = data_array['ttheta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
@@ -143,7 +143,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertFalse(testv[3])
 
     def test__correct_omegaoffset(self):
-        data_array = get_fake_elastic_sc_dataset()
+        data_array = get_fake_elastic_single_crystal_dataset()
         omega = data_array['omega']
         testv = _correct_omegaoffset(omega, 3)
         self.assertEqual(testv[0], 1)
@@ -154,7 +154,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertTrue((testv[0] == [1, 2]).all())
         self.assertTrue((testv[1] == [3]).all())
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'angle_to_q')
     def test__get_q_mesh(self, mock_angle):
         testv = _get_q_mesh(1, 2, 3)
@@ -204,11 +204,11 @@ class DNSScMapTest(unittest.TestCase):
         self.assertTrue(testv[1].shape == (6, 7))
         self.assertTrue(np.allclose(testv[1], car[:, 0:7]))
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'file_helper.create_dir_from_filename')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'DNSScMap.create_np_array')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'np.savetxt')
     def test_save_ascii(self, mock_save, mock_create_array, mock_cdir):
         header = ' 2theta, omega, qx,      qy ,      hklx,' \
@@ -238,7 +238,7 @@ class DNSScMapTest(unittest.TestCase):
             header=header[0:-16]
         )
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_sc_map.'
            'scipy')
     def test__get_z_mesh_interp(self, mock_scipy):
         self.map.omega_intp = 3

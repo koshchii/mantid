@@ -12,7 +12,7 @@ from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer \
     import DNSObserver
 from mantidqtinterfaces.dns_powder_tof.options.common_options_presenter \
     import DNSCommonOptionsPresenter
-from mantidqtinterfaces.dns_sc_elastic.options.elastic_sc_options_presenter \
+from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_presenter \
     import DNSElasticSCOptionsPresenter
 
 
@@ -45,7 +45,7 @@ class DNSElasticSCOptionsPresenterTest(unittest.TestCase):
             view=cls.view,
             model=cls.model,
             parent=cls.parent,
-            name='elastic_sc_options')
+            name='elastic_single_crystal_options')
 
     def test___init__(self):
         self.assertIsInstance(self.presenter, DNSElasticSCOptionsPresenter)
@@ -54,8 +54,8 @@ class DNSElasticSCOptionsPresenterTest(unittest.TestCase):
         self.view.sig_get_wavelength.connect.assert_called_once_with(
             self.presenter._determine_wavelength)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.'
-           'options.elastic_sc_options_presenter.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.'
+           'options.elastic_single_crystal_options_presenter.'
            'DNSElasticSCOptionsPresenter._determine_wavelength')
     def test_process_request(self, mock_wavel):
         self.view.get_state.return_value = {
