@@ -18,7 +18,7 @@ from mantidqtinterfaces.dns_powder_tof.options.tof_powder_options_widget import 
 from mantidqtinterfaces.dns_powder_tof.paths.path_widget import DNSPathWidget
 from mantidqtinterfaces.dns_powder_tof.plot.tof_powder_plot_widget import \
     DNSTofPowderPlotWidget
-from mantidqtinterfaces.dns_powder_tof.script_generator.\
+from mantidqtinterfaces.dns_powder_tof.script_generator. \
     tof_powder_script_generator_widget import \
     DNSTofPowderScriptGeneratorWidget
 from mantidqtinterfaces.dns_powder_tof.xml_dump.xml_dump_widget import \
@@ -32,12 +32,21 @@ from mantidqtinterfaces.dns_powder_elastic.plot.elastic_powder_plot_widget impor
 from mantidqtinterfaces.dns_powder_elastic.script_generator.elastic_powder_script_generator_widget import \
     DNSElasticPowderScriptGeneratorWidget
 
+# single crystal elastic
+from mantidqtinterfaces.dns_sc_elastic.options.elastic_sc_options_widget import \
+    DNSElasticSCOptionsWidget
+from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_widget import \
+    DNSElasticSCPlotWidget
+from mantidqtinterfaces.dns_sc_elastic.script_generator.elastic_sc_script_generator_widget import \
+    DNSElasticSCScriptGeneratorWidget
+
 
 class DNSModus:
     """
     Defines the different reduction modes and which widgets are used in
     each mode.
     """
+
     def __init__(self, name, parent):
         super().__init__()
         self.parent = parent  # should be main widget
@@ -54,6 +63,11 @@ class DNSModus:
                 'elastic_powder_script_generator', 'xml_dump',
                 'plot_elastic_powder'
             ],
+            'sc_elastic': [
+                'paths', 'file_selector', 'elastic_sc_options',
+                'elastic_sc_script_generator', 'xml_dump',
+                'plot_elastic_sc'
+            ],
         }
         # Yapf: disable
         self._widget_map = {
@@ -69,6 +83,11 @@ class DNSModus:
             'elastic_powder_script_generator':
                 DNSElasticPowderScriptGeneratorWidget,
             'plot_elastic_powder': DNSElasticPowderPlotWidget,
+
+            # powder single crystal
+            'elastic_sc_options': DNSElasticSCOptionsWidget,
+            'elastic_sc_script_generator': DNSElasticSCScriptGeneratorWidget,
+            'plot_elastic_sc': DNSElasticSCPlotWidget,
 
         }
         # Yapf: enable
