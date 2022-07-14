@@ -29,6 +29,7 @@ class DNSDataset(ObjectDict):
     Class for storing data of a multiple dns datafiles
     this is a dictionary but can also be accessed like attributes.
     """
+
     def __init__(self, data, path, is_sample=True, fields=None):
         super().__init__()
         self.is_sample = is_sample
