@@ -11,13 +11,13 @@ from mantidqt.gui_helper import get_qapplication
 
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_widget \
     import DNSWidget
-from mantidqtinterfaces.dns_sc_elastic.options.elastic_sc_options_model \
+from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_model \
     import DNSElasticSCOptionsModel
-from mantidqtinterfaces.dns_sc_elastic.options.elastic_sc_options_presenter \
+from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_presenter \
     import DNSElasticSCOptionsPresenter
-from mantidqtinterfaces.dns_sc_elastic.options.elastic_sc_options_view \
+from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_view \
     import DNSElasticSCOptionsView
-from mantidqtinterfaces.dns_sc_elastic.options.elastic_sc_options_widget \
+from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_widget \
     import DNSElasticSCOptionsWidget
 
 app, within_mantid = get_qapplication()
@@ -28,7 +28,7 @@ class DNSElasticSCOptionsWidgetTest(unittest.TestCase):
     def setUpClass(cls):
         parent = mock.Mock()
         parent.view = None
-        cls.widget = DNSElasticSCOptionsWidget('elastic_sc_options', parent)
+        cls.widget = DNSElasticSCOptionsWidget('elastic_single_crystal_options', parent)
 
     def test___init__(self):
         self.assertIsInstance(self.widget, DNSElasticSCOptionsWidget)
