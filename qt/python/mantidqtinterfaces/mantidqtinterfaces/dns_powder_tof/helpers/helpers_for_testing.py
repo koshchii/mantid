@@ -196,7 +196,7 @@ def get_fake_tof_binning():  # matches data 1,2 above
     }
 
 
-def get_fake_elastic_sc_binning():  # matches data 1,2 above
+def get_fake_elastic_single_crystal_binning():  # matches data 1,2 above
     return {
         'twoTheta': (0, 1, 2),
         'Omega': (3, 4, 5),
@@ -235,8 +235,7 @@ def get_fake_tof_options():
     return tof_opt
 
 
-# OKcomment: not used anywhere
-def get_fake_elastic_sc_options():
+def get_fake_elastic_single_crystal_options():
     el_opt = {
         'a': 2,
         'b': 3,
@@ -255,7 +254,6 @@ def get_fake_elastic_sc_options():
     return el_opt
 
 
-# OKcomment: not used anywhere
 def get_fake_tof_errors():  # matches data 1,2 above
     return {
         'channel_widths': [2.0, 1.6],
@@ -314,6 +312,17 @@ def get_elastic_standard_datadic():
             'z_nsf': range(50, 60, 1),
             'z_sf': range(40, 50, 1)
         },
+    }
+
+
+def get_fake_elastic_single_crystal_dataset():
+    return {
+        'ttheta': [0, 1, 2],
+        'omega': [4, 5],
+        'intensity': np.transpose(
+            np.asarray([[8.0, 9.0, 10.0], [11.0, 12.0, 13.0]])),
+        'error': np.transpose(
+            np.asarray([[14.0, 15.0, 16.0], [17.0, 18.0, 19.0]]))
     }
 
 

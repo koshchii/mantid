@@ -129,7 +129,7 @@
     <string>DNS website</string>
    </property>
   </action>
-  <action name="actionSC_elastic">
+  <action name="actionsingle_crystal_elastic">
    <property name="text">
     <string>Single crystal elastic</string>
    </property>
