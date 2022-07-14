@@ -46,17 +46,17 @@ class DNSReductionGUIView(QMainWindow):
         # connect mode switching signals
         self.modus_mapping = {
             # self.ui.actionSimulation: 'simulation',
-            self.ui.actionPowder_elastic: 'powder_elastic',
+            self.ui.actionPowder_Elastic: 'powder_elastic',
             self.ui.actionPowder_TOF: 'powder_tof',
-            self.ui.actionSingle_Crystal_elastic: 'sc_elastic',
-            # self.ui.actionSingle_crystal_TOF: 'sc_tof',
+            self.ui.actionSingle_Crystal_Elastic: 'single_crystal_elastic',
+            # self.ui.actionSingle_crystal_TOF: 'single_crystal_tof',
         }
         self.modus_titles = {
             # 'simulation': 'DNS Reduction - Simulation',
             'powder_elastic': 'DNS Reduction - Powder Elastic',
             'powder_tof': 'DNS Reduction - Powder TOF',
-            'sc_elastic': 'DNS Reduction - Single Crystal Elastic',
-            # 'sc_tof': 'DNS Reduction - Single Crystal TOF',
+            'single_crystal_elastic': 'DNS Reduction - Single Crystal Elastic',
+            # 'single_crystal_tof': 'DNS Reduction - Single Crystal TOF',
         }
         for key in self.modus_mapping:
             key.triggered.connect(self._modus_change)

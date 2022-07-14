@@ -9,7 +9,7 @@
 DNS script generator for elastic powder data.
 """
 
-from mantidqtinterfaces.dns_powder_tof.script_generator.\
+from mantidqtinterfaces.dns_powder_tof.script_generator. \
     common_script_generator_presenter import DNSScriptGeneratorPresenter
 
 
