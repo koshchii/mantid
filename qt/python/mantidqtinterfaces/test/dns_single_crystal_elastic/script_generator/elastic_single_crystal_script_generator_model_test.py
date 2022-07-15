@@ -39,7 +39,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         cls.sample_data = mock.create_autospec(DNSDataset)
         cls.model._sample_data = cls.sample_data
         cls.sample_data.datadic = get_fake_elastic_datadic()
-        cls.sample_data.create_plotlist.return_value = ['knso_x_sf']
+        cls.sample_data.create_subtract.return_value = ['knso_x_sf']
         cls.sample_data.format_dataset.return_value = '12345'
         cls.sample_data.fields = []
         cls.sample_data.ttheta = mock.Mock()
