@@ -238,7 +238,7 @@ class DNSScMapTest(unittest.TestCase):
             header=header[0:-16]
         )
 
-    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'scipy')
     def test__get_z_mesh_interp(self, mock_scipy):
         self.map.omega_intp = 3
@@ -255,15 +255,15 @@ class DNSScMapTest(unittest.TestCase):
         self.assertEqual(
             testv, mock_scipy.interpolate.interp2d.return_value.return_value)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'np.meshgrid')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'DNSScMap._get_z_mesh_interp')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            '_get_hkl_mesh')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            '_get_q_mesh')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            '_get_interpolated')
     def test_interpolate_quad_mesh(self, mock_get_interpolated,
                                    mock_get_q_mesh, mock_get_hkl_mesh,
@@ -307,7 +307,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertEqual(self.map.hkl_mesh_intp, [3, 4, 8])
         self.assertEqual(self.map.qxqy_mesh_intp, [1, 2, 8])
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'tri')
     def test_triangulate(self, mock_tri):
         self.map.hkl_mesh = [np.asarray([0, 1]), np.asarray([2, 3]),
@@ -327,9 +327,9 @@ class DNSScMapTest(unittest.TestCase):
             (mock_tri.Triangulation.call_args_list[0][0][0]
              == np.asarray([2, 3])).all())
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'UniformTriRefiner')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'LinearTriInterpolator')
     def test_interpolate_triangulation(self, mock_lin_intp, mock_uni):
         refimock = mock.Mock()
@@ -349,7 +349,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertEqual(testv[0], 4)
         self.assertEqual(testv[1], refimock.flatten.return_value)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.dns_sc_map.path')
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.path')
     def test_get_dns_map_border(self, mock_path):
         testv = self.map.get_dns_map_border('qxqy')
         self.assertEqual(testv, mock_path.Path.return_value)
