@@ -56,7 +56,7 @@ class DNSScriptGeneratorModel(DNSObsModel):
     # helper functions:
 
     @staticmethod
-    def get_auto_scriptname(fulldata):
+    def get_auto_script_name(fulldata):
         sample_name = fulldata[0]['sample_name'].strip('_.')
         file_numbers = [x['file_number'] for x in fulldata]
         return f"script_{sample_name}_from_{min(file_numbers)}" \
@@ -64,7 +64,7 @@ class DNSScriptGeneratorModel(DNSObsModel):
 
     def get_filename(self, filename, fulldata, auto=False):
         if auto:
-            return self.get_auto_scriptname(fulldata)
+            return self.get_auto_script_name(fulldata)
         if filename:
             if not filename.endswith('.py'):
                 filename = ''.join((filename, '.py'))
