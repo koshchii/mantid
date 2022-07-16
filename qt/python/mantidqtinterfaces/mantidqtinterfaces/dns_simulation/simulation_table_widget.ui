@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>900</width>
+    <height>576</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QTableWidget" name="table">
+     <property name="font">
+      <font>
+       <family>Arial</family>
+       <pointsize>12</pointsize>
+       <weight>50</weight>
+       <bold>false</bold>
+      </font>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="lineWidth">
+      <number>2</number>
+     </property>
+     <property name="editTriggers">
+      <set>QAbstractItemView::NoEditTriggers</set>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
+     <attribute name="horizontalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="horizontalHeaderDefaultSectionSize">
+      <number>120</number>
+     </attribute>
+     <attribute name="horizontalHeaderMinimumSectionSize">
+      <number>60</number>
+     </attribute>
+     <attribute name="horizontalHeaderStretchLastSection">
+      <bool>false</bool>
+     </attribute>
+     <attribute name="verticalHeaderDefaultSectionSize">
+      <number>80</number>
+     </attribute>
+     <attribute name="verticalHeaderMinimumSectionSize">
+      <number>80</number>
+     </attribute>
+     <column>
+      <property name="text">
+       <string>h</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>k</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>l</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>q</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>d</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>2theta</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>F2</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>M</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>diff</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>det_rot</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>channel</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>sample_rot</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
