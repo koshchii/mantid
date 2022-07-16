@@ -99,8 +99,9 @@ class DNSDataset(ObjectDict):
 
 # helper functions
 def create_script_name(sample_data):
-    lowest_fn = min([entry['file_number'] for entry in sample_data])
-    highest_fn = max([entry['file_number'] for entry in sample_data])
+    array_fn = [entry['file_number'] for entry in sample_data]
+    lowest_fn = min(array_fn)
+    highest_fn = max(array_fn)
     sample_name = '_and_'.join(
         set(entry['sample_type'] for entry in sample_data))
     return f'{sample_name}_{lowest_fn}_to_{highest_fn}.py'
