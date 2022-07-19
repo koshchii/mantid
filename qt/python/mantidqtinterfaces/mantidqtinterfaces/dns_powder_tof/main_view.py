@@ -47,10 +47,14 @@ class DNSReductionGUIView(QMainWindow):
         self.modus_mapping = {
             self.ui.actionPowder_Elastic: 'powder_elastic',
             self.ui.actionPowder_TOF: 'powder_tof',
+            self.ui.actionSingle_Crystal_elastic: 'sc_elastic',
+            # self.ui.actionSingle_crystal_TOF: 'sc_tof',
         }
         self.modus_titles = {
             'powder_elastic': 'DNS Reduction GUI - Powder Elastic',
             'powder_tof': 'DNS Reduction GUI - Powder TOF',
+            # 'simulation': 'DNS Reduction - Simulation',
+            'sc_elastic': 'DNS Reduction - Single Crystal Elastic',
         }
         for key in self.modus_mapping:
             key.triggered.connect(self._modus_change)
@@ -104,7 +108,7 @@ class DNSReductionGUIView(QMainWindow):
                             QProcess(self))
 
     def add_submenu(self, subview):
-        for menu in subview.menues:
+        for menu in subview.menus:
             submenu = self.menu.insertMenu(self.ui.menuHelp.menuAction(), menu)
             self.subview_menus.append(submenu)
 
