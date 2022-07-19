@@ -200,6 +200,13 @@ def get_fake_tof_binning():  # matches data 1,2 above
     }
 
 
+def get_fake_elastic_sc_binning():  # matches data 1,2 above
+    return {
+        'twoTheta': (0, 1, 2),
+        'Omega': (3, 4, 5),
+    }
+
+
 def get_fileselector_param_dict():
     return {
         'paths': {
@@ -246,7 +253,8 @@ def get_fake_elastic_sc_options():
         'omega_offset': 0,
         'dx': 1,
         'dy': 2,
-        'wavelength': 4.74
+        'wavelength': 4.74,
+        'norm_to': 'monitor'
     }
     return el_opt
 
