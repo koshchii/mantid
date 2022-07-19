@@ -59,13 +59,13 @@ class CommandLineReader(ObjectDict):
         pre, post = first_file_n.split(real_fn)
         fn_part_prefix = prefix[len(pre):]
         fn_part_postfix = postfix[:-len(post)]
-        return [fn_part_prefix, fn_part_postfix]
+        return fn_part_prefix, fn_part_postfix
 
     def _get_fix_part_fnb(self, ffnmb, prefix, postfix, path):
         first_file_n = prefix + ffnmb + postfix
         if os.path.isfile(os.path.join(path, first_file_n)):
             return self._parse_old_filenumbers(ffnmb, prefix, postfix, path)
-        return [prefix.split('_')[-1], postfix.split('.d_dat')[0]]
+        return prefix.split('_')[-1], postfix.split('.d_dat')[0]
 
     def _parse_file_command(self, command, path):
         if not command[0] == '-files':
@@ -82,4 +82,4 @@ class CommandLineReader(ObjectDict):
         fn_pre, fn_post = self._get_fix_part_fnb(ffnmb, prefix, postfix, path)
         ffnmb = (fn_pre + ffnmb + fn_post)
         lfnmb = (fn_pre + lfnmb + fn_post)
-        return [ffnmb, lfnmb, oof]
+        return ffnmb, lfnmb, oof
