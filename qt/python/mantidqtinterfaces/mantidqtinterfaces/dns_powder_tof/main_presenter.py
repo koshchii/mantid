@@ -30,7 +30,7 @@ class DNSReductionGUIPresenter:
         self.command_line_reader = command_line_reader
         self._parameter_abo = parameter_abo
         self.model = self._parameter_abo
-        self._switch_mode('powder_elastic')
+        self._switch_mode('simulation')
         # connect signals
         self.view.sig_tab_changed.connect(self._tab_changed)
         self.view.sig_save_as_triggered.connect(self._save_as)

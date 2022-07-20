@@ -39,7 +39,7 @@
          <item row="10" column="0">
           <widget class="QLabel" name="l_gamma">
            <property name="text">
-            <string>gamma</string>
+            <string>&lt;p&gt;&amp;gamma;&lt;/p&gt;</string>
            </property>
           </widget>
          </item>
@@ -60,7 +60,7 @@
          <item row="8" column="0">
           <widget class="QLabel" name="l_alpha">
            <property name="text">
-            <string>alpha</string>
+            <string>&lt;p&gt;&amp;alpha;&lt;/p&gt;</string>
            </property>
           </widget>
          </item>
@@ -238,7 +238,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Identify:</string>
+            <string>Identify</string>
            </property>
           </widget>
          </item>
@@ -259,7 +259,7 @@
          <item row="9" column="0">
           <widget class="QLabel" name="l_beta">
            <property name="text">
-            <string>beta</string>
+            <string>&lt;p&gt;&amp;beta;&lt;/p&gt;</string>
            </property>
           </widget>
          </item>
@@ -334,7 +334,7 @@
          <item row="4" column="0">
           <widget class="QLabel" name="l_ki">
            <property name="text">
-            <string>k_i, Å⁻¹ </string>
+            <string>k&lt;sub&gt;i&lt;/sub&gt;, Å⁻¹ </string>
            </property>
           </widget>
          </item>
