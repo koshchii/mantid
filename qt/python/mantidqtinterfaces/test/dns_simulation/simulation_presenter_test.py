@@ -123,7 +123,7 @@ class DNSSimulationPresenterTest(unittest.TestCase):
     @patch('mantidqtinterfaces.dns_simulation.simulation_presenter.'
            'DNSSimulationPresenter._get_and_validate')
     @patch('mantidqtinterfaces.dns_simulation.simulation_presenter.'
-           'DNSSimulationPresenter._perp_inplane')
+           'DNSSimulationPresenter._perpendicular_inplane')
     @patch('mantidqtinterfaces.dns_simulation.simulation_presenter.'
            'DNSSimulationPresenter._d_tooltip')
     @patch('mantidqtinterfaces.dns_simulation.simulation_presenter.'
@@ -164,7 +164,7 @@ class DNSSimulationPresenterTest(unittest.TestCase):
 
     def test__perp_inplane(self):
         self.model.get_hkl2_p.return_value = [0, 1, 0]
-        self.presenter._perp_inplane()
+        self.presenter._perpendicular_inplane()
         self.model.get_hkl2_p.assert_called_once()
         self.view.set_hkl2_p.assert_called_once_with([0, 1, 0])
 

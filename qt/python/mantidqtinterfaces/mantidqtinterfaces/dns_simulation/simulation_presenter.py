@@ -14,8 +14,9 @@ from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer import \
 
 
 class DNSSimulationPresenter(DNSObserver):
-    TWO_THETA_LIMIT = 5  # limit for 2theta difference under which entries marked
-    # as matching, 5deg is detector distance at DNS
+    TWO_THETA_LIMIT = 5
+    # limit for 2theta difference under which entries marked
+    # as matching, 5 deg is detector distance at DNS
 
     def __init__(self, name=None, parent=None, view=None, model=None,
                  subwidgets=None):
@@ -28,7 +29,7 @@ class DNSSimulationPresenter(DNSObserver):
         self.own_dict['cif_set'] = False
         self._set_ki()
         self.sub_presenters = [wid.presenter for wid in subwidgets]
-        # connect Signals
+        # connect signals
         self.view.sig_cif_set.connect(self._cif_set)
         self.view.sig_unit_cell_changed.connect(self._unit_cell_changed)
         self.view.sig_wavelength_changed.connect(self._set_ki)
@@ -88,7 +89,7 @@ class DNSSimulationPresenter(DNSObserver):
             self.raise_error('Spacegroup not valid, use HM'
                              'Symbol or IT Number.')
             return
-        self._perp_inplane()
+        self._perpendicular_inplane()
         self._d_tooltip()
         self.request_to_subwidget()
 
@@ -124,7 +125,7 @@ class DNSSimulationPresenter(DNSObserver):
         d_hkl1, d_hkl2, d_hkl2_p = self.model.get_ds(hkl1_v, hkl2_v, hkl2_p_v)
         self.view.set_d_tooltip(d_hkl1, d_hkl2, d_hkl2_p)
 
-    def _perp_inplane(self):
+    def _perpendicular_inplane(self):
         """
         Returns vector perpendicular to hkl1 in the scattering plane.
         """
