@@ -73,6 +73,6 @@ class DNSSimulationSubScPresenter(DNSSimulationSubCommonPresenter):
 
     def _toggle_off_set_warning(self, checked):
         if checked:
-            self.view.set_off_warning('')
+            self.view.set_omega_offset_warning('')
         else:
-            self.view.set_off_warning('Warning: omega offset not set')
+            self.view.set_omega_offset_warning('Warning: omega offset not set')

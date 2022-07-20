@@ -111,11 +111,11 @@ class DNSSimulationSubScPresenterTest(unittest.TestCase):
 
     def test__toggle_off_set_warning(self):
         self.presenter._toggle_off_set_warning(False)
-        self.view.set_off_warning.assert_called_once_with(
+        self.view.set_omega_offset_warning.assert_called_once_with(
             'Warning: omega offset not set')
         self.view.reset_mock()
         self.presenter._toggle_off_set_warning(True)
-        self.view.set_off_warning.assert_called_once_with('')
+        self.view.set_omega_offset_warning.assert_called_once_with('')
 
 
 if __name__ == '__main__':

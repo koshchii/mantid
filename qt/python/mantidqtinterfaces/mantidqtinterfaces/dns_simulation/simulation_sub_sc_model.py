@@ -6,11 +6,10 @@
 # SPDX - License - Identifier: GPL - 3.0 +
 
 """
-DNS View for simulation elastic DNS data.
+DNS widget for simulation elastic DNS data.
 """
 
 import numpy as np
-
 import mantidqtinterfaces.dns_simulation.simulation_helpers as sim_help
 
 

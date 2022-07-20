@@ -8,7 +8,6 @@ from qtpy import QtWidgets
 from qtpy.QtCore import Signal
 
 from mantidqt.utils.qt import load_ui
-
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_view import DNSView
 
 
@@ -51,7 +50,7 @@ class DNSSimulationSubScView(DNSView):
     sig_mouse_pos_changed = Signal(float, float)
     sig_scplot_clicked = Signal()
 
-    def set_off_warning(self, text):
+    def set_omega_offset_warning(self, text):
         self._content.l_warning_omega_offset.setText(text)
 
     def _mouse_pos_changed(self, event):

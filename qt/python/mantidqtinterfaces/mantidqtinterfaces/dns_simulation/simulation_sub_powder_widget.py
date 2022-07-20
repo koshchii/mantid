@@ -11,10 +11,8 @@ DNS Simulation widget.
 
 from mantidqtinterfaces.dns_simulation.simulation_sub_powder_presenter import \
     DNSSimulationSubPowderPresenter
-
 from mantidqtinterfaces.dns_simulation.simulation_sub_powder_model import \
     DNSSimulationSubPowderModel
-
 from mantidqtinterfaces.dns_simulation.simulation_sub_powder_view import \
     DNSSimulationSubPowderView
 
@@ -27,5 +25,4 @@ class DNSSimulationSubPowderWidget:
         self.model = DNSSimulationSubPowderModel(parent=self)
         self.presenter = DNSSimulationSubPowderPresenter(parent=self,
                                                          view=self.view,
-                                                         model=self.model,
-                                                         )
+                                                         model=self.model)
