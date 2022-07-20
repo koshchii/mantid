@@ -52,7 +52,7 @@ class DNSSimulationPresenter(DNSObserver):
         """
         self.get_option_dict()
         if not self.own_dict.get('fix_omega', False):
-            omega_offset = self.model.get_oof_from_ident(
+            omega_offset = self.model.get_omega_offset_from_ident(
                 det_rot, sample_rot, self.own_dict['sample_rot'],
                 self.own_dict['det_rot'])
             self.view.set_omega_offset(omega_offset)

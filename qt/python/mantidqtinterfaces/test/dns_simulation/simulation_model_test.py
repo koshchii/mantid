@@ -339,7 +339,7 @@ class DNSSimulationModelTest(unittest.TestCase):
         self.assertEqual(testv['hkl2_v'], mock_hkl.return_value)
 
     def test_get_oof_from_ident(self):
-        testv = self.model.get_oof_from_ident(1, 2, 3, 4)
+        testv = self.model.get_omega_offset_from_ident(1, 2, 3, 4)
         self.assertEqual(testv, 2)
 
 

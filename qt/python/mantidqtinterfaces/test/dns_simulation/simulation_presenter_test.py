@@ -93,13 +93,13 @@ class DNSSimulationPresenterTest(unittest.TestCase):
     def test_back_call_from_tableitem_clicked(self):
         self.view.get_state.return_value['fix_omega'] = True
         self.presenter.back_call_from_table_item_clicked(-6, 25)
-        self.model.get_oof_from_ident.assert_not_called()
+        self.model.get_omega_offset_from_ident.assert_not_called()
         self.view.get_state.return_value['fix_omega'] = False
         self.presenter.back_call_from_table_item_clicked(-6, 25)
-        self.model.get_oof_from_ident.assert_called_once_with(
+        self.model.get_omega_offset_from_ident.assert_called_once_with(
             -6, 25, 20, -5)
         self.view.set_omega_offset.assert_called_once_with(
-            self.model.get_oof_from_ident.return_value)
+            self.model.get_omega_offset_from_ident.return_value)
 
     def test_sample_rot_changed(self):
         self.view.get_state.return_value['fix_omega'] = True

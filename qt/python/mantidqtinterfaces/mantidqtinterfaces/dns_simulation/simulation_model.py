@@ -245,6 +245,6 @@ class DNSSimulationModel(DNSObsModel):
         return hkl_vector_dict
 
     @staticmethod
-    def get_oof_from_ident(det_rot, sample_rot, id_sr, id_dr):
-        oof = (sample_rot - det_rot) - (id_sr - id_dr)
-        return oof
+    def get_omega_offset_from_ident(det_rot, sample_rot, id_sr, id_dr):
+        omega_offset = (sample_rot - det_rot) - (id_sr - id_dr)
+        return omega_offset
