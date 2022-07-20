@@ -16,6 +16,16 @@ import numpy as np
 from mantid.kernel import V3D
 
 
+def two_theta_to_q(two_theta, wavelength):
+    q = 4.0 * pi * sin(two_theta / 2.0) / wavelength
+    return q
+
+
+def two_theta_to_d(two_theta, wavelength):
+    d = wavelength / (2.0 * sin(two_theta / 2.0))
+    return d
+
+
 def angle_to_hkl(two_theta, omega, ub_inv, wavelength):
     """
     Return hkl for diffractometer angles and given inverse UB.
@@ -117,23 +127,23 @@ def rotate_ub(omega_offset, ubm):
     return ubm
 
 
-def get_two_theta_path(two_theta_rang, omega_rang):
+def get_two_theta_path(two_theta_range, omega_range):
     """
     Returns two_theta list of the surface boundary of dns map.
     """
     two_theta_path = np.concatenate(
-        (two_theta_rang[0] * np.ones(len(omega_rang)), two_theta_rang,
-         two_theta_rang[-1] * np.ones(len(omega_rang)), np.flip(two_theta_rang)))
+        (two_theta_range[0] * np.ones(len(omega_range)), two_theta_range,
+         two_theta_range[-1] * np.ones(len(omega_range)), np.flip(two_theta_range)))
     return two_theta_path
 
 
-def get_omega_path(two_theta_rang, omega_rang):
+def get_omega_path(two_theta_range, omega_range):
     """
     Returns omega list of the surface boundary of dns map.
     """
     omega_path = np.concatenate(
-        (np.flip(omega_rang), omega_rang[0] * np.ones(len(two_theta_rang)),
-         omega_rang, omega_rang[-1] * np.ones(len(two_theta_rang))))
+        (np.flip(omega_range), omega_range[0] * np.ones(len(two_theta_range)),
+         omega_range, omega_range[-1] * np.ones(len(two_theta_range))))
     return omega_path
 
 
@@ -146,13 +156,13 @@ def return_dns_surface_shape(oriented_lattice, q1, q2, wavelength, options):
     two_theta_end = options['sc_det_end']
     o_start = options['sc_sam_start']
     o_end = options['sc_sam_end']
-    two_theta_rang = get_two_theta_range_sc(two_theta_start, two_theta_end)
-    omega_rang = get_omega_range_sc(o_start, o_end, two_theta_start)
+    two_theta_range = get_two_theta_range_sc(two_theta_start, two_theta_end)
+    omega_range = get_omega_range_single_crystal(o_start, o_end, two_theta_start)
     ubm_inv = np.linalg.inv(oriented_lattice.getUB())
     line = []
     # create shape of dns measured surface in two_theta and omega
-    two_theta_r = get_two_theta_path(two_theta_rang, omega_rang)
-    omega_r = get_omega_path(two_theta_rang, omega_rang)
+    two_theta_r = get_two_theta_path(two_theta_range, omega_range)
+    omega_r = get_omega_path(two_theta_range, omega_range)
     for i, omega in enumerate(omega_r):
         hkl = angle_to_hkl(two_theta_r[i], omega, ubm_inv, wavelength)
         qx, qy = return_qxqy(oriented_lattice, q1, q2, hkl)
@@ -212,7 +222,7 @@ def two_theta_to_rot_number(two_theta):
     return [det_rot, channel]
 
 
-def get_omega_range_sc(o_start, o_end, two_theta_start):
+def get_omega_range_single_crystal(o_start, o_end, two_theta_start):
     omega_start = o_start - two_theta_start
     omega_end = o_end - two_theta_start
     omega_range_sc = get_1deg_angle_linspace(omega_start, omega_end)
