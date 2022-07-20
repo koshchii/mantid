@@ -16,16 +16,6 @@ import numpy as np
 from mantid.kernel import V3D
 
 
-def two_theta_to_q(two_theta, wavelength):
-    q = 4.0 * pi * sin(two_theta / 2.0) / wavelength
-    return q
-
-
-def two_theta_to_d(two_theta, wavelength):
-    d = wavelength / (2.0 * sin(two_theta / 2.0))
-    return d
-
-
 def angle_to_hkl(two_theta, omega, ub_inv, wavelength):
     """
     Return hkl for diffractometer angles and given inverse UB.
