@@ -25,5 +25,4 @@ class DNSSimulationSubScWidget:
         self.model = DNSSimulationSubScModel(parent=self)
         self.presenter = DNSSimulationSubScPresenter(parent=self,
                                                      view=self.view,
-                                                     model=self.model,
-                                                     )
+                                                     model=self.model)

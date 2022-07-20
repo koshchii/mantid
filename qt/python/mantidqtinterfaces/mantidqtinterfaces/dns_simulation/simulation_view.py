@@ -6,7 +6,7 @@
 # SPDX - License - Identifier: GPL - 3.0 +
 
 """
-DNS View for simulation elastic DNS data.
+DNS View for simulation of elastic DNS data.
 """
 
 from os.path import expanduser
@@ -138,9 +138,7 @@ class DNSSimulationView(DNSView):
             expanduser("~"),
             "Cif Files (*.cif);;All Files (*)",
             options=options)
-        if isinstance(
-                file_name, tuple
-        ):  # Qt4 vs QT5 hack QT5 returns string, filter as second argument
+        if isinstance(file_name, tuple):  # Qt4 vs QT5 hack QT5 returns string, filter as second argument
             file_name = file_name[0]
         if file_name:
             self._content.lE_cif_filename.setText(file_name)

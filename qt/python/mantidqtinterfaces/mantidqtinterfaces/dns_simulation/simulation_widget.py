@@ -29,8 +29,7 @@ class DNSSimulationWidget(DNSWidget):
         super().__init__(name, parent)
         self.sub_widgets = [DNSSimulationSubTableWidget(parent=self),
                             DNSSimulationSubPowderWidget(parent=self),
-                            DNSSimulationSubScWidget(parent=self)
-                            ]
+                            DNSSimulationSubScWidget(parent=self)]
         self.view = DNSSimulationView(parent=parent.view)
         self.model = DNSSimulationModel(parent=self)
         self.presenter = DNSSimulationPresenter(parent=self,

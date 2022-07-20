@@ -4,6 +4,7 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
 DNS Simulation widget.
 """
@@ -25,5 +26,4 @@ class DNSSimulationSubTableWidget:
         self.parent = parent
         self.presenter = DNSSimulationSubTablePresenter(parent=self,
                                                         view=self.view,
-                                                        model=self.model,
-                                                        )
+                                                        model=self.model)
