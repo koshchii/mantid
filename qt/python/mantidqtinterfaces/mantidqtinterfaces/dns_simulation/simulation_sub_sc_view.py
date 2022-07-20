@@ -73,16 +73,16 @@ class DNSSimulationSubScView(DNSView):
         self._ax.annotate(label, (x, y), fontsize=10, zorder=200)
 
     def scatter_plot(self, x, y, intensity, intensity_max_min):
-        cm = get_cmap('plasma')
-        sc = self._ax.scatter(x, y, c=intensity,
-                              vmin=intensity_max_min[1],
-                              vmax=intensity_max_min[0],
-                              s=300,
-                              cmap=cm,
-                              zorder=20)
-        cb = self._sc_static_canvas.figure.colorbar(sc)
-        cb.set_label('Intensity', fontsize=14)
-        cb.ax.zorder = -1
+        color_map = get_cmap('plasma')
+        single_crystal = self._ax.scatter(x, y, c=intensity,
+                                          vmin=intensity_max_min[1],
+                                          vmax=intensity_max_min[0],
+                                          s=300,
+                                          cmap=color_map,
+                                          zorder=20)
+        color_bar = self._sc_static_canvas.figure.colorbar(single_crystal)
+        color_bar.set_label('Intensity', fontsize=14)
+        color_bar.ax.zorder = -1
 
     def start_sc_plot(self, line):
         self._sc_static_canvas.figure.clear()
