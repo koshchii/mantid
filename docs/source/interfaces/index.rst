@@ -27,3 +27,4 @@ Interfaces
    reflectometry/*
    utility/*
    direct/dns_powder_tof/*
+   direct/dns_simulation/*
