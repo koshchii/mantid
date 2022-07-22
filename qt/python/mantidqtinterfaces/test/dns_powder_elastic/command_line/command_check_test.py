@@ -65,7 +65,7 @@ class CommandLineReaderTest(unittest.TestCase):
     def test__parse_old_filenumbers(self, mock_dnsfile):
         mock_dnsfile.return_value = {'file_number': '1230'}
         testv = self.colire._parse_old_filenumbers('23', 'p151', '0_1', 'a')
-        self.assertEqual(testv, ['1', '0'])
+        self.assertEqual(testv, ('1', '0'))
 
     @patch('mantidqtinterfaces.dns_powder_elastic.command_line.command_check.'
            'CommandLineReader._parse_old_filenumbers')
@@ -75,12 +75,12 @@ class CommandLineReaderTest(unittest.TestCase):
         # prefix or postfix and the old format is used
         # there is no way to test for this, has to be avoided by user
         mock_isfile.return_value = False
-        mock_parse.return_value = ['1', '2']
+        mock_parse.return_value = ('1', '2')
         testv = self.colire._get_fix_part_fnb('54858', 'p123_2', '3.d_dat', 'b')
-        self.assertEqual(testv, ['2', '3'])
+        self.assertEqual(testv, ('2', '3'))
         mock_isfile.return_value = True
         testv = self.colire._get_fix_part_fnb('54858', 'p123_2', '3.d_dat', 'b')
-        self.assertEqual(testv, ['1', '2'])
+        self.assertEqual(testv, ('1', '2'))
 
     @patch('mantidqtinterfaces.dns_powder_elastic.command_line.command_check.'
            'CommandLineReader._get_fix_part_fnb')
@@ -93,7 +93,7 @@ class CommandLineReaderTest(unittest.TestCase):
         testv = self.colire._parse_file_command(['-files'], '')
         self.assertEqual(testv, [None, None, 0, ''])
         testv = self.colire._parse_file_command(cla, '')
-        self.assertEqual(testv, ['000027863591', '000027880581', '100'])
+        self.assertEqual(testv, ('000027863591', '000027880581', '100'))
 
 
 if __name__ == '__main__':
