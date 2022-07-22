@@ -239,7 +239,6 @@ def get_fake_tof_options():
     return tof_opt
 
 
-# OKcomment: not used anywhere
 def get_fake_elastic_single_crystal_options():
     el_opt = {
         'a': 2,
@@ -251,15 +250,14 @@ def get_fake_elastic_single_crystal_options():
         'hkl1': '1,2,3',
         'hkl2': '2,3,4',
         'omega_offset': 0,
+        'norm_to': 'monitor',
         'dx': 1,
         'dy': 2,
         'wavelength': 4.74,
-        'norm_to': 'monitor'
     }
     return el_opt
 
 
-# OKcomment: not used anywhere
 def get_fake_tof_errors():  # matches data 1,2 above
     return {
         'channel_widths': [2.0, 1.6],
@@ -269,7 +267,6 @@ def get_fake_tof_errors():  # matches data 1,2 above
     }
 
 
-# OKcomment: not used anywhere
 def get_fake_elastic_datadic():
     return {
         'knso': {
