@@ -4,9 +4,11 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
 Common Presenter for DNS Script generators
 """
+
 import unittest
 from unittest import mock
 from unittest.mock import patch
@@ -38,7 +40,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         cls.model = DNSElasticSCScriptGeneratorModel(parent=cls.parent)
         cls.sample_data = mock.create_autospec(DNSDataset)
         cls.model._sample_data = cls.sample_data
-        cls.sample_data.datadic = get_fake_elastic_datadic()
+        cls.sample_data.data_dic = get_fake_elastic_datadic()
         cls.sample_data.create_subtract.return_value = ['knso_x_sf']
         cls.sample_data.format_dataset.return_value = '12345'
         cls.sample_data.fields = []
@@ -56,7 +58,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         cls.sample_data.banks = [1, 2, 3]
         cls.standard_data = mock.create_autospec(DNSDataset)
         cls.model._standard_data = cls.standard_data
-        cls.standard_data.datadic = get_elastic_standard_datadic()
+        cls.standard_data.data_dic = get_elastic_standard_datadic()
         cls.standard_data.format_dataset.return_value = '123456'
         cls.standard_data.fields = []
         cls.standard_data.ttheta = mock.Mock()
@@ -107,9 +109,9 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         mock_dns_dataset.return_value = self.standard_data
         options = {
             'corrections': 1,
-            'det_efficency': 1,
+            'det_efficiency': 1,
             'flipping_ratio': 1,
-            'substract_background_from_sample': 1,
+            'subtract_background_from_sample': 1,
             'background_factor': 1,
             'ignore_vana_fields': 1,
             'sum_vana_sf_nsf': 1,
@@ -119,7 +121,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'norm_monitor': 1
         }
         options.update(get_fake_elastic_single_crystal_options())
-        fselector = {'full_data': [], 'standard_data': []}
+        f_selector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '12',
             'standards_dir': '13',
@@ -128,7 +130,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'nexus': True,
             'export': True
         }
-        testv = self.model.script_maker(options, paths, fselector)
+        test_v = self.model.script_maker(options, paths, f_selector)
         self.assertTrue(self.model._vanac)
         self.assertTrue(self.model._nicrc)
         self.assertTrue(self.model._sampb)
@@ -142,18 +144,18 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertEqual(self.model._sum_sfnsf, '1')
         self.assertEqual(self.model._export_path, '14')
         self.assertEqual(self.model._norm, 'monitor')
-        self.assertIsInstance(testv, tuple)
-        self.assertIsInstance(testv[0], list)
-        lines = [76, 113, 91, 65, 49, 0, 20, 22, 0, 307, 0, 109, 51, 71, 0, 45,
-                 130, 0,
-                 21, 250, 129]
-        for i, tv in enumerate(testv[0]):
+        self.assertIsInstance(test_v, tuple)
+        self.assertIsInstance(test_v[0], list)
+        lines = [100, 138, 114, 65, 49, 0, 20, 22, 0, 307, 0, 109, 51, 70, 0, 44,
+                 129, 0,
+                 21, 249, 130]
+        for i, tv in enumerate(test_v[0]):
             self.assertEqual(len(tv), lines[i])
         options = {
             'corrections': 0,
-            'det_efficency': 0,
+            'det_efficiency': 0,
             'flipping_ratio': 0,
-            'substract_background_from_sample': 0,
+            'subtract_background_from_sample': 0,
             'background_factor': 0,
             'ignore_vana_fields': 0,
             'sum_vana_sf_nsf': 0,
@@ -163,7 +165,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'norm_monitor': 0
         }
         options.update(get_fake_elastic_single_crystal_options())
-        fselector = {'full_data': [], 'standard_data': []}
+        f_selector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '',
             'standards_dir': '',
@@ -172,15 +174,15 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'nexus': False,
             'export': False
         }
-        testv = self.model.script_maker(options, paths, fselector)
-        lines = [76, 113, 91, 65, 49, 0, 20, 0, 0, 304, 0, 109, 51, 0]
-        for i, tv in enumerate(testv[0]):
+        test_v = self.model.script_maker(options, paths, f_selector)
+        lines = [100, 138, 114, 65, 49, 0, 20, 0, 0, 304, 0, 109, 51, 0]
+        for i, tv in enumerate(test_v[0]):
             self.assertEqual(len(tv), lines[i])
         options = {
             'corrections': 0,
-            'det_efficency': 0,
+            'det_efficiency': 0,
             'flipping_ratio': 0,
-            'substract_background_from_sample': 0,
+            'subtract_background_from_sample': 0,
             'background_factor': 0,
             'ignore_vana_fields': 0,
             'sum_vana_sf_nsf': 0,
@@ -190,7 +192,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'norm_monitor': 0
         }
         options.update(get_fake_elastic_single_crystal_options())
-        testv = self.model.script_maker(options, paths, fselector)
+        test_v = self.model.script_maker(options, paths, f_selector)
         self.assertFalse(self.model._vanac)
         self.assertFalse(self.model._nicrc)
         self.assertFalse(self.model._sampb)
@@ -204,14 +206,14 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertEqual(self.model._sum_sfnsf, '0')
         self.assertEqual(self.model._export_path, '')
         self.assertEqual(self.model._norm, 'time')
-        lines = [76, 113, 91, 65, 49, 0, 20, 0, 0, 304, 0, 109, 51, 0]
-        for i, tv in enumerate(testv[0]):
+        lines = [100, 138, 114, 65, 49, 0, 20, 0, 0, 304, 0, 109, 51, 0]
+        for i, tv in enumerate(test_v[0]):
             self.assertEqual(len(tv), lines[i])
         options = {
             'corrections': 1,
-            'det_efficency': 0,
+            'det_efficiency': 0,
             'flipping_ratio': 0,
-            'substract_background_from_sample': 0,
+            'subtract_background_from_sample': 0,
             'background_factor': 1,
             'ignore_vana_fields': 1,
             'sum_vana_sf_nsf': 1,
@@ -221,7 +223,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'norm_monitor': 1
         }
         options.update(get_fake_elastic_single_crystal_options())
-        fselector = {'full_data': [], 'standard_data': []}
+        f_selector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '12',
             'standards_dir': '13',
@@ -230,8 +232,8 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'nexus': False,
             'export': True
         }
-        testv = self.model.script_maker(options, paths, fselector)
-        self.assertEqual(len(testv[0][0]), 76)
+        test_v = self.model.script_maker(options, paths, f_selector)
+        self.assertEqual(len(test_v[0][0]), 100)
         self.assertFalse(self.model._vanac)
         self.assertFalse(self.model._nicrc)
         self.assertFalse(self.model._sampb)
@@ -240,14 +242,14 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertFalse(self.model._corrections)
         self.assertFalse(self.model._ascii)
         self.assertFalse(self.model._nexus)
-        lines = [76, 113, 91, 65, 49, 0, 20, 0, 0, 307, 0, 109, 51, 0]
-        for i, tv in enumerate(testv[0]):
+        lines = [100, 138, 114, 65, 49, 0, 20, 0, 0, 307, 0, 109, 51, 0]
+        for i, tv in enumerate(test_v[0]):
             self.assertEqual(len(tv), lines[i])
         options = {
             'corrections': 0,
-            'det_efficency': 1,
+            'det_efficiency': 1,
             'flipping_ratio': 1,
-            'substract_background_from_sample': 1,
+            'subtract_background_from_sample': 1,
             'background_factor': 1,
             'ignore_vana_fields': 1,
             'sum_vana_sf_nsf': 1,
@@ -257,7 +259,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'norm_monitor': 1
         }
         options.update(get_fake_elastic_single_crystal_options())
-        fselector = {'full_data': [], 'standard_data': []}
+        f_selector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '12',
             'standards_dir': '13',
@@ -266,7 +268,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'nexus': True,
             'export': False
         }
-        testv = self.model.script_maker(options, paths, fselector)
+        test_v = self.model.script_maker(options, paths, f_selector)
         self.assertFalse(self.model._vanac)
         self.assertFalse(self.model._nicrc)
         self.assertFalse(self.model._sampb)
@@ -275,8 +277,8 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertFalse(self.model._corrections)
         self.assertFalse(self.model._ascii)
         self.assertFalse(self.model._nexus)
-        lines = [76, 113, 91, 65, 49, 0, 20, 0, 0, 307, 0, 109, 51, 0]
-        for i, tv in enumerate(testv[0]):
+        lines = [100, 138, 114, 65, 49, 0, 20, 0, 0, 307, 0, 109, 51, 0]
+        for i, tv in enumerate(test_v[0]):
             self.assertEqual(len(tv), lines[i])
         paths = {
             'data_dir': '12',
@@ -286,11 +288,11 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'nexus': True,
             'export': True
         }
-        testv = self.model.script_maker(options, paths, fselector)
+        test_v = self.model.script_maker(options, paths, f_selector)
         self.assertFalse(self.model._ascii)
         self.assertFalse(self.model._nexus)
-        lines = [76, 113, 91, 65, 49, 0, 20, 0, 0, 307, 0, 109, 51, 0]
-        for i, tv in enumerate(testv[0]):
+        lines = [100, 138, 114, 65, 49, 0, 20, 0, 0, 307, 0, 109, 51, 0]
+        for i, tv in enumerate(test_v[0]):
             self.assertEqual(len(tv), lines[i])
 
     @patch(
@@ -338,104 +340,104 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.model._sample_data = self.sample_data
 
     def test_get_header_lines(self):
-        testv = self.model._get_header_lines()
-        self.assertIsInstance(testv, list)
-        self.assertEqual(len(testv), 6)
+        test_v = self.model._get_header_lines()
+        self.assertIsInstance(test_v, list)
+        self.assertEqual(len(test_v), 6)
         self.assertEqual(
-            testv[0],
+            test_v[0],
             'from mantidqtinterfaces.dns_single_crystal_elastic.'
             'scripts.md_single_crystal_elastic import load_all'
         )
         self.assertEqual(
-            testv[1],
+            test_v[1],
             'from mantidqtinterfaces.dns_single_crystal_elastic.'
             'scripts.md_single_crystal_elastic import '
-            'vanadium_correction, fliping_ratio_correction')
+            'vanadium_correction, flipping_ratio_correction')
         self.assertEqual(
-            testv[2],
+            test_v[2],
             'from mantidqtinterfaces.dns_single_crystal_elastic.'
             'scripts.md_single_crystal_elastic import'
             ' background_subtraction', )
         self.assertEqual(
-            testv[3],
+            test_v[3],
             "from mantid.simpleapi import ConvertMDHistoToMatrixWorkspace, mtd"
         )
-        self.assertEqual(testv[4],
+        self.assertEqual(test_v[4],
                          "from mantid.simpleapi import SaveAscii, SaveNexus")
-        self.assertEqual(testv[5], "")
+        self.assertEqual(test_v[5], "")
 
     def test_get_sample_data_lines(self):
-        testv = self.model._get_sample_data_lines()
-        self.assertEqual(testv, ['sample_data = 12345'])
+        test_v = self.model._get_sample_data_lines()
+        self.assertEqual(test_v, ['sample_data = 12345'])
 
     def test_get_standard_data_lines(self):
         self.model._corrections = True
-        testv = self.model._get_standard_data_lines()
-        self.assertEqual(testv, ['standard_data = 123456'])
+        test_v = self.model._get_standard_data_lines()
+        self.assertEqual(test_v, ['standard_data = 123456'])
         self.model._corrections = False
-        testv = self.model._get_standard_data_lines()
-        self.assertEqual(testv, [''])
+        test_v = self.model._get_standard_data_lines()
+        self.assertEqual(test_v, [''])
 
     def test__get_param_lines(self):
         self.model._norm = 'time'
-        testv = self.model._get_param_lines(get_fake_elastic_single_crystal_options())
-        self.assertIsInstance(testv, list)
-        self.assertEqual(len(testv), 3)
-        comparestring = ("params = {'a' : 2, \n          'b' : 3,\n          "
-                         "'c' : 4,\n          'alpha' : 78,\n          'beta'"
-                         "  : 86,\n          'gamma' : 85,\n          'hkl1' "
-                         " : '1,2,3',\n          'hkl2'  : '2,3,4',\n        "
-                         "  'omega_offset' : 0,\n          'norm_to' : "
-                         "'time',\n          'dx' : ' 1.0000',\n        "
-                         "  'dy' : ' 2.0000',}")
-        self.assertEqual(testv[1], comparestring)
+        test_v = self.model._get_param_lines(get_fake_elastic_single_crystal_options())
+        self.assertIsInstance(test_v, list)
+        self.assertEqual(len(test_v), 3)
+        compare_string = ("params = {'a' : 2, \n          'b' : 3,\n          "
+                          "'c' : 4,\n          'alpha' : 78,\n          'beta'"
+                          "  : 86,\n          'gamma' : 85,\n          'hkl1' "
+                          " : '1,2,3',\n          'hkl2'  : '2,3,4',\n        "
+                          "  'omega_offset' : 0,\n          'norm_to' : "
+                          "'time',\n          'dx' : ' 1.0000',\n        "
+                          "  'dy' : ' 2.0000',}")
+        self.assertEqual(test_v[1], compare_string)
 
     def test__get_binning_lines(self):
-        testv = self.model._get_binning_lines()
+        test_v = self.model._get_binning_lines()
         testl = ["binning = {'twoTheta' : [1.000, 6.000, 5],\n       "
                  "    'Omega':  [3.000, 5.000, 3]} # min, max, number_of_bins"]
-        self.assertEqual(testv, testl)
+        self.assertEqual(test_v, testl)
 
     def test_get_load_data_lines(self):
         self.model._corrections = True
-        testv = self.model._get_load_data_lines()
-        self.assertEqual(testv, ['wss_sample = load_all(sample_data, binning,'
-                                 ' params)', 'wss_standard = load_all(standar'
-                                             'd_data, binning, params, standar'
-                                             'd=True,)', ''])
+        test_v = self.model._get_load_data_lines()
+        self.assertEqual(test_v, ['wss_sample = load_all(sample_data, binning,'
+                                  ' params)', 'wss_standard = load_all(standar'
+                                              'd_data, binning, params, standar'
+                                              'd=True)', ''])
         self.model._corrections = False
-        testv = self.model._get_load_data_lines()
-        self.assertEqual(testv, [
+        test_v = self.model._get_load_data_lines()
+        self.assertEqual(test_v, [
             "wss_sample = load_all(sample_data, binning, params)", ''
         ])
 
     def test__get_bg_corr_lines(self):
         self.model._vanac = True
-        testv = self.model._get_bg_corr_lines()
-        self.assertEqual(testv, [
-            '# substract background from vanadium and nicr',
+        test_v = self.model._get_bg_corr_lines()
+        self.assertEqual(test_v, [
+            '# subtract background from vanadium and nicr',
             'for sample, workspacelist in wss_standard.items(): \n    '
-            'for workspace in workspacelist:\n        background_substr'
+            'for workspace in workspacelist:\n        background_subtr'
             'action(workspace)', ''
         ])
         self.model._vanac = False
         self.model._nicrc = False
-        testv = self.model._get_bg_corr_lines()
-        self.assertEqual(testv, [])
+        test_v = self.model._get_bg_corr_lines()
+        self.assertEqual(test_v, [])
 
     def test__return_sample_bg_string(self):
         self.model._spac = '  '
         self.model._backfac = '123'
-        testv = self.model._return_sample_bg_string()
-        self.assertEqual(testv, '  background_subtraction(workspace,'
+        test_v = self.model._return_sample_bg_string()
+        self.assertEqual(test_v, '  background_subtraction(workspace,'
                                 ' factor=123)')
 
     def test__return_sample_vanac_strinf(self):
         self.model._spac = '  '
         self.model._sum_sfnsf = 1
         self.model._ign_vana = 2
-        testv = self.model._return_sample_vanac_strinf()
-        self.assertEqual(testv, "  vanadium_correction(workspace,  vanaset=s"
+        test_v = self.model._return_sample_vanac_strinf()
+        self.assertEqual(test_v, "  vanadium_correction(workspace,  vanaset=s"
                                 "tandard_data['vana'], ignore_vana_fields=2,"
                                 " sum_vana_sf_nsf=1)")
 
@@ -452,25 +454,25 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
                    "ium_correction(workspace,  vanaset=standard_data['vana'],"
                    " ignore_vana_fields=2, sum_vana_sf_nsf=1)"]
 
-        testv = self.model._get_vanac_lines()
-        self.assertEqual(testv, [])
+        test_v = self.model._get_vanac_lines()
+        self.assertEqual(test_v, [])
         self.model._sampb = True
-        testv = self.model._get_vanac_lines()
-        self.assertEqual(testv, compare)
+        test_v = self.model._get_vanac_lines()
+        self.assertEqual(test_v, compare)
         self.model._sampb = False
         self.model._vanac = True
-        testv = self.model._get_vanac_lines()
-        self.assertEqual(testv, compare)
+        test_v = self.model._get_vanac_lines()
+        self.assertEqual(test_v, compare)
 
     def test__get_nicrc_lines(self):
         self.model._nicrc = False
         self.model._loop = 'fo:'
         self.model._spac = '  '
-        testv = self.model._get_nicrc_lines()
-        self.assertEqual(testv, [])
+        test_v = self.model._get_nicrc_lines()
+        self.assertEqual(test_v, [])
         self.model._nicrc = True
-        testv = self.model._get_nicrc_lines()
-        self.assertEqual(testv, ['fo:  fliping_ratio_correction(workspace)'])
+        test_v = self.model._get_nicrc_lines()
+        self.assertEqual(test_v, ['fo:  flipping_ratio_correction(workspace)'])
 
     @patch(
         'mantidqtinterfaces.dns_single_crystal_elastic.script_generator.'
@@ -478,13 +480,13 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
     def test_get_plotlist(self, mtd):
         mtd.__getitem__.return_value = self.fake_workspace
         self.model._plotlist = ['4p1K_map']
-        testv = self.model.get_plotlist()
+        test_v = self.model.get_plotlist()
         self.assertEqual(
-            testv, (['4p1K_map'],
-                    {'4p1K_map': {'ttheta': [1, 2, 3],
-                                  'omega': [4, 5, 6],
-                                  'intensity': 4,
-                                  'error': 1.0}}))
+            test_v, (['4p1K_map'],
+                     {'4p1K_map': {'ttheta': [1, 2, 3],
+                                   'omega': [4, 5, 6],
+                                   'intensity': 4,
+                                   'error': 1.0}}))
 
 
 if __name__ == '__main__':
