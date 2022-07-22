@@ -22,7 +22,7 @@ from mantid.simpleapi import mtd
 
 class DNSElasticSCScriptGeneratorModel(DNSScriptGeneratorModel):
     # pylint: disable=too-many-instance-attributes
-    # having the options as instance attribues, is much better readable
+    # having the options as instance attributes, is much better readable
     # none of them are public
     """
     Common Model for DNS Script generators
@@ -157,7 +157,7 @@ class DNSElasticSCScriptGeneratorModel(DNSScriptGeneratorModel):
                     f"\n          'omega_offset' : {options['omega_offset']},"
                     f"\n          'norm_to' : '{self._norm}',"
                     f"\n          'dx' : '{options['dx']:7.4f}',"
-                    f"\n          'dy' : '{options['dx']:7.4f}',"
+                    f"\n          'dy' : '{options['dy']:7.4f}',"
                     "}", ""]
 
     def _get_binning_lines(self):
