@@ -36,7 +36,7 @@ class DNSSimulationSubPowderWidgetTest(unittest.TestCase):
         self.assertIsInstance(self.widget.model, DNSSimulationSubPowderModel)
         self.assertIsInstance(self.widget.presenter,
                               DNSSimulationSubPowderPresenter)
-        self.assertEqual(self.widget.name, "Powder diffraktorgram")
+        self.assertEqual(self.widget.name, "Powder Diffractogram")
 
 
 if __name__ == '__main__':

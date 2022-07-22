@@ -17,14 +17,16 @@ from mantid.kernel import V3D
 import numpy as np
 
 from mantidqtinterfaces.dns_simulation.simulation_helpers import (
-    tth_to_q, tth_to_d, ang_to_hkl, check_inplane, det_rot_nmb_to_tth,
+    two_theta_to_q, two_theta_to_d, angle_to_hkl, check_inplane,
+    det_rot_number_to_two_theta,
     hkl_to_omega, ki_from_wavelength, list_to_v3d, lorentz_correction,
-    max_q, omega_to_samp_rot, q_to_tth, rotate_ub, get_tth_path,
+    max_q, omega_to_sample_rot, q_to_two_theta, rotate_ub, get_two_theta_path,
     get_omega_path, return_dns_surface_shape, get_angle_q_vs_hkl, return_qxqy,
-    return_qx_qx_inplane_refl, shift_channels_below_23, tth_to_rot_nmb,
-    get_omega_range_sc, get_tth_end, get_tth_start, get_1deg_angle_linspace,
-    get_tth_range_sc, get_fwhm, get_peak_width, get_peak, get_intensity_prof,
-    get_tth_range, get_tth_bins, get_unique_refl, get_inplane_refl,
+    return_qx_qx_inplane_refl, shift_channels_below_23, two_theta_to_rot_number,
+    get_omega_range_single_crystal, get_two_theta_end, get_two_theta_start,
+    get_1deg_angle_linspace,
+    get_two_theta_range_sc, get_fwhm, get_peak_width, get_peak, get_intensity_prof,
+    get_two_theta_range, get_two_theta_bins, get_unique_refl, get_inplane_refl,
     get_unique_inplane_refl)
 
 UB = np.asarray([[0.00000000e+00, -1.74272370e-17, 4.03582196e-02],
@@ -42,16 +44,16 @@ ORILAT = OrientedLattice(3.5, 3.5, 24, 90, 90, 120)
 class DNSReductionGUIPresenterTest(unittest.TestCase):
     # pylint: disable=protected-access, too-many-public-methods
 
-    def test_tth_to_q(self):
-        testv = tth_to_q(TTH, WAVELENGTH)
+    def test_two_theta_to_q(self):
+        testv = two_theta_to_q(TTH, WAVELENGTH)
         self.assertAlmostEqual(testv, 0.21733483834214878)
 
-    def test_tth_to_d(self):
-        testv = tth_to_d(TTH, WAVELENGTH)
+    def test_two_theta_to_d(self):
+        testv = two_theta_to_d(TTH, WAVELENGTH)
         self.assertAlmostEqual(testv, 28.9101616432429)
 
-    def test_ang_to_hkl(self):
-        testv = ang_to_hkl(TTH, OEMEGA, UBINV, WAVELENGTH)
+    def test_angle_to_hkl(self):
+        testv = angle_to_hkl(TTH, OEMEGA, UBINV, WAVELENGTH)
         self.assertAlmostEqual(testv[0], 1.00002826)
         self.assertAlmostEqual(testv[1], 0)
         self.assertAlmostEqual(testv[2], -1.00058571)
@@ -64,8 +66,8 @@ class DNSReductionGUIPresenterTest(unittest.TestCase):
         testv = check_inplane(Q1, Q2, hkl)
         self.assertFalse(testv)
 
-    def test_det_rot_nmb_to_tth(self):
-        testv = det_rot_nmb_to_tth(-20, 3)
+    def test_det_rot_number_to_two_theta(self):
+        testv = det_rot_number_to_two_theta(-20, 3)
         self.assertEqual(testv, 35)
 
     def test_hkl_to_omega(self):
@@ -90,14 +92,14 @@ class DNSReductionGUIPresenterTest(unittest.TestCase):
 
     def test_max_q(self):
         testv = max_q(WAVELENGTH)
-        self.assertAlmostEqual(testv, 0.44073357334169827)
+        self.assertAlmostEqual(testv, 2.769210712401315)
 
-    def test_omega_to_samp_rot(self):
-        testv = omega_to_samp_rot(100, -5)
+    def test_omega_to_sample_rot(self):
+        testv = omega_to_sample_rot(100, -5)
         self.assertEqual(testv, 95)
 
-    def test_q_to_tth(self):
-        testv = q_to_tth(2, 4)
+    def test_q_to_two_theta(self):
+        testv = q_to_two_theta(2, 4)
         self.assertAlmostEqual(testv, 79.08044749562039)
 
     def test_rotate_ub(self):
@@ -107,8 +109,8 @@ class DNSReductionGUIPresenterTest(unittest.TestCase):
                              [0.26587328, 0.13293664, 0.02372197]])
         self.assertTrue((rot_ub == testv).all)
 
-    def test_get_tth_path(self):
-        testv = get_tth_path(range(0, 10), range(2, 5))
+    def test_get_two_theta_path(self):
+        testv = get_two_theta_path(range(0, 10), range(2, 5))
         dpath = np.asarray([0., 0., 0., 0., 1., 2., 3., 4.,
                             5., 6., 7., 8., 9., 9., 9., 9.,
                             9., 8., 7., 6., 5., 4., 3., 2.,
@@ -166,31 +168,31 @@ class DNSReductionGUIPresenterTest(unittest.TestCase):
         testv = shift_channels_below_23(26, -5)
         self.assertEqual(testv, [23, -20])
 
-    def test_tth_to_rot_nmb(self):
-        testv = tth_to_rot_nmb(51)
+    def test_two_theta_to_rot_number(self):
+        testv = two_theta_to_rot_number(51)
         self.assertEqual(testv, [-6, 9])
 
-    def test_get_omega_range_sc(self):
-        testv = get_omega_range_sc(10, 12, -5)
+    def test_get_omega_range_single_crystal(self):
+        testv = get_omega_range_single_crystal(10, 12, -5)
         self.assertEqual(len(testv), 3)
         self.assertAlmostEqual(testv[0], 15)
         self.assertAlmostEqual(testv[1], 16)
         self.assertAlmostEqual(testv[2], 17)
 
-    def test_get_tth_end(self):
-        testv = get_tth_end(-10, 5)
+    def test_get_two_theta_end(self):
+        testv = get_two_theta_end(-10, 5)
         self.assertEqual(testv, 130)
 
-    def test_get_tth_start(self):
-        testv = get_tth_start(-10, 5)
+    def test_get_two_theta_start(self):
+        testv = get_two_theta_start(-10, 5)
         self.assertEqual(testv, 15)
 
     def test_get_1deg_angle_linspace(self):
         testv = get_1deg_angle_linspace(10, 14)
         self.assertTrue((testv == np.asarray([10, 11, 12, 13, 14])).all())
 
-    def test_get_tth_range_sc(self):
-        testv = get_tth_range_sc(2, 3)
+    def test_get_two_theta_range_sc(self):
+        testv = get_two_theta_range_sc(2, 3)
         self.assertEqual(len(testv), 115)
         self.assertEqual(testv[0], -2)
         self.assertEqual(testv[1], -1)
@@ -217,15 +219,15 @@ class DNSReductionGUIPresenterTest(unittest.TestCase):
         self.assertAlmostEqual(testv[0], 2.04727282e+01)
         self.assertAlmostEqual(testv[1], 3.91407935e-05)
 
-    def test_get_tth_range(self):
-        testv = get_tth_range(1, 3, 2)
+    def test_get_two_theta_range(self):
+        testv = get_two_theta_range(1, 3, 2)
         self.assertEqual(len(testv), 1131)
         self.assertEqual(testv[0], 1)
         self.assertEqual(testv[1], 1.1)
         self.assertEqual(testv[-1], 114)
 
-    def test_get_tth_bins(self):
-        testv = get_tth_bins(np.asarray([0, 1]), 0.1)
+    def test_get_two_theta_bins(self):
+        testv = get_two_theta_bins(np.asarray([0, 1]), 0.1)
         self.assertAlmostEqual(testv[0], -0.05)
         self.assertAlmostEqual(testv[1], 0.95)
         self.assertAlmostEqual(testv[2], 1.05)

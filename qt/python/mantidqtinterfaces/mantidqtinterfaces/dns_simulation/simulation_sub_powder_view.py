@@ -64,8 +64,8 @@ class DNSSimulationSubPowderView(DNSView):
         self._powder_static_canvas.figure.clear()
         self._ax = self._powder_static_canvas.figure.subplots()
         self._ax.plot(x, y, zorder=1)
-        self._ax.set_xlabel('2$\\theta$', fontsize=14)
-        self._ax.set_ylabel("Intensity (M*F2)", fontsize=14)
+        self._ax.set_xlabel('2$\\theta$ (deg)', fontsize=14)
+        self._ax.set_ylabel("Intensity$", fontsize=14)
 
     def finish_powder_plot(self):
         self._powder_toolbar.update()

@@ -9,6 +9,7 @@ import unittest
 from unittest import mock
 from unittest.mock import patch
 import numpy as np
+from numpy import pi
 
 import mantidqtinterfaces.dns_simulation.simulation_helpers as sim_help
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_obs_model import DNSObsModel
@@ -114,9 +115,9 @@ class DNSSimulationModelTest(unittest.TestCase):
         testv = self.model._get_filtered_hkls(4.7, '123.cif')
         mock_filter.assert_called_once_with('123.cif')
         mock_max_q.assert_called_once_with(4.7)
-        mock_gen.getUniqueHKLsUsingFilter.assert_called_once_with(1 / 3, 100,
+        mock_gen.getUniqueHKLsUsingFilter.assert_called_once_with(2 * pi / 3, 100,
                                                                   2)
-        mock_gen.getHKLsUsingFilter.assert_called_once_with(1 / 3, 100, 2)
+        mock_gen.getHKLsUsingFilter.assert_called_once_with(2 * pi / 3, 100, 2)
         self.assertEqual(testv, [[2], [1]])
 
     @patch('mantidqtinterfaces.dns_simulation.simulation_model.'
@@ -168,7 +169,7 @@ class DNSSimulationModelTest(unittest.TestCase):
         self.assertEqual(len(testv), 29)
         first_dict = {'hkl': sim_help.list_to_v3d([1, 0, 4]), 'unique': True,
                       'q': 2.7253974323168175, 'fs': 1, 'd': 2.30541983810352,
-                      'two_theta': 120.34364613905412, 'fs_lc': 1, 'h': 1.0,
+                      'tth': 120.34364613905412, 'fs_lc': 1, 'h': 1.0,
                       'k': 0.0, 'l': 4.0,
                       'equivalents': [sim_help.list_to_v3d([1, 0, 4]),
                                       sim_help.list_to_v3d([1, -1, -4]),
@@ -320,12 +321,12 @@ class DNSSimulationModelTest(unittest.TestCase):
         self.assertEqual(testv, [True, ''])
         testv = self.model.validate_hkl([None, 2, 3], [4, 5, 6])
         self.assertEqual(testv, [False, 'Could not parse hkl, enter 3 '
-                                        'comma seperated numbers.'])
+                                        'comma separated numbers.'])
         testv = self.model.validate_hkl([1, 2, 3], [None, 5, 6])
         self.assertEqual(testv, [False, 'Could not parse hkl, enter 3 '
-                                        'comma seperated numbers.'])
+                                        'comma separated numbers.'])
         testv = self.model.validate_hkl([0, 0, 1], [0, 0, 2])
-        self.assertEqual(testv, [False, 'hkl1 cannot be paralell hkl2'])
+        self.assertEqual(testv, [False, 'hkl1 cannot be parallel hkl2'])
 
     @patch('mantidqtinterfaces.dns_simulation.simulation_model.'
            'convert_hkl_string_to_float')

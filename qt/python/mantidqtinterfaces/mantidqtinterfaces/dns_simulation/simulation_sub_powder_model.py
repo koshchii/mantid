@@ -42,10 +42,10 @@ class DNSSimulationSubPowderModel:
         refls = sim_help.get_unique_refl(refls)
         annotate_list = [[], [], []]
         for refl in refls:
-            if (refl.two_theta + shift <= two_theta_end
-                    and round(refl.two_theta + shift, 2) not in annotate_list[0]):
-                x_numb = int((refl.two_theta - start + shift) / 0.1)
-                annotate_list[0].append(round(refl.two_theta + shift, 2))
+            if (refl.tth + shift <= two_theta_end
+                    and round(refl.tth + shift, 2) not in annotate_list[0]):
+                x_numb = int((refl.tth - start + shift) / 0.1)
+                annotate_list[0].append(round(refl.tth + shift, 2))
                 annotate_list[1].append(refl.hkl)
                 annotate_list[2].append(intensity[x_numb])
         return annotate_list

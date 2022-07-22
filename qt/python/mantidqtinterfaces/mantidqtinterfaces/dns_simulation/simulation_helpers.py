@@ -272,7 +272,7 @@ def get_peak(peak_width, two_theta, shifted_two_theta):
 
 
 def get_intensity_prof(refl, shift, two_theta):
-    shifted_two_theta = refl.two_theta + shift
+    shifted_two_theta = refl.tth + shift
     fwhm = get_fwhm(shifted_two_theta)
     peak_width = get_peak_width(fwhm)
     peak = get_peak(peak_width, two_theta, shifted_two_theta)

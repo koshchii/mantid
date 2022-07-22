@@ -13,7 +13,7 @@ from mantidqtinterfaces.dns_simulation.simulation_sub_common_presenter import \
     DNSSimulationSubCommonPresenter
 
 TABLE_HEAD = [
-    'h', 'k', 'l', 'q', 'd', 'two_theta', 'fs', 'mult', 'diff', 'det_rot',
+    'h', 'k', 'l', 'q', 'd', 'tth', 'fs', 'mult', 'diff', 'det_rot',
     'channel', 'sample_rot'
 ]
 FORMAT_STRING = [
@@ -38,7 +38,7 @@ class DNSSimulationSubTablePresenter(DNSSimulationSubCommonPresenter):
     def process_request(self, sub_dict):
         self._sub_dict = sub_dict
         filtered_refls = sub_dict['filtered_refls']
-        two_theta_limit = sub_dict['two_theta_limit']
+        two_theta_limit = sub_dict['tth_limit']
         self._write_table(filtered_refls, two_theta_limit)
 
     def _table_item_double_clicked(self, det_rot, sample_rot):

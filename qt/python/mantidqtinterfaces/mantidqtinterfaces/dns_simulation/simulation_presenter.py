@@ -98,7 +98,7 @@ class DNSSimulationPresenter(DNSObserver):
         unique = self.parent.presenter.own_dict['unique']
         filtered_refls = self.model.filter_refls(self._refls, inplane, unique)
         sub_dict = {'filtered_refls': filtered_refls,
-                    'two_theta_limit': self.TWO_THETA_LIMIT,
+                    'tth_limit': self.TWO_THETA_LIMIT,
                     'refls': self._refls,
                     'hkl1_v': self.own_dict['hkl1_v'],
                     'hkl2_p_v': self.own_dict['hkl2_p_v'],

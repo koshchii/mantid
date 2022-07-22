@@ -121,8 +121,8 @@ class DNSSimulationModel(DNSObsModel):
             refl.q = q_val[i]
             refl.fs = f_squared[i]
             refl.d = d_val[i]
-            refl.two_theta = sim_help.q_to_two_theta(refl.q, wvl)
-            refl.fs_lc = sim_help.lorentz_correction(refl.fs, refl.two_theta)
+            refl.tth = sim_help.q_to_two_theta(refl.q, wvl)
+            refl.fs_lc = sim_help.lorentz_correction(refl.fs, refl.tth)
             if not cif_fn:
                 # if dummy scatterer set I = 1
                 refl.fs = 1
@@ -132,14 +132,14 @@ class DNSSimulationModel(DNSObsModel):
             refl.l = refl.hkl[2]  # noqa: E741, E743
             refl.equivalents = point_group.getEquivalents(refl.hkl)
             refl.mult = len(refl.equivalents)
-            refl.diff = abs(identify_two_theta - refl.two_theta)
-            refl.det_rot, refl.channel = sim_help.two_theta_to_rot_number(refl.two_theta)
+            refl.diff = abs(identify_two_theta - refl.tth)
+            refl.det_rot, refl.channel = sim_help.two_theta_to_rot_number(refl.tth)
             refl.inplane = sim_help.check_inplane(q1, q2, refl.hkl)
 
             refl.channel, refl.det_rot = sim_help.shift_channels_below_23(
                 refl.channel, refl.det_rot)
             refl.omega = sim_help.hkl_to_omega(refl.hkl, ub, wvl,
-                                               refl.two_theta)
+                                               refl.tth)
             refl.sample_rot = sim_help.omega_to_sample_rot(
                 refl.omega, refl.det_rot)
             self._refls.append(refl)

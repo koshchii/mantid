@@ -61,7 +61,9 @@ class DNSSimulationSubTablePresenterTest(unittest.TestCase):
            'DNSSimulationSubTablePresenter._add_mult_tooltip')
     @patch('mantidqtinterfaces.dns_simulation.simulation_sub_table_presenter.'
            'DNSSimulationSubTablePresenter._color_identified')
-    def test__writetable(self, mock_color, mock_tool):
+    #@patch('mantidqtinterfaces.dns_simulation.simulation_sub_table_presenter.'
+    #       'DNSSimulationSubTablePresenter._write_table')
+    def test__write_table(self, mock_color, mock_tool):
         refl = mock.Mock()
         refl.h = 1
         refl.k = 2
