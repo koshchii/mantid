@@ -51,7 +51,8 @@ set_property(CACHE MANTID_QT_LIB PROPERTY STRINGS "OFF" "BUILD" "SYSTEM")
 if(NOT
    (ENABLE_WORKBENCH
     OR MANTID_QT_LIB STREQUAL "BUILD"
-    OR MANTID_FRAMEWORK_LIB STREQUAL "BUILD")
+    OR MANTID_FRAMEWORK_LIB STREQUAL "BUILD"
+    OR ENABLE_DOCS)
 )
   message(FATAL_ERROR "Must select atleast one component to build")
 endif()
@@ -117,8 +118,8 @@ set(CPACK_PACKAGE_NAME "mantid${CPACK_PACKAGE_SUFFIX}")
 # Bootstrap any dependencies
 include(Bootstrap)
 
-if(MSVC)
-  include(MSVCSetup)
+if(WIN32)
+  include(WindowsSetup)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
   include(DarwinSetup)
 endif()
@@ -132,7 +133,7 @@ endif()
 include(Span)
 
 # Find OpenGL
-if(ENABLE_OPENGL)
+if(ENABLE_OPENGL AND (BUILD_MANTIDFRAMEWORK OR BUILD_MANTIDQT))
   # Use legacy libGL library
   set(OpenGL_GL_PREFERENCE LEGACY)
   find_package(OpenGL REQUIRED)
@@ -201,10 +202,6 @@ if(UNIX)
   # Experimental feature. Unix only at this point.
   option(UNITY_BUILD "Switch for utilising unity builds. Faster builds for selected components.")
 endif(UNIX)
-
-if(MSVC)
-  add_definitions(-DQWT_DLL)
-endif()
 
 add_custom_target(AllTests)
 

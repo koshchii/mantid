@@ -22,8 +22,9 @@ from qtpy.QtCore import QProcess
 class DNSReductionGUIView(QMainWindow):
     # pylint: disable=too-many-instance-attributes
     """
-    Main View for DNS reduction GUI.
+    Main view for DNS reduction GUI.
     """
+
     def __init__(self, parent=None, app=None, within_mantid=None):
         QMainWindow.__init__(self, parent=None)
         self.parent = parent
@@ -44,18 +45,12 @@ class DNSReductionGUIView(QMainWindow):
         self.ui.actionDNS_website.triggered.connect(self._open_dns_webpage)
         # connect mode switching signals
         self.modus_mapping = {
-            # self.ui.actionSimulation: 'simulation',
             self.ui.actionPowder_elastic: 'powder_elastic',
             self.ui.actionPowder_TOF: 'powder_tof',
-            # self.ui.actionSingle_crystal_elastic: 'sc_elastic',
-            # self.ui.actionSingle_crystal_TOF: 'sc_tof',
         }
         self.modus_titles = {
-            # 'simulation': 'DNS Reduction - Simulation',
             'powder_elastic': 'DNS Reduction - Powder Elastic',
             'powder_tof': 'DNS Reduction - Powder TOF',
-            # 'sc_elastic': 'DNS Reduction - Single Crystal elastic',
-            # 'sc_tof': 'DNS Reduction - Single Crystal TOF',
         }
         for key in self.modus_mapping:
             key.triggered.connect(self._modus_change)
@@ -105,7 +100,7 @@ class DNSReductionGUIView(QMainWindow):
         return None
 
     def _help_button_clicked(self):
-        show_interface_help("direct/dns_powder_tof/DNS Reduction",
+        show_interface_help("direct/dns_powder_tof/DNS Powder TOF",
                             QProcess(self))
 
     def add_submenu(self, subview):

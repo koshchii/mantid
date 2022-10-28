@@ -6,6 +6,7 @@ DNS Data Tab
 .. image::  ../../../images/DNS_interface_powder_tof_data_tab.png
    :align: center
    :height: 400px
+
 \
 
 This tab is a file browser for the DNS datafiles.
@@ -41,7 +42,7 @@ by mouse selection and one can use "Ctrl" or "Shift" buttons for multiple select
 \
 
 (6) Here a user can switch between sample data and standard data. If standard data
-are not selected, then all files found in the **Standard Files Directory** (as
+is not selected, then all files found in the **Standard Files Directory** (as
 specified in :ref:`Paths <dns_powder_tof_paths_tab-ref>` tab) will be automatically
 selected by default. One can change this set up by switching to "Standard Data" and
 unselecting the **Authomatically Select Standard Files** checkbox. If no standard

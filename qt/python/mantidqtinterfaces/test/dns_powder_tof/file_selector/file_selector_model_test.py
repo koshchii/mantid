@@ -4,8 +4,9 @@
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 """
-presenter for dns path panel
+Presenter for dns path panel.
 """
 
 import unittest
@@ -25,7 +26,7 @@ from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import (
 
 
 def get3files():
-    # functions, so we do get an new object for every test
+    # functions, so we do get a new object for every test
     return [
         'service_774714.d_dat', 'service_787463.d_dat',
         'service_788058.d_dat'
@@ -67,8 +68,8 @@ class DNSFileSelectorModelTest(unittest.TestCase):
 
     def test___init__(self):
         self.assertIsInstance(self.model, DNSObsModel)
-        self.assertIsInstance(self.model.tree_model, DNSTreeModel)
-        self.assertIsInstance(self.model.standard_data, DNSTreeModel)
+        self.assertIsInstance(self.model.sample_data_tree_model, DNSTreeModel)
+        self.assertIsInstance(self.model.standard_data_tree_model, DNSTreeModel)
         self.assertTrue(hasattr(self.model, 'all_datafiles'))
         self.assertTrue(hasattr(self.model, 'old_data_set'))
         self.assertTrue(hasattr(self.model, 'active_model'))
@@ -92,16 +93,16 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         mock_load.return_value = [1, 2]
         mock_return_filelist.return_value = get3files()
         self.model.old_data_set = get3files()[0]
-        testv = self.model.set_datafiles_to_load(data_path='a',
-                                                 fn_range=[0, 1000000],
-                                                 filtered=False,
-                                                 watcher=True)
+        test_v = self.model.set_datafiles_to_load(data_path='a',
+                                                  file_number_range=[0, 1000000],
+                                                  filtered=False,
+                                                  watcher=True)
         self.assertEqual(
-            testv,
+            test_v,
             (2, [1, 2], ['service_787463.d_dat', 'service_788058.d_dat'
                          ], [0, 1000000]))
 
-    def test_get_start_end_filen_umbers(self):
+    def test_get_start_end_file_numbers(self):
         self.model.all_datafiles = get2files()
         testv = self.model._get_start_end_file_numbers()
         self.assertEqual(testv, [787463, 788058])
@@ -117,7 +118,7 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         self.assertEqual(testv, ([], [774714, 788058]))
         testv = self.model._filter_range(get3files(),
                                          filtered=True,
-                                         fn_range=[787463, 787463])
+                                         file_number_range=[787463, 787463])
         self.assertEqual(testv, ([get2files()[0]], [787463, 787463]))
 
     def test_read_all(self):
@@ -125,7 +126,7 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         self.assertFalse(self.model.loading_canceled)
         self.assertEqual(self.parent.update_progress.call_count, 3)
         self.assertEqual(len(self.model.old_data_set), 3)
-        self.assertEqual(self.model.tree_model.rowCount(), 3)  # three scans
+        self.assertEqual(self.model.sample_data_tree_model.rowCount(), 3)  # three scans
 
     @patch(
         'mantidqtinterfaces.dns_powder_tof.file_selector.file_selector_model.'
@@ -136,8 +137,8 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         new=dns_file)
     def test_read_standard(self, mock_return_filelist):
         mock_return_filelist.return_value = ['service_774714.d_dat']
-        standardpath = self.filepath
-        testv = self.model.read_standard(standardpath)
+        standard_path = self.filepath
+        testv = self.model.read_standard(standard_path)
         self.parent.update_progress.assert_not_called()
         self.assertEqual(testv, 1)
 
@@ -150,15 +151,12 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         testv = self.model.try_unzip('a', '')
         self.assertFalse(testv)
 
-    # def test_add_number_of_files_per_scan(self):
-    #     pass # tested in treemodel
-
     def test_clear_scans_if_not_sequential(self):
         self.read3files()  # pylint: disable=no-value-for-parameter
         self.model._clear_scans_if_not_sequential(True)
-        self.assertEqual(self.model.tree_model.rowCount(), 3)
+        self.assertEqual(self.model.sample_data_tree_model.rowCount(), 3)
         self.model._clear_scans_if_not_sequential(False)
-        self.assertEqual(self.model.tree_model.rowCount(), 0)
+        self.assertEqual(self.model.sample_data_tree_model.rowCount(), 0)
 
     @patch(
         'mantidqtinterfaces.dns_powder_tof.file_selector.file_selector_model.'
@@ -180,7 +178,7 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         mock_load.assert_called_once_with('last_filelist.txt', '123')
         self.assertIsInstance(testv['0'], ObjectDict)
         for name in [
-            'file_number', 'det_rot', 'sample_rot', 'field', 'temp_samp',
+            'file_number', 'det_rot', 'sample_rot', 'field', 'temp_sample',
             'sample', 'end_time', 'tof_channels', 'channel_width', 'filename',
             'wavelength', 'selector_speed', 'scan_number', 'scan_command',
             'scan_points', 'new_format'
@@ -191,26 +189,11 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         testv = self.model._load_saved_filelist('123')
         self.assertEqual(testv, {})
 
-    # def test_get_number_of_scans(self):
-    # tested in the treemodel
-
-    # def test_get_scan_range(self):
-    # tested in the treemodel
-
     def test_check_last_scans(self):
         self.read3files()  # pylint: disable=no-value-for-parameter
         self.model.check_last_scans(1, False, [0, 1, 2])
-        self.assertEqual(self.model.tree_model.get_checked(False), [788058])
+        self.assertEqual(self.model.sample_data_tree_model.get_checked(False), [788058])
         self.model.check_last_scans(1, True, [0, 1, 2])
-
-    # def test_check_scans_by_indexes(self, indexes):
-    # tested in treemodel
-
-    # def test_check_scans_by_rows(self, rows):
-    # tested in treemodel
-
-    # def test_uncheck_all_scans(self):
-    #  tested in treemodel
 
     def test_check_by_file_numbers(self):
         self.read3files()  # pylint: disable=no-value-for-parameter
@@ -219,39 +202,35 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         testv = self.model.check_by_file_numbers([788058])
         self.assertEqual(testv, 0)
 
-    # def test_check_fn_range(self, ffnmb, lfnmb):
-    # tested in treemodel
-
     def test_set_loading_canceled(self):
         self.model.set_loading_canceled()
         self.assertTrue(self.model.loading_canceled)
         self.model.set_loading_canceled(False)
         self.assertFalse(self.model.loading_canceled)
 
-    def test_get_model(self):
-        treemodel = self.model.get_model()
-        self.assertIsInstance(treemodel, DNSTreeModel)
-        self.assertEqual(self.model.tree_model, treemodel)
-        treemodel = self.model.get_model(standard=True)
-        self.assertIsInstance(treemodel, DNSTreeModel)
-        self.assertEqual(self.model.standard_data, treemodel)
+    def test_get_standard_data_model(self):
+        tree_model = self.model.get_standard_data_model()
+        self.assertIsInstance(tree_model, DNSTreeModel)
+        self.assertEqual(self.model.standard_data_tree_model, tree_model)
+
+    def test_get_sample_data_model(self):
+        tree_model = self.model.get_sample_data_model()
+        self.assertIsInstance(tree_model, DNSTreeModel)
+        self.assertEqual(self.model.sample_data_tree_model, tree_model)
 
     def test_model_is_standard(self):
         self.assertFalse(self.model.model_is_standard())
-        self.model.active_model = self.model.standard_data
+        self.model.active_model = self.model.standard_data_tree_model
         self.assertTrue(self.model.model_is_standard())
-
-    # def test_get_data(self):
-    # tested in treemodel
 
     def test_set_model(self):
         self.model.active_model = ''
         self.assertFalse(self.model.model_is_standard())
-        self.model.set_model(standard=True)
+        self.model.set_active_model(standard=True)
         self.assertTrue(self.model.model_is_standard())
-        self.assertFalse(self.model.active_model == self.model.tree_model)
-        self.model.set_model()
-        self.assertTrue(self.model.active_model == self.model.tree_model)
+        self.assertFalse(self.model.active_model == self.model.sample_data_tree_model)
+        self.model.set_active_model()
+        self.assertTrue(self.model.active_model == self.model.sample_data_tree_model)
 
     def test_filter_scans_for_boxes(self):
         self.read3files()  # pylint: disable=no-value-for-parameter
@@ -285,26 +264,26 @@ class DNSFileSelectorModelTest(unittest.TestCase):
         'mantidqtinterfaces.dns_powder_tof.file_selector.file_selector_model.'
         'DNSTreeModel.get_filename_from_index')
     def test_open_datafile(self, mock_index, mock_open):
-        self.model.active_model = self.model.standard_data
+        self.model.active_model = self.model.standard_data_tree_model
         mock_index.return_value = 'a'
         self.model.open_datafile(1, 'b', 'c')
         mock_open.assert_called_once_with('a', 'c')
         mock_open.reset_mock()
-        self.model.active_model = self.model.tree_model
+        self.model.active_model = self.model.sample_data_tree_model
         self.model.open_datafile(1, 'b', 'c')
         mock_open.assert_called_once_with('a', 'b')
 
     @patch(
         'mantidqtinterfaces.dns_powder_tof.file_selector.file_selector_model.'
         'DNSFile')
-    def test_load_file_from_chache_or_new(self, mock_dnsfile):
+    def test_load_file_from_cache_or_new(self, mock_dnsfile):
         filename = get2files()[0]
-        # datapath = self.filepath
+        # data_path = self.filepath
         mydict = {filename: dns_file('a', filename)}
-        testv = self.model._load_file_from_chache_or_new(mydict, filename, 'a')
+        testv = self.model._load_file_from_cache_or_new(mydict, filename, 'a')
         mock_dnsfile.assert_not_called()
         self.assertIsInstance(testv, ObjectDict)
-        testv = self.model._load_file_from_chache_or_new({}, filename, 'a')
+        testv = self.model._load_file_from_cache_or_new({}, filename, 'a')
         mock_dnsfile.assert_called_once_with('a', filename)
 
     @patch(

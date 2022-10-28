@@ -16,14 +16,15 @@ from mantidqtinterfaces.dns_powder_tof.helpers.file_processing import (load_txt,
 
 class DNSFile(ObjectDict):
     """
-    Class for reading, writing and storing data of a single dns datafile.
+    Class for reading, writing and storing data of a single DNS datafile.
     This is a dictionary, but can also be accessed like attributes.
     """
-    def __init__(self, datapath, filename):
-        super().__init__()
-        self.new_format = self.read(datapath, filename)
 
-    def write(self, datapath, filename):
+    def __init__(self, data_path, filename):
+        super().__init__()
+        self.new_format = self.read(data_path, filename)
+
+    def write(self, data_path, filename):
         # mostly stolen form nicos
         txt = ''
         separator = "#" + "-" * 74 + "\n"
@@ -95,7 +96,7 @@ class DNSFile(ObjectDict):
         txt += separator
         txt += "# Temperatures/Lakeshore      T\n"
         txt += f"#  T1                         {self['temp_tube']:6.3f} K\n"
-        txt += f"#  T2                         {self['temp_samp']:6.3f} K\n"
+        txt += f"#  T2                         {self['temp_sample']:6.3f} K\n"
         txt += f"#  sample_setpoint            {self['temp_set']:6.3f} K\n"
         txt += separator
 
@@ -147,10 +148,10 @@ class DNSFile(ObjectDict):
                 txt += f" {0:8d}"
             txt += "\n"
         txt = ''.join([line.rstrip() + '\n' for line in txt.splitlines()])
-        save_txt(txt, filename, datapath)
+        save_txt(txt, filename, data_path)
 
-    def read(self, datapath, filename):
-        txt = load_txt(filename, datapath)
+    def read(self, data_path, filename):
+        txt = load_txt(filename, data_path)
         if len(txt) < 138 or not txt[0].startswith('# DNS Data'):
             del txt
             return False
@@ -186,7 +187,7 @@ class DNSFile(ObjectDict):
         self['C'] = float(txt[39][25:-16])
         self['ZT'] = float(txt[40][25:-16])
         self['temp_tube'] = float(txt[43][25:-3])
-        self['temp_samp'] = float(txt[44][25:-3])
+        self['temp_sample'] = float(txt[44][25:-3])
         self['temp_set'] = float(txt[45][25:-3])
         self['tof_channels'] = int(txt[48][25:-1])
         self['channel_width'] = float(txt[49][25:-11])

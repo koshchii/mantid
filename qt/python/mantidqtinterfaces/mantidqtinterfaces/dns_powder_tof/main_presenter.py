@@ -6,14 +6,15 @@
 # SPDX - License - Identifier: GPL - 3.0 +
 
 """
-Reduction GUI for DNS Instrument at MLZ.
+Main GUI presenter class.
 """
 
 
 class DNSReductionGUIPresenter:
     """
-    Main GUI presenter for dns, presenter is owned by main_view.
+    The presenter is owned by main_view.
     """
+
     def __init__(self,
                  name=None,
                  view=None,
@@ -30,11 +31,7 @@ class DNSReductionGUIPresenter:
         self.model = self._parameter_abo
         self._switch_mode('powder_elastic')
         # connect signals
-        self.view.sig_tab_changed.connect(self._tab_changed)
-        self.view.sig_save_as_triggered.connect(self._save_as)
-        self.view.sig_save_triggered.connect(self._save)
-        self.view.sig_open_triggered.connect(self._load_xml)
-        self.view.sig_modus_change.connect(self._switch_mode)
+        self._attach_signal_slots()
 
     def _load_xml(self):
         """
@@ -80,3 +77,10 @@ class DNSReductionGUIPresenter:
         for observer in self._parameter_abo.observers:
             if observer.view == actual_view:
                 self._parameter_abo.notify_focused_tab(observer)
+
+    def _attach_signal_slots(self):
+        self.view.sig_tab_changed.connect(self._tab_changed)
+        self.view.sig_save_as_triggered.connect(self._save_as)
+        self.view.sig_save_triggered.connect(self._save)
+        self.view.sig_open_triggered.connect(self._load_xml)
+        self.view.sig_modus_change.connect(self._switch_mode)

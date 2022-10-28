@@ -6,9 +6,11 @@
 // SPDX - License - Identifier: GPL - 3.0 +
 #pragma once
 #include "../../../ISISReflectometry/GUI/Batch/RowProcessingAlgorithm.h"
+#include "../../../ISISReflectometry/GUI/Preview/ROIType.h"
 #include "../../../ISISReflectometry/Reduction/Batch.h"
 #include "../../../ISISReflectometry/Reduction/PreviewRow.h"
 #include "../../../ISISReflectometry/TestHelpers/ModelCreationHelper.h"
+#include "MantidFrameworkTestHelpers/WorkspaceCreationHelper.h"
 
 #include <cxxtest/TestSuite.h>
 
@@ -47,10 +49,28 @@ public:
     checkExperimentSettings(*result);
   }
 
+  void testExperimentSettingsReductionTypeSetToNormalForSumInLambda() {
+    auto experiment = makeExperimentWithReductionTypeSetForSumInLambda();
+    auto model = Batch(experiment, m_instrument, m_runsTable, m_slicing);
+    auto row = makeEmptyRow();
+    auto result = RowProcessing::createAlgorithmRuntimeProps(model, row);
+    TS_ASSERT_EQUALS(result->getPropertyValue("ReductionType"), "Normal");
+    TS_ASSERT_EQUALS(result->getPropertyValue("SummationType"), "SumInLambda");
+  }
+
   void testExperimentSettingsWithPreviewRow() {
     auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
-    auto result = Reduction::createAlgorithmRuntimeProps(model, makePreviewRow());
+    auto theta = 0.7;
+    auto previewRow = makePreviewRow(theta, "2-3", "4-5", "6-7");
+    auto result = Reduction::createAlgorithmRuntimeProps(model, previewRow);
+
+    // Check results from the experiment settings tab
     checkExperimentSettings(*result);
+    // Check the settings from the PreviewRow model
+    TS_ASSERT_EQUALS(result->getPropertyValue("ProcessingInstructions"), "2-3");
+    TS_ASSERT_EQUALS(result->getPropertyValue("BackgroundProcessingInstructions"), "4-5");
+    TS_ASSERT_EQUALS(result->getPropertyValue("TransmissionProcessingInstructions"), "6-7");
+    assertProperty(*result, "ThetaIn", theta);
   }
 
   void testLookupRowWithAngleLookup() {
@@ -61,14 +81,14 @@ public:
     checkMatchesAngleRow(*result);
   }
 
-  // TODO
-  //  void testLookupPreviewRowWithAngleLookup() {
-  //    auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
-  //    // angle within tolerance of 2.3
-  //    auto row = makePreviewRow(2.29);
-  //    auto result = RowProcessing::createAlgorithmRuntimeProps(model, row);
-  //    checkMatchesAngleRow(*result);
-  //  }
+  void testLookupPreviewRowWithAngleLookup() {
+    auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
+    // angle within tolerance of 2.3
+    auto previewRow = makePreviewRow(2.29, "2-3");
+    auto result = Reduction::createAlgorithmRuntimeProps(model, previewRow);
+    checkMatchesAngleRowExcludingProcessingInstructions(*result);
+    TS_ASSERT_EQUALS(result->getPropertyValue("ProcessingInstructions"), "2-3");
+  }
 
   void testLookupRowWithWildcardLookup() {
     auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
@@ -78,14 +98,14 @@ public:
     checkMatchesWildcardRow(*result);
   }
 
-  // TODO
-  //  void testLookupPreviewRowWithWildcardLookup() {
-  //    auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
-  //    // angle outside tolerance of any angle matches wildcard row instead
-  //    auto row = makePreviewRow(2.28);
-  //    auto result = RowProcessing::createAlgorithmRuntimeProps(model, row);
-  //    checkMatchesWildcardRow(*result);
-  //  }
+  void testLookupPreviewRowWithWildcardLookup() {
+    auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
+    // angle outside tolerance of any angle matches wildcard row instead
+    auto row = makePreviewRow(2.28, "2-3");
+    auto result = Reduction::createAlgorithmRuntimeProps(model, row);
+    checkMatchesWildcardRowExcludingProcessingInstructions(*result);
+    TS_ASSERT_EQUALS(result->getPropertyValue("ProcessingInstructions"), "2-3");
+  }
 
   void testInstrumentSettings() {
     auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
@@ -194,6 +214,18 @@ public:
     assertProperty(*result, "ScaleFactor", 2.2);
   }
 
+  void testSecondTransmissionRunClearedIfFirstTransmissionSet() {
+    auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
+    // Use an angle that will match per-theta defaults. They should be
+    // overridden by the cell values. Set first transmission run only.
+    auto row = Row({"12345", "12346"}, 2.3, TransmissionRunPair("92345", ""), RangeInQ(0.1, 0.09, 0.91), 2.2,
+                   ReductionOptionsMap(), ReductionWorkspaces({"12345", "12346"}, TransmissionRunPair("92345", "")));
+    auto result = RowProcessing::createAlgorithmRuntimeProps(model, row);
+
+    TS_ASSERT_EQUALS(result->getPropertyValue("FirstTransmissionRunList"), "92345");
+    TS_ASSERT_EQUALS(result->getPropertyValue("SecondTransmissionRunList"), "");
+  }
+
   void testAddingPropertyViaOptionsCell() {
     // This tests adding a property via the options cell on a row, for a
     // property that does not get set anywhere else on the GUI
@@ -216,9 +248,14 @@ public:
     auto model = Batch(m_experiment, m_instrument, m_runsTable, m_slicing);
     // Use an angle that will match per-theta defaults. They should be
     // overridden by the cell values
-    auto row = makeRowWithOptionsCellFilled(2.3, ReductionOptionsMap{{"ProcessingInstructions", "390-410"}});
+    auto row =
+        makeRowWithOptionsCellFilled(2.3, ReductionOptionsMap{{"ProcessingInstructions", "390-410"},
+                                                              {"BackgroundProcessingInstructions", "410-430"},
+                                                              {"TransmissionProcessingInstructions", "430-450"}});
     auto result = RowProcessing::createAlgorithmRuntimeProps(model, row);
     TS_ASSERT_EQUALS(result->getPropertyValue("ProcessingInstructions"), "390-410");
+    TS_ASSERT_EQUALS(result->getPropertyValue("BackgroundProcessingInstructions"), "410-430");
+    TS_ASSERT_EQUALS(result->getPropertyValue("TransmissionProcessingInstructions"), "430-450");
   }
 
   void testOptionsCellOverridesInstrumentSettings() {
@@ -245,6 +282,20 @@ public:
     TS_ASSERT_EQUALS(result->getPropertyValue("CostFunction"), "Unweighted least squares");
   }
 
+  void test_row_is_updated_on_reduction_algorithm_complete() {
+    auto mockAlg = std::make_shared<StubbedReduction>();
+    const bool isHistogram = true;
+    Mantid::API::MatrixWorkspace_sptr mockWs = WorkspaceCreationHelper::create1DWorkspaceRand(1, isHistogram);
+    mockAlg->addOutputWorkspace(mockWs);
+
+    auto runNumbers = std::vector<std::string>{};
+    auto row = PreviewRow(runNumbers);
+
+    Reduction::updateRowOnAlgorithmComplete(mockAlg, row);
+
+    TS_ASSERT_EQUALS(row.getReducedWs(), mockWs);
+  }
+
 private:
   std::vector<std::string> m_instruments;
   double m_thetaTolerance;
@@ -253,7 +304,33 @@ private:
   RunsTable m_runsTable;
   Slicing m_slicing;
 
-  PreviewRow makePreviewRow() { return PreviewRow({"12345"}); }
+  class StubbedReduction : public WorkspaceCreationHelper::StubAlgorithm {
+  public:
+    StubbedReduction() {
+      this->setChild(true);
+      auto prop = std::make_unique<Mantid::API::WorkspaceProperty<>>(m_propName, "", Mantid::Kernel::Direction::Output);
+      declareProperty(std::move(prop));
+    }
+
+    void addOutputWorkspace(Mantid::API::MatrixWorkspace_sptr &ws) {
+      this->getPointerToProperty("OutputWorkspace")->createTemporaryValue();
+      setProperty(m_propName, ws);
+    }
+    const std::string m_propName = "OutputWorkspace";
+  };
+
+  PreviewRow makePreviewRow(double theta = 0.1, const std::string &processingInstructions = "10-11",
+                            const std::string &backgroundProcessingInstructions = "",
+                            const std::string &transmissionProcessingInstructions = "") {
+    auto previewRow = PreviewRow({"12345"});
+    previewRow.setTheta(theta);
+    previewRow.setProcessingInstructions(ROIType::Signal, processingInstructions);
+    if (!backgroundProcessingInstructions.empty())
+      previewRow.setProcessingInstructions(ROIType::Background, backgroundProcessingInstructions);
+    if (!transmissionProcessingInstructions.empty())
+      previewRow.setProcessingInstructions(ROIType::Transmission, transmissionProcessingInstructions);
+    return previewRow;
+  }
 
   void checkExperimentSettings(IAlgorithmRuntimeProps const &result) {
     TS_ASSERT_EQUALS(result.getPropertyValue("AnalysisMode"), "MultiDetectorAnalysis");
@@ -286,6 +363,17 @@ private:
     TS_ASSERT_EQUALS(result.getPropertyValue("BackgroundProcessingInstructions"), "2-3,7-8");
   }
 
+  void checkMatchesAngleRowExcludingProcessingInstructions(IAlgorithmRuntimeProps const &result) {
+    TS_ASSERT_EQUALS(result.getPropertyValue("FirstTransmissionRunList"), "22348, 22349");
+    TS_ASSERT_EQUALS(result.getPropertyValue("SecondTransmissionRunList"), "22358, 22359");
+    TS_ASSERT_EQUALS(result.getPropertyValue("TransmissionProcessingInstructions"), "4");
+    assertProperty(result, "MomentumTransferMin", 0.009);
+    assertProperty(result, "MomentumTransferStep", 0.03);
+    assertProperty(result, "MomentumTransferMax", 1.3);
+    assertProperty(result, "ScaleFactor", 0.9);
+    TS_ASSERT_EQUALS(result.getPropertyValue("BackgroundProcessingInstructions"), "2-3,7-8");
+  }
+
   void checkMatchesWildcardRow(IAlgorithmRuntimeProps const &result) {
     TS_ASSERT_EQUALS(result.getPropertyValue("FirstTransmissionRunList"), "22345");
     TS_ASSERT_EQUALS(result.getPropertyValue("SecondTransmissionRunList"), "22346");
@@ -295,6 +383,17 @@ private:
     assertProperty(result, "MomentumTransferMax", 1.1);
     assertProperty(result, "ScaleFactor", 0.7);
     TS_ASSERT_EQUALS(result.getPropertyValue("ProcessingInstructions"), "1");
+    TS_ASSERT_EQUALS(result.getPropertyValue("BackgroundProcessingInstructions"), "3,7");
+  }
+
+  void checkMatchesWildcardRowExcludingProcessingInstructions(IAlgorithmRuntimeProps const &result) {
+    TS_ASSERT_EQUALS(result.getPropertyValue("FirstTransmissionRunList"), "22345");
+    TS_ASSERT_EQUALS(result.getPropertyValue("SecondTransmissionRunList"), "22346");
+    TS_ASSERT_EQUALS(result.getPropertyValue("TransmissionProcessingInstructions"), "5-6");
+    assertProperty(result, "MomentumTransferMin", 0.007);
+    assertProperty(result, "MomentumTransferStep", 0.01);
+    assertProperty(result, "MomentumTransferMax", 1.1);
+    assertProperty(result, "ScaleFactor", 0.7);
     TS_ASSERT_EQUALS(result.getPropertyValue("BackgroundProcessingInstructions"), "3,7");
   }
 

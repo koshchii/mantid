@@ -29,20 +29,16 @@ def get_bank_positions(sample_data, rounding_limit=0.05):
         for compare in new_arr:
             if abs(compare - bank) < rounding_limit:
                 inside = True
-                break
-            inside = False
+            else:
+                inside = False
         if not inside:
             new_arr.append(bank)
     return new_arr
 
 
-def _get_max_key_length(dataset):
-    return max([len(a) for a in dataset.keys()]) + 6 + 4
-
-
-def _get_field_string(fields, llens):
+def _get_field_string(fields, line_indent):
     field_items = sorted(fields.items())
-    spacer = " " * (llens + 1)
+    spacer = "".rjust(line_indent)
     string_list = [(f"{spacer}{key:4.2f}: {value}")
                    for key, value in field_items]
     return ",\n".join(string_list)
@@ -53,11 +49,11 @@ def _get_path_string(dataset, sample_name):
     return f"'path': '{path}',\n"
 
 
-def _get_sample_string(sample_name, llens):
-    return f"'{sample_name:s}': {{".rjust(llens)
+def _get_sample_string(sample_name):
+    return f"'{sample_name:s}': {{"
 
 
-def _get_datapath(entry, path):
+def _get_data_path(entry, path):
     proposal = get_proposal_from_filename(entry['filename'],
                                           entry['file_number'])
     return os.path.join(path, proposal)
@@ -84,7 +80,7 @@ def _get_closest_bank_key(banks, det_rot):
 def _create_new_datatype(dataset, datatype, det_rot, entry, path):
     dataset[datatype] = {
         det_rot: [entry['file_number']],
-        'path': _get_datapath(entry, path)
+        'path': _get_data_path(entry, path)
     }
 
 
@@ -99,9 +95,10 @@ def _add_or_create_filelist(dataset, datatype, det_rot, entry):
 
 class DNSTofDataset(ObjectDict):
     """
-    Class for storing data of a multiple dns datafiles.
+    Class for storing data of multiple DNS datafiles.
     This is a dictionary, but can also be accessed like attributes.
     """
+
     def __init__(self, data, path, is_sample=True):
         super().__init__()
         self['is_sample'] = is_sample
@@ -112,14 +109,16 @@ class DNSTofDataset(ObjectDict):
         """
         Formatting the dictionary to a nicely indented string.
         """
-
         dataset = self.data_dic
-        llens = _get_max_key_length(dataset)
+        tab_indent = 4
+        special_char_indent = 5
         dataset_string = '{\n'
         for sample_name, fields in dataset.items():
-            dataset_string += _get_sample_string(sample_name, llens)
+            dataset_string += "".rjust(tab_indent)
+            dataset_string += _get_sample_string(sample_name)
             dataset_string += _get_path_string(dataset, sample_name)
-            dataset_string += _get_field_string(fields, llens)
+            total_indent = tab_indent + special_char_indent + len(sample_name)
+            dataset_string += _get_field_string(fields, total_indent)
             dataset_string += "},\n"
         dataset_string += "}"
         return dataset_string
@@ -130,49 +129,46 @@ class DNSTofDataset(ObjectDict):
             return len(dic.keys()) - 1
         return 0
 
-    def get_vana_filename(self):
-        vana_filename = [x for x in self.data_dic.keys() if '_vana' in x]
-        if len(vana_filename) == 0:
-            vana_filename = ''
-        elif len(vana_filename) > 1:
-            vana_filename = ''
+    def get_vana_scan_name(self):
+        vana_scan_name = [x for x in self.data_dic.keys() if '_vana' in x]
+        if len(vana_scan_name) == 0:
+            vana_scan_name = ''
+        elif len(vana_scan_name) > 1:
+            vana_scan_name = ''
         else:
-            vana_filename = vana_filename[0]
-        return vana_filename
+            vana_scan_name = vana_scan_name[0]
+        return vana_scan_name
 
-    def get_empty_filename(self):
-        empty_filename = [
+    def get_empty_scan_name(self):
+        empty_scan_name = [
             x for x in self.data_dic.keys() if ('_empty' in x or '_leer' in x)
         ]
-        if len(empty_filename) == 0:
-            empty_filename = ''
-        elif len(empty_filename) > 1:
-            empty_filename = ''
+        if len(empty_scan_name) == 0:
+            empty_scan_name = ''
+        elif len(empty_scan_name) > 1:
+            empty_scan_name = ''
         else:
-            empty_filename = empty_filename[0]
-        return empty_filename
+            empty_scan_name = empty_scan_name[0]
+        return empty_scan_name
 
     def get_sample_filename(self):
         sample_filename = list(self.data_dic.keys())
-        # if len(sample_filename) > 1:
-        #    pass
         return sample_filename[0]
 
     def get_nb_sample_banks(self):
         return self._get_nb_banks(self.get_sample_filename())
 
     def get_nb_vana_banks(self):
-        return self._get_nb_banks(self.get_vana_filename())
+        return self._get_nb_banks(self.get_vana_scan_name())
 
     def get_nb_empty_banks(self):
-        return self._get_nb_banks(self.get_empty_filename())
+        return self._get_nb_banks(self.get_empty_scan_name())
 
     @staticmethod
     def create_dataset(data, path):
         """
-        Creates a smaller dictionary used
-        in the reduction script of the form
-        dict[datatype][path/det_rot] = list(file_numbers).
+        Creates a smaller dictionary used in the reduction script of
+        the form: dict[datatype][path/det_rot] = list(file_numbers).
         """
         dataset = {}
         for entry in data:

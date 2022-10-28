@@ -58,22 +58,10 @@ class DNSObserverTest(unittest.TestCase):
         self.assertEqual(testv, {'1': 2})
 
     def test_raise_error(self):
-        self.observer.raise_error('123', critical=True, doraise=False)
+        self.observer.raise_error('123', critical=True, do_raise=False)
         self.view.raise_error.assert_not_called()
-        self.observer.raise_error('123', critical=True, doraise=True)
+        self.observer.raise_error('123', critical=True, do_raise=True)
         self.view.raise_error.assert_called_once_with('123', True, False)
-
-    # def test_process_request(self):
-    # pass
-
-    # def test_tab_got_focus(self):
-    # pass
-
-    # def test_on_modus_change(self):
-    # pass
-
-    # def test_process_commandline_request(self):
-    # pass
 
 
 if __name__ == '__main__':
