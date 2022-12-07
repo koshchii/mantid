@@ -45,12 +45,12 @@ class DNSReductionGUIView(QMainWindow):
         self.ui.actionDNS_website.triggered.connect(self._open_dns_webpage)
         # connect mode switching signals
         self.modus_mapping = {
-            self.ui.actionPowder_elastic: 'powder_elastic',
+            self.ui.actionPowder_Elastic: 'powder_elastic',
             self.ui.actionPowder_TOF: 'powder_tof',
         }
         self.modus_titles = {
-            'powder_elastic': 'DNS Reduction - Powder Elastic',
-            'powder_tof': 'DNS Reduction - Powder TOF',
+            'powder_elastic': 'DNS Reduction GUI - Powder Elastic',
+            'powder_tof': 'DNS Reduction GUI - Powder TOF',
         }
         for key in self.modus_mapping:
             key.triggered.connect(self._modus_change)
