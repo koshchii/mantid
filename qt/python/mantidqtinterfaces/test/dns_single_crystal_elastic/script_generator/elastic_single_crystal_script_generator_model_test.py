@@ -81,18 +81,18 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertIsInstance(self.model, DNSObsModel)
         self.assertTrue(hasattr(self.model, '_script'))
         self.assertTrue(hasattr(self.model, '_data_arrays'))
-        self.assertTrue(hasattr(self.model, '_plotlist'))
+        self.assertTrue(hasattr(self.model, '_plot_list'))
         self.assertTrue(hasattr(self.model, '_sample_data'))
         self.assertTrue(hasattr(self.model, '_standard_data'))
         self.assertTrue(hasattr(self.model, '_loop'))
-        self.assertTrue(hasattr(self.model, '_spac'))
-        self.assertTrue(hasattr(self.model, '_vanac'))
-        self.assertTrue(hasattr(self.model, '_nicrc'))
-        self.assertTrue(hasattr(self.model, '_sampb'))
-        self.assertTrue(hasattr(self.model, '_backfac'))
-        self.assertTrue(hasattr(self.model, '_ign_vana'))
-        self.assertTrue(hasattr(self.model, '_sum_sfnsf'))
-        self.assertTrue(hasattr(self.model, '_nonmag'))
+        self.assertTrue(hasattr(self.model, '_spacing'))
+        self.assertTrue(hasattr(self.model, '_vana_correction'))
+        self.assertTrue(hasattr(self.model, '_nicr_correction'))
+        self.assertTrue(hasattr(self.model, '_sample_background_correction'))
+        self.assertTrue(hasattr(self.model, '_background_factor'))
+        self.assertTrue(hasattr(self.model, '_ignore_vana'))
+        self.assertTrue(hasattr(self.model, '_sum_sf_nsf'))
+        self.assertTrue(hasattr(self.model, '_non_magnetic'))
         self.assertTrue(hasattr(self.model, '_corrections'))
         self.assertTrue(hasattr(self.model, '_export_path'))
         self.assertTrue(hasattr(self.model, '_ascii'))
@@ -129,17 +129,17 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'export': True
         }
         testv = self.model.script_maker(options, paths, fselector)
-        self.assertTrue(self.model._vanac)
-        self.assertTrue(self.model._nicrc)
-        self.assertTrue(self.model._sampb)
-        self.assertTrue(self.model._backfac)
-        self.assertTrue(self.model._nonmag)
+        self.assertTrue(self.model._vana_correction)
+        self.assertTrue(self.model._nicr_correction)
+        self.assertTrue(self.model._sample_background_correction)
+        self.assertTrue(self.model._background_factor)
+        self.assertTrue(self.model._non_magnetic)
         self.assertTrue(self.model._xyz)
         self.assertTrue(self.model._corrections)
         self.assertTrue(self.model._ascii)
         self.assertTrue(self.model._nexus)
-        self.assertEqual(self.model._ign_vana, '1')
-        self.assertEqual(self.model._sum_sfnsf, '1')
+        self.assertEqual(self.model._ignore_vana, '1')
+        self.assertEqual(self.model._sum_sf_nsf, '1')
         self.assertEqual(self.model._export_path, '14')
         self.assertEqual(self.model._norm, 'monitor')
         self.assertIsInstance(testv, tuple)
@@ -191,17 +191,17 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         }
         options.update(get_fake_elastic_single_crystal_options())
         testv = self.model.script_maker(options, paths, fselector)
-        self.assertFalse(self.model._vanac)
-        self.assertFalse(self.model._nicrc)
-        self.assertFalse(self.model._sampb)
-        self.assertFalse(self.model._backfac)
-        self.assertFalse(self.model._nonmag)
+        self.assertFalse(self.model._vana_correction)
+        self.assertFalse(self.model._nicr_correction)
+        self.assertFalse(self.model._sample_background_correction)
+        self.assertFalse(self.model._background_factor)
+        self.assertFalse(self.model._non_magnetic)
         self.assertFalse(self.model._xyz)
         self.assertFalse(self.model._corrections)
         self.assertFalse(self.model._ascii)
         self.assertFalse(self.model._nexus)
-        self.assertEqual(self.model._ign_vana, '0')
-        self.assertEqual(self.model._sum_sfnsf, '0')
+        self.assertEqual(self.model._ignore_vana, '0')
+        self.assertEqual(self.model._sum_sf_nsf, '0')
         self.assertEqual(self.model._export_path, '')
         self.assertEqual(self.model._norm, 'time')
         lines = [76, 113, 91, 65, 49, 0, 20, 0, 0, 304, 0, 109, 51, 0]
@@ -232,10 +232,10 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         }
         testv = self.model.script_maker(options, paths, fselector)
         self.assertEqual(len(testv[0][0]), 76)
-        self.assertFalse(self.model._vanac)
-        self.assertFalse(self.model._nicrc)
-        self.assertFalse(self.model._sampb)
-        self.assertFalse(self.model._nonmag)
+        self.assertFalse(self.model._vana_correction)
+        self.assertFalse(self.model._nicr_correction)
+        self.assertFalse(self.model._sample_background_correction)
+        self.assertFalse(self.model._non_magnetic)
         self.assertFalse(self.model._xyz)
         self.assertFalse(self.model._corrections)
         self.assertFalse(self.model._ascii)
@@ -267,10 +267,10 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'export': False
         }
         testv = self.model.script_maker(options, paths, fselector)
-        self.assertFalse(self.model._vanac)
-        self.assertFalse(self.model._nicrc)
-        self.assertFalse(self.model._sampb)
-        self.assertFalse(self.model._nonmag)
+        self.assertFalse(self.model._vana_correction)
+        self.assertFalse(self.model._nicr_correction)
+        self.assertFalse(self.model._sample_background_correction)
+        self.assertFalse(self.model._non_magnetic)
         self.assertFalse(self.model._xyz)
         self.assertFalse(self.model._corrections)
         self.assertFalse(self.model._ascii)
@@ -302,7 +302,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         mock_dns_dataset.return_value = self.sample_data
         self.model._setup_sample_data({'data_dir': '123'}, {'full_data': []})
         self.assertEqual(self.model._sample_data, self.sample_data)
-        self.assertEqual(self.model._plotlist, ['knso_x_sf'])
+        self.assertEqual(self.model._plot_list, ['knso_x_sf'])
 
     @patch(
         'mantidqtinterfaces.dns_single_crystal_elastic.'
@@ -319,18 +319,18 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
 
     def test_set_loop(self):
         self.model._loop = None
-        self.model._spac = None
+        self.model._spacing = None
         self.model._set_loop()
         self.assertEqual(
             self.model._loop,
             "for sample, workspacelist in wss_sample.items(): \n    for work"
             "space in workspacelist:")
-        self.assertEqual(self.model._spac, "\n" + " " * 8)
+        self.assertEqual(self.model._spacing, "\n" + " " * 8)
         self.model._sample_data = {'123': 1}
         self.model._set_loop()
         self.assertEqual(self.model._loop,
                          "for workspace in wss_sample['123']:")
-        self.assertEqual(self.model._spac, "\n" + " " * 4)
+        self.assertEqual(self.model._spacing, "\n" + " " * 4)
         self.model._sample_data = self.sample_data
 
     def test_get_header_lines(self):
@@ -406,7 +406,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         ])
 
     def test__get_bg_corr_lines(self):
-        self.model._vanac = True
+        self.model._vana_correction = True
         testv = self.model._get_bg_corr_lines()
         self.assertEqual(testv, [
             '# substract background from vanadium and nicr',
@@ -414,35 +414,35 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'for workspace in workspacelist:\n        background_substr'
             'action(workspace)', ''
         ])
-        self.model._vanac = False
-        self.model._nicrc = False
+        self.model._vana_correction = False
+        self.model._nicr_correction = False
         testv = self.model._get_bg_corr_lines()
         self.assertEqual(testv, [])
 
     def test__return_sample_bg_string(self):
-        self.model._spac = '  '
-        self.model._backfac = '123'
+        self.model._spacing = '  '
+        self.model._background_factor = '123'
         testv = self.model._return_sample_bg_string()
         self.assertEqual(testv, '  background_subtraction(workspace,'
                                 ' factor=123)')
 
     def test__return_sample_vanac_strinf(self):
-        self.model._spac = '  '
-        self.model._sum_sfnsf = 1
-        self.model._ign_vana = 2
+        self.model._spacing = '  '
+        self.model._sum_sf_nsf = 1
+        self.model._ignore_vana = 2
         testv = self.model._return_sample_vanac_strinf()
         self.assertEqual(testv, "  vanadium_correction(workspace,  vanaset=s"
                                 "tandard_data['vana'], ignore_vana_fields=2,"
                                 " sum_vana_sf_nsf=1)")
 
     def test__get_vanac_lines(self):
-        self.model._backfac = '123'
+        self.model._background_factor = '123'
         self.model._loop = 'fo:'
-        self.model._spac = '  '
-        self.model._sum_sfnsf = 1
-        self.model._ign_vana = 2
-        self.model._sampb = False
-        self.model._vanac = False
+        self.model._spacing = '  '
+        self.model._sum_sf_nsf = 1
+        self.model._ignore_vana = 2
+        self.model._sample_background_correction = False
+        self.model._vana_correction = False
         compare = ['# correct sample data',
                    "fo:  background_subtraction(workspace, factor=123)  vanad"
                    "ium_correction(workspace,  vanaset=standard_data['vana'],"
@@ -450,21 +450,21 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
 
         testv = self.model._get_vanac_lines()
         self.assertEqual(testv, [])
-        self.model._sampb = True
+        self.model._sample_background_correction = True
         testv = self.model._get_vanac_lines()
         self.assertEqual(testv, compare)
-        self.model._sampb = False
-        self.model._vanac = True
+        self.model._sample_background_correction = False
+        self.model._vana_correction = True
         testv = self.model._get_vanac_lines()
         self.assertEqual(testv, compare)
 
     def test__get_nicrc_lines(self):
-        self.model._nicrc = False
+        self.model._nicr_correction = False
         self.model._loop = 'fo:'
-        self.model._spac = '  '
+        self.model._spacing = '  '
         testv = self.model._get_nicrc_lines()
         self.assertEqual(testv, [])
-        self.model._nicrc = True
+        self.model._nicr_correction = True
         testv = self.model._get_nicrc_lines()
         self.assertEqual(testv, ['fo:  fliping_ratio_correction(workspace)'])
 
@@ -473,7 +473,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         'elastic_single_crystal_script_generator_model.mtd')
     def test_get_plotlist(self, mtd):
         mtd.__getitem__.return_value = self.fake_workspace
-        self.model._plotlist = ['4p1K_map']
+        self.model._plot_list = ['4p1K_map']
         testv = self.model.get_plotlist()
         self.assertEqual(
             testv, (['4p1K_map'],
