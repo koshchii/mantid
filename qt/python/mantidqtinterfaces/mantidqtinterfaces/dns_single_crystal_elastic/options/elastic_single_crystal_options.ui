@@ -446,28 +446,28 @@
      </property>
      <layout class="QFormLayout" name="formLayout_3">
       <item row="1" column="0">
-       <widget class="QLabel" name="l_ttheta_min">
+       <widget class="QLabel" name="l_two_theta_min">
         <property name="text">
          <string>2θ min, deg</string>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="l_ttehta_max">
+       <widget class="QLabel" name="l_two_theta_max">
         <property name="text">
          <string>2θ max, deg</string>
         </property>
        </widget>
       </item>
       <item row="3" column="0">
-       <widget class="QLabel" name="l_ttheta_nbins">
+       <widget class="QLabel" name="l_two_theta_bin_size">
         <property name="text">
-         <string>Number of Bins</string>
+         <string>2θ bin size, deg</string>
         </property>
        </widget>
       </item>
       <item row="4" column="0">
-       <widget class="QLabel" name="L_omega_min">
+       <widget class="QLabel" name="l_omega_min">
         <property name="text">
          <string>ω min, deg</string>
         </property>
@@ -481,9 +481,9 @@
        </widget>
       </item>
       <item row="6" column="0">
-       <widget class="QLabel" name="l_omega_nbins">
+       <widget class="QLabel" name="l_omega_bin_size">
         <property name="text">
-         <string>Number of Bins</string>
+         <string>ω bin size, deg</string>
         </property>
        </widget>
       </item>
@@ -497,18 +497,8 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="1">
-       <widget class="QSpinBox" name="sB_ttheta_nbins">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <property name="maximum">
-         <number>999</number>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
-       <widget class="QDoubleSpinBox" name="dSB_ttheta_max">
+       <widget class="QDoubleSpinBox" name="dSB_two_theta_max">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -521,7 +511,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QDoubleSpinBox" name="dSB_ttheta_min">
+       <widget class="QDoubleSpinBox" name="dSB_two_theta_min">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -562,13 +552,17 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="1">
-       <widget class="QSpinBox" name="sB_omega_nbins">
+      <item row="3" column="1">
+       <widget class="QDoubleSpinBox" name="dSB_two_theta_bin_size">
         <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="maximum">
-         <number>999</number>
+       </widget>
+      </item>
+      <item row="6" column="1">
+       <widget class="QDoubleSpinBox" name="dSB_omega_bin_size">
+        <property name="enabled">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
