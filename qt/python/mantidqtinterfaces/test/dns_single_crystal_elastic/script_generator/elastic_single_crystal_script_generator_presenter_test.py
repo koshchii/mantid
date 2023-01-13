@@ -53,7 +53,7 @@ class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
                               DNSElasticSCScriptGeneratorPresenter)
         self.assertIsInstance(self.presenter, DNSScriptGeneratorPresenter)
         self.assertIsInstance(self.presenter, DNSObserver)
-        self.assertTrue(hasattr(self.presenter, '_plotlist'))
+        self.assertTrue(hasattr(self.presenter, '_plot_list'))
         self.assertTrue(hasattr(self.presenter, '_data_arrays'))
 
     def test__finish_script_run(self):
