@@ -14,13 +14,13 @@ from mantidqtinterfaces.dns_powder_tof.script_generator.\
     common_script_generator_presenter import DNSScriptGeneratorPresenter
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer import \
     DNSObserver
-from mantidqtinterfaces.dns_sc_elastic.script_generator.\
-    elastic_sc_script_generator_presenter \
+from mantidqtinterfaces.dns_single_crystal_elastic.script_generator.\
+    elastic_single_crystal_script_generator_presenter \
     import DNSElasticSCScriptGeneratorPresenter
 from mantidqtinterfaces.dns_powder_tof.script_generator.\
     common_script_generator_view import DNSScriptGeneratorView
-from mantidqtinterfaces.dns_sc_elastic.script_generator.\
-    elastic_sc_script_generator_model import DNSElasticSCScriptGeneratorModel
+from mantidqtinterfaces.dns_single_crystal_elastic.script_generator.\
+    elastic_single_crystal_script_generator_model import DNSElasticSCScriptGeneratorModel
 
 
 class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
@@ -41,7 +41,7 @@ class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
         cls.presenter = DNSElasticSCScriptGeneratorPresenter(
             view=cls.view,
             model=cls.model,
-            name='elastic_sc_script_generator',
+            name='elastic_single_crystal_script_generator',
             parent=cls.parent)
 
     def setUp(self):

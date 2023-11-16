@@ -12,7 +12,7 @@ from unittest.mock import patch
 from mantidqt.gui_helper import get_qapplication
 from qtpy.QtWidgets import QDialog
 
-from mantidqtinterfaces.dns_sc_elastic.data_structures.dns_dialog \
+from mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_dialog \
     import DNSDialog
 
 app, within_mantid = get_qapplication()
@@ -21,9 +21,9 @@ app, within_mantid = get_qapplication()
 class DNSDialogTest(unittest.TestCase):
 
     @classmethod
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.'
            'dns_dialog.loadUi')
-    @patch('mantidqtinterfaces.dns_sc_elastic.data_structures.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.'
            'dns_dialog.Path')
     def setUpClass(cls, mock_path, mock_loadui):
         # pylint: disable=arguments-differ

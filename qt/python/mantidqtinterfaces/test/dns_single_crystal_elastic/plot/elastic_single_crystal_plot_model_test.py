@@ -14,10 +14,10 @@ import numpy as np
 
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_obs_model \
     import DNSObsModel
-from mantidqtinterfaces.dns_sc_elastic.plot.elastic_single_crystal_plot_model \
+from mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_model \
     import DNSElasticSCPlotModel
 from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import \
-    get_fake_elastic_sc_dataset, get_fake_elastic_sc_options
+    get_fake_elastic_single_crystal_dataset, get_fake_elastic_single_crystal_options
 
 
 class DNSElasticSCPlotModelTest(unittest.TestCase):
@@ -29,14 +29,14 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         cls.model = DNSElasticSCPlotModel(parent)
 
     def setUp(self):
-        self.model._sc_map = mock.Mock()
-        self.model._sc_map.hkl_mesh_intp = [1, 2, 3]
-        self.model._sc_map.hkl_mesh = [0, 1, 2]
+        self.model._single_crystal_map = mock.Mock()
+        self.model._single_crystal_map.hkl_mesh_intp = [1, 2, 3]
+        self.model._single_crystal_map.hkl_mesh = [0, 1, 2]
 
     def test___init__(self):
         self.assertIsInstance(self.model, DNSElasticSCPlotModel)
         self.assertIsInstance(self.model, DNSObsModel)
-        self.assertTrue(hasattr(self.model, '_sc_map'))
+        self.assertTrue(hasattr(self.model, '_single_crystal_map'))
         self.assertTrue(hasattr(self.model, '_data'))
         self.assertTrue(hasattr(self.model._data, 'x'))
         self.assertTrue(hasattr(self.model._data, 'y'))
@@ -47,22 +47,22 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertTrue(hasattr(self.model._data, 'triang'))
         self.assertTrue(hasattr(self.model._data, 'ztriang'))
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
            'DNSScMap')
-    def test_create_sc_map(self, mock_dns_scd_map):
+    def test_create_single_crystal_map(self, mock_dns_scd_map):
         mock_dns_scd_map.return_value = 123
-        data_array = get_fake_elastic_sc_dataset()
-        options = get_fake_elastic_sc_options()
-        self.model.create_sc_map(
+        data_array = get_fake_elastic_single_crystal_dataset()
+        options = get_fake_elastic_single_crystal_options()
+        self.model.create_single_crystal_map(
             data_array, options, initial_values={'a': 1})
         mock_dns_scd_map.assert_called_once()
-        self.assertEqual(self.model._sc_map, 123)
+        self.assertEqual(self.model._single_crystal_map, 123)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
            'helper.get_projection')
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
            'helper.filter_flattend_meshs')
     def test_get_projections(self, mock_ffm, mock_gpj):
@@ -86,35 +86,35 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(testv, (0, 1, 2))
 
     def test_get_interpolated_triangulation(self):
-        self.model._sc_map.interpolate_triangulation.return_value = [1, 2]
+        self.model._single_crystal_map.interpolate_triangulation.return_value = [1, 2]
         testv = self.model.get_interpolated_triangulation(True, 'hkl', False)
         self.assertEqual(self.model._data.x, 0)
         self.assertEqual(self.model._data.y, 1)
         self.assertEqual(self.model._data.z, 2)
-        self.model._sc_map.triangulate.assert_called_once_with(
+        self.model._single_crystal_map.triangulate.assert_called_once_with(
             meshname='hkl_mesh', switch=False)
-        self.model._sc_map.mask_triangles.assert_called_once_with(
+        self.model._single_crystal_map.mask_triangles.assert_called_once_with(
             meshname='hkl_mesh')
-        self.model._sc_map.interpolate_triangulation.assert_called_once_with(
+        self.model._single_crystal_map.interpolate_triangulation.assert_called_once_with(
             True)
         self.assertEqual(testv, (1, 2))
-        self.model._sc_map.triangulate.reset_mock()
-        self.model._sc_map.interpolate_triangulation.reset_mock()
+        self.model._single_crystal_map.triangulate.reset_mock()
+        self.model._single_crystal_map.interpolate_triangulation.reset_mock()
         self.model.get_interpolated_triangulation(False, 'hkl', True)
-        self.model._sc_map.triangulate.assert_called_once_with(
+        self.model._single_crystal_map.triangulate.assert_called_once_with(
             meshname='hkl_mesh', switch=True)
-        self.model._sc_map.interpolate_triangulation.assert_called_once_with(
+        self.model._single_crystal_map.interpolate_triangulation.assert_called_once_with(
             False)
 
     def test_get_xy_dy_ratio(self):
-        self.model._sc_map.dx = 2
-        self.model._sc_map.dy = 3
+        self.model._single_crystal_map.dx = 2
+        self.model._single_crystal_map.dy = 3
         testv = self.model.get_xy_dy_ratio()
         self.assertEqual(testv, 2 / 3)
 
     def test_get_aspect_ratio(self):
-        self.model._sc_map.dx = 2
-        self.model._sc_map.dy = 3
+        self.model._single_crystal_map.dx = 2
+        self.model._single_crystal_map.dy = 3
         testv = self.model.get_aspect_ratio({'fix_aspect': True,
                                              'type': 'hkl'})
         self.assertEqual(testv, 2 / 3)
@@ -126,9 +126,9 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(testv, 'auto')
 
     def test_get_axis_labels(self):
-        self.model._sc_map.hkl1 = 'abc'
-        self.model._sc_map.hkl2 = 'cde'
-        self.model._sc_map.get_crystal_axis_names = mock.Mock(
+        self.model._single_crystal_map.hkl1 = 'abc'
+        self.model._single_crystal_map.hkl2 = 'cde'
+        self.model._single_crystal_map.get_crystal_axis_names = mock.Mock(
             return_value=[1, 2])
         testv = self.model.get_axis_labels('hkl', False, False)
         self.assertEqual(testv, ['abc (r.l.u.)', 'cde (r.l.u.)'])
@@ -142,12 +142,12 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(testv, [1, 2])
 
     def test_get_changing_hkl_components(self):
-        self.model._sc_map.get_changing_hkl_components = mock.Mock(
+        self.model._single_crystal_map.get_changing_hkl_components = mock.Mock(
             return_value=123)
         testv = self.model.get_changing_hkl_components()
         self.assertEqual(testv, 123)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
            'get_hkl_intensity_from_cursor')
     def test_get_format_coord(self, mock_get_hkl_from_c):
@@ -156,10 +156,10 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(test_format_cord(12, 15),
                          'x= 12.0000, y= 15.0000, hkl=( 1.00, 2.00, 3.00),'
                          ' Intensity=      4.00 ±       5.00')
-        mock_get_hkl_from_c.assert_called_once_with(self.model._sc_map, 'hkl',
+        mock_get_hkl_from_c.assert_called_once_with(self.model._single_crystal_map, 'hkl',
                                                     12, 15)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
            'helper.stringrange_to_float')
     def test_get_mlimits(self, mock_stringrange):
@@ -167,7 +167,7 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         testv = self.model.get_mlimits(1, 2)
         self.assertEqual(testv, ['a', 'a'])
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
            'helper.get_z_min_max')
     def test_get_data_zmin_max(self, mock_get_z_min_max):
@@ -200,12 +200,12 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(testv[2][0, 1], 13)
 
     def test_get_omegaoffset(self):
-        self.model._sc_map = {'omegaoffset': 123}
+        self.model._single_crystal_map = {'omegaoffset': 123}
         testv = self.model.get_omegaoffset()
         self.assertEqual(testv, 123)
 
     def test_get_dx_dy(self):
-        self.model._sc_map = {'dx': 123, 'dy': 345}
+        self.model._single_crystal_map = {'dx': 123, 'dy': 345}
         testv = self.model.get_dx_dy()
         self.assertEqual(testv, (123, 345))
 
