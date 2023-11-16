@@ -17,11 +17,11 @@ from mantidqtinterfaces.dns_powder_tof.script_generator. \
     common_script_generator_model import DNSScriptGeneratorModel
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_obs_model \
     import DNSObsModel
-from mantidqtinterfaces.dns_sc_elastic.script_generator. \
-    elastic_sc_script_generator_model import DNSElasticSCScriptGeneratorModel
+from mantidqtinterfaces.dns_single_crystal_elastic.script_generator. \
+    elastic_single_crystal_script_generator_model import DNSElasticSCScriptGeneratorModel
 from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import \
     get_fake_elastic_datadic, get_elastic_standard_datadic, \
-    get_fake_elastic_sc_options
+    get_fake_elastic_single_crystal_options
 
 
 class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
@@ -100,8 +100,8 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertTrue(hasattr(self.model, '_norm'))
 
     @patch(
-        'mantidqtinterfaces.dns_sc_elastic.'
-        'script_generator.elastic_sc_script_generator_mod'
+        'mantidqtinterfaces.dns_single_crystal_elastic.'
+        'script_generator.elastic_single_crystal_script_generator_mod'
         'el.DNSDataset')
     def test_script_maker(self, mock_dns_dataset):
         mock_dns_dataset.return_value = self.standard_data
@@ -118,7 +118,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'separation_coh_inc': 1,
             'norm_monitor': 1
         }
-        options.update(get_fake_elastic_sc_options())
+        options.update(get_fake_elastic_single_crystal_options())
         fselector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '12',
@@ -162,7 +162,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'separation_coh_inc': 0,
             'norm_monitor': 0
         }
-        options.update(get_fake_elastic_sc_options())
+        options.update(get_fake_elastic_single_crystal_options())
         fselector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '',
@@ -189,7 +189,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'separation_coh_inc': 0,
             'norm_monitor': 0
         }
-        options.update(get_fake_elastic_sc_options())
+        options.update(get_fake_elastic_single_crystal_options())
         testv = self.model.script_maker(options, paths, fselector)
         self.assertFalse(self.model._vanac)
         self.assertFalse(self.model._nicrc)
@@ -220,7 +220,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'separation_coh_inc': 0,
             'norm_monitor': 1
         }
-        options.update(get_fake_elastic_sc_options())
+        options.update(get_fake_elastic_single_crystal_options())
         fselector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '12',
@@ -256,7 +256,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             'separation_coh_inc': 1,
             'norm_monitor': 1
         }
-        options.update(get_fake_elastic_sc_options())
+        options.update(get_fake_elastic_single_crystal_options())
         fselector = {'full_data': [], 'standard_data': []}
         paths = {
             'data_dir': '12',
@@ -294,8 +294,8 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             self.assertEqual(len(tv), lines[i])
 
     @patch(
-        'mantidqtinterfaces.dns_sc_elastic.'
-        'script_generator.elastic_sc_script_generator_model'
+        'mantidqtinterfaces.dns_single_crystal_elastic.'
+        'script_generator.elastic_single_crystal_script_generator_model'
         '.DNSDataset')
     def test_setup_sample_data(self, mock_dns_dataset):
         self.model._sample_data = None
@@ -305,8 +305,8 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertEqual(self.model._plotlist, ['knso_x_sf'])
 
     @patch(
-        'mantidqtinterfaces.dns_sc_elastic.'
-        'script_generator.elastic_sc_script_generator_model'
+        'mantidqtinterfaces.dns_single_crystal_elastic.'
+        'script_generator.elastic_single_crystal_script_generator_model'
         '.DNSDataset')
     def test_setup_standard_data(self, mock_dns_dataset):
         self.model._standard_data = None
@@ -343,18 +343,18 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertEqual(len(testv), 6)
         self.assertEqual(
             testv[0],
-            'from mantidqtinterfaces.dns_sc_elastic.'
-            'scripts.md_sc_elastic import load_all'
+            'from mantidqtinterfaces.dns_single_crystal_elastic.'
+            'scripts.md_single_crystal_elastic import load_all'
         )
         self.assertEqual(
             testv[1],
-            'from mantidqtinterfaces.dns_sc_elastic.'
-            'scripts.md_sc_elastic import '
+            'from mantidqtinterfaces.dns_single_crystal_elastic.'
+            'scripts.md_single_crystal_elastic import '
             'vanadium_correction, fliping_ratio_correction')
         self.assertEqual(
             testv[2],
-            'from mantidqtinterfaces.dns_sc_elastic.'
-            'scripts.md_sc_elastic import'
+            'from mantidqtinterfaces.dns_single_crystal_elastic.'
+            'scripts.md_single_crystal_elastic import'
             ' background_substraction', )
         self.assertEqual(
             testv[3],
@@ -378,7 +378,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
 
     def test__get_param_lines(self):
         self.model._norm = 'time'
-        testv = self.model._get_param_lines(get_fake_elastic_sc_options())
+        testv = self.model._get_param_lines(get_fake_elastic_single_crystal_options())
         self.assertIsInstance(testv, list)
         self.assertEqual(len(testv), 3)
         comparestring = ("params = {'a' : 2, \n          'b' : 3,\n          "
@@ -473,8 +473,8 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.assertEqual(testv, ['fo:  fliping_ratio_correction(workspace)'])
 
     @patch(
-        'mantidqtinterfaces.dns_sc_elastic.script_generator.'
-        'elastic_sc_script_generator_model.mtd')
+        'mantidqtinterfaces.dns_single_crystal_elastic.script_generator.'
+        'elastic_single_crystal_script_generator_model.mtd')
     def test_get_plotlist(self, mtd):
         mtd.__getitem__.return_value = self.fake_workspace
         self.model._plotlist = ['4p1K_map']

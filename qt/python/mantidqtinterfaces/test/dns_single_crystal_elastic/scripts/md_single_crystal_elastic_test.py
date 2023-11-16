@@ -12,12 +12,12 @@ import unittest
 from unittest.mock import patch
 from unittest.mock import call
 
-from mantidqtinterfaces.dns_sc_elastic.scripts.md_sc_elastic import \
+from mantidqtinterfaces.dns_single_crystal_elastic.scripts.md_single_crystal_elastic import \
     load_all, load_binned, vanadium_correction
 from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import \
     get_fake_MD_workspace_unique, \
-    get_fake_elastic_datadic, get_fake_elastic_sc_options, \
-    get_fake_elastic_sc_binning
+    get_fake_elastic_datadic, get_fake_elastic_single_crystal_options, \
+    get_fake_elastic_single_crystal_binning
 from mantidqtinterfaces.dns_powder_tof.data_structures.dns_error import \
     DNSError
 from mantid.simpleapi import mtd
@@ -31,7 +31,7 @@ class MDPowderElasticTest(unittest.TestCase):
 
     @staticmethod
     @patch(
-        'mantidqtinterfaces.dns_sc_elastic.scripts.md_sc_elastic.load_binned')
+        'mantidqtinterfaces.dns_single_crystal_elastic.scripts.md_single_crystal_elastic.load_binned')
     def test_load_all(mock_load_binned):
         data_dict = get_fake_elastic_datadic()
         load_all(data_dict, [0, 1, 2], {'a': 1})
@@ -49,13 +49,13 @@ class MDPowderElasticTest(unittest.TestCase):
                       range(554577, 554637, 6), False)]
         mock_load_binned.assert_has_calls(calls)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.scripts.md_sc_elastic.mtd')
-    @patch('mantidqtinterfaces.dns_sc_elastic.scripts.md_sc_elastic.BinMD')
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.scripts.md_single_crystal_elastic.mtd')
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.scripts.md_single_crystal_elastic.BinMD')
     @patch(
-        'mantidqtinterfaces.dns_sc_elastic.scripts.md_sc_elastic.LoadDNSSCD')
+        'mantidqtinterfaces.dns_single_crystal_elastic.scripts.md_single_crystal_elastic.LoadDNSSCD')
     def test_load_binned(self, mock_load, mock_binmd, mock_mtd):
-        params = get_fake_elastic_sc_options()
-        binning = get_fake_elastic_sc_binning()
+        params = get_fake_elastic_single_crystal_options()
+        binning = get_fake_elastic_single_crystal_binning()
         testv = load_binned('knso_x_nsf', binning, params, 'C:/data',
                             range(554574, 554578, 2), False)
         mock_load.assert_called_once_with(
