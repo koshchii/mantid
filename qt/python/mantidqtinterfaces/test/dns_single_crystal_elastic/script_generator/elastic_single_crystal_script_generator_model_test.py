@@ -355,7 +355,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             testv[2],
             'from mantidqtinterfaces.dns_single_crystal_elastic.'
             'scripts.md_single_crystal_elastic import'
-            ' background_substraction', )
+            ' background_subtraction', )
         self.assertEqual(
             testv[3],
             "from mantid.simpleapi import ConvertMDHistoToMatrixWorkspace, mtd"
@@ -427,7 +427,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.model._spac = '  '
         self.model._backfac = '123'
         testv = self.model._return_sample_bg_string()
-        self.assertEqual(testv, '  background_substraction(workspace,'
+        self.assertEqual(testv, '  background_subtraction(workspace,'
                                 ' factor=123)')
 
     def test__return_sample_vanac_strinf(self):
@@ -448,7 +448,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.model._sampb = False
         self.model._vanac = False
         compare = ['# correct sample data',
-                   "fo:  background_substraction(workspace, factor=123)  vanad"
+                   "fo:  background_subtraction(workspace, factor=123)  vanad"
                    "ium_correction(workspace,  vanaset=standard_data['vana'],"
                    " ignore_vana_fields=2, sum_vana_sf_nsf=1)"]
 

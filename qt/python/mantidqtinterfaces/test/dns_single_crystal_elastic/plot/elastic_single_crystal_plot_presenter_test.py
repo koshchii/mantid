@@ -441,24 +441,24 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         self.model.get_format_coord.assert_called_once()
         self.view.single_crystal_plot.set_format_coord.assert_called_once_with(123)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._change_cb_range')
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._get_current_limits')
     def test__manual_lim_changed(self, mock_get_current_limits,
                                  mock_change_cb_range):
         mock_get_current_limits.return_value = [1, 2], [3, 4], 1, 1
         self.presenter._manual_lim_changed()
-        self.view.sc_plot.set_xlim.assert_called_once_with([1, 2])
-        self.view.sc_plot.set_ylim.assert_called_once_with([3, 4])
+        self.view.single_crystal_plot.set_xlim.assert_called_once_with([1, 2])
+        self.view.single_crystal_plot.set_ylim.assert_called_once_with([3, 4])
         mock_change_cb_range.assert_called_once_with(zoom=False)
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._toggle_projections')
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._get_current_limits')
     def test__change_cb_range(self, mock_get_current_limits, mock_tg_proj):
@@ -472,7 +472,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         mock_get_current_limits.return_value = [1, 2], [3, 4], 5, 6
         self.presenter._change_cb_range(zoom=True)
         mock_get_current_limits.assert_called_once_with(True)
-        self.view.sc_plot.set_zlim.assert_called_once_with(5)
+        self.view.single_crystal_plot.set_zlim.assert_called_once_with(5)
         self.assertEqual(self.presenter._plot_param.xlim, [1, 2])
         self.assertEqual(self.presenter._plot_param.ylim, [3, 4])
         self.assertEqual(self.presenter._plot_param.zlim, 5)
@@ -486,7 +486,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         mock_tg_proj.assert_called_once()
         self.view.draw.assert_not_called()
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._change_cb_range')
     def test__home_button_clicked(self, mock_change_cb_range):
@@ -494,17 +494,17 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         self.view.get_axis_type.return_value['zoom']['fix_xy'] = True
         self.model.get_data_xy_lim.return_value = 1, 2
         self.presenter._home_button_clicked()
-        self.view.sc_plot.disconnect_ylim_change.assert_called_once()
+        self.view.single_crystal_plot.disconnect_ylim_change.assert_called_once()
         self.view.get_state.assert_called_once()
         self.view.get_axis_type.assert_called_once()
-        self.view.sc_plot.redraw_colorbar.assert_called_once()
+        self.view.single_crystal_plot.redraw_colorbar.assert_called_once()
         self.model.get_data_xy_lim.assert_called_once()
-        self.view.sc_plot.set_xlim.assert_called_once_with(1)
-        self.view.sc_plot.set_ylim.assert_called_once_with(2)
+        self.view.single_crystal_plot.set_xlim.assert_called_once_with(1)
+        self.view.single_crystal_plot.set_ylim.assert_called_once_with(2)
         self.assertEqual(self.presenter._plot_param.xlim, 1)
         self.assertEqual(self.presenter._plot_param.ylim, 2)
         mock_change_cb_range.assert_called_once()
-        self.view.sc_plot.connect_ylim_change.assert_called_once()
+        self.view.single_crystal_plot.connect_ylim_change.assert_called_once()
 
     def test__get_current_xy_lim(self):
         self.model.get_mlimits.return_value = [1, 2], [3, 4]
@@ -523,10 +523,10 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         testv = self.presenter._get_current_xy_lim(zoom=False)
         self.assertEqual(testv, ([5, 6], [7, 8]))
 
-        self.view.sc_plot.get_active_limits.return_value = [22, 23], [24, 25]
+        self.view.single_crystal_plot.get_active_limits.return_value = [22, 23], [24, 25]
         self.model.get_mlimits.return_value = [None, None], [1, 2]
         testv = self.presenter._get_current_xy_lim(zoom=True)
-        self.view.sc_plot.get_active_limits.assert_called_once()
+        self.view.single_crystal_plot.get_active_limits.assert_called_once()
         self.assertEqual(testv, ([22, 23], [1, 2]))
 
         self.view.get_axis_type.return_value['zoom']['fix_xy'] = True
@@ -566,10 +566,10 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         testv = self.presenter._get_current_z_lim([0, 1], [2, 3], False)
         self.assertEqual(testv, ([13, -3], True))
 
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._get_current_z_lim')
-    @patch('mantidqtinterfaces.dns_sc_elastic.plot.'
+    @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._get_current_xy_lim')
     def test__get_current_limits(self, mock_get_current_xy_lim,
