@@ -19,7 +19,7 @@ from mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_cr
     import (_get_mesh,
             _is_rectangular_mesh,
             _correct_rect_grid,
-            _correct_omegaoffset,
+            _correct_omega_offset,
             _get_unique,
             _get_q_mesh,
             _get_hkl_mesh,
@@ -33,7 +33,7 @@ class DNSScMapTest(unittest.TestCase):
     def setUpClass(cls):
         data_array = get_fake_elastic_single_crystal_dataset()
         options = get_fake_elastic_single_crystal_options()
-        ttheta = data_array['ttheta']
+        ttheta = data_array['two_theta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
         error = data_array['error']
@@ -44,7 +44,7 @@ class DNSScMapTest(unittest.TestCase):
                      'hkl2': options['hkl2'],
                      'omega_offset': options['omega_offset']
                      }
-        cls.map = DNSScMap(ttheta=ttheta,
+        cls.map = DNSScMap(two_theta=ttheta,
                            omega=omega,
                            z_mesh=z_mesh,
                            error_mesh=error,
@@ -57,26 +57,26 @@ class DNSScMapTest(unittest.TestCase):
     def test___init__(self):
         self.assertIsInstance(self.map, DNSScMap)
         self.assertIsInstance(self.map, ObjectDict)
-        self.assertTrue(hasattr(self.map, 'omega_intp'))
+        self.assertTrue(hasattr(self.map, 'omega_interpolated'))
         self.assertEqual(self.map.rectangular_grid, True)
-        self.assertTrue((self.map.ttheta == [0, 1, 2]).all())
+        self.assertTrue((self.map.two_theta == [0, 1, 2]).all())
         self.assertTrue((self.map.omega == [4, 5]).all())
-        self.assertEqual(self.map.omegaoffset, 0)
+        self.assertEqual(self.map.omega_offset, 0)
         self.assertEqual(self.map.dx, 1)
         self.assertEqual(self.map.dy, 2)
         self.assertEqual(self.map.hkl1, '1,2,3')
         self.assertEqual(self.map.hkl2, '2,3,4')
         self.assertEqual(self.map.wavelength, 4.74)
-        self.assertIsInstance(self.map.tthomega_mesh, list)
+        self.assertIsInstance(self.map.two_theta_and_omega_mesh, list)
         self.assertIsInstance(self.map.hkl_mesh, list)
         self.assertIsInstance(self.map.qxqy_mesh, list)
-        self.assertEqual(len(self.map.tthomega_mesh), 3)
+        self.assertEqual(len(self.map.two_theta_and_omega_mesh), 3)
         self.assertEqual(len(self.map.hkl_mesh), 3)
         self.assertEqual(len(self.map.qxqy_mesh), 3)
         self.assertTrue(
             (self.map.omega_mesh == np.array([[4, 5], [4, 5], [4, 5]])).all())
         self.assertTrue(
-            (self.map.ttheta_mesh == np.array([[0, 0], [1, 1], [2, 2]])).all())
+            (self.map.two_theta_mesh == np.array([[0, 0], [1, 1], [2, 2]])).all())
         self.assertTrue(np.allclose(self.map.qx_mesh,
                                     [[0., 0.],
                                      [-0.00141237, -0.00181517],
@@ -102,7 +102,7 @@ class DNSScMapTest(unittest.TestCase):
 
     def test__get_mesh(self):
         data_array = get_fake_elastic_single_crystal_dataset()
-        ttheta = data_array['ttheta']
+        ttheta = data_array['two_theta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
         z_mesh[0, 1] = np.nan
@@ -113,7 +113,7 @@ class DNSScMapTest(unittest.TestCase):
 
     def test__is_rectangular_mesh(self):
         data_array = get_fake_elastic_single_crystal_dataset()
-        ttheta = data_array['ttheta']
+        ttheta = data_array['two_theta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
         testv = _is_rectangular_mesh(omega, ttheta, z_mesh)
@@ -124,7 +124,7 @@ class DNSScMapTest(unittest.TestCase):
 
     def test__correct_rect_grid(self):
         data_array = get_fake_elastic_single_crystal_dataset()
-        ttheta = data_array['ttheta']
+        ttheta = data_array['two_theta']
         omega = data_array['omega']
         z_mesh = data_array['intensity']
         omega_mesh, ttheta_mesh = 0, 1
@@ -145,7 +145,7 @@ class DNSScMapTest(unittest.TestCase):
     def test__correct_omegaoffset(self):
         data_array = get_fake_elastic_single_crystal_dataset()
         omega = data_array['omega']
-        testv = _correct_omegaoffset(omega, 3)
+        testv = _correct_omega_offset(omega, 3)
         self.assertEqual(testv[0], 1)
         self.assertEqual(testv[1], 2)
 
@@ -175,7 +175,7 @@ class DNSScMapTest(unittest.TestCase):
         self.assertTrue((testv == car).all())
 
     def test_create_np_array(self):
-        self.map.omega_intp = None
+        self.map.omega_interpolated = None
         self.map.rectangular_grid = True
         testv = self.map.create_np_array()
         self.assertIsNone(testv[1])
@@ -191,15 +191,15 @@ class DNSScMapTest(unittest.TestCase):
                          -1.46918e-02, 13, 19]])
         self.assertTrue(testv[0].shape == (6, 8))
         self.assertTrue(np.allclose(testv[0], car))
-        self.map.omega_intp = True
+        self.map.omega_interpolated = True
         self.map.rectangular_grid = True
-        self.map.omega_mesh_intp = self.map.omega_mesh
-        self.map.ttheta_mesh_intp = self.map.ttheta_mesh
-        self.map.qx_mesh_intp = self.map.qx_mesh
-        self.map.qy_mesh_intp = self.map.qy_mesh
-        self.map.hklx_mesh_intp = self.map.hklx_mesh
-        self.map.hkly_mesh_intp = self.map.hkly_mesh
-        self.map.z_mesh_intp = self.map.z_mesh
+        self.map.omega_mesh_interpolated = self.map.omega_mesh
+        self.map.two_theta_mesh_interpolated = self.map.two_theta_mesh
+        self.map.qx_mesh_interpolated = self.map.qx_mesh
+        self.map.qy_mesh_interpolated = self.map.qy_mesh
+        self.map.hklx_mesh_interpolated = self.map.hklx_mesh
+        self.map.hkly_mesh_interpolated = self.map.hkly_mesh
+        self.map.z_mesh_interpolated = self.map.z_mesh
         testv = self.map.create_np_array()
         self.assertTrue(testv[1].shape == (6, 7))
         self.assertTrue(np.allclose(testv[1], car[:, 0:7]))
@@ -241,9 +241,9 @@ class DNSScMapTest(unittest.TestCase):
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'scipy')
     def test__get_z_mesh_interp(self, mock_scipy):
-        self.map.omega_intp = 3
-        self.map.ttheta_intp = 4
-        testv = self.map._get_z_mesh_interp()
+        self.map.omega_interpolated = 3
+        self.map.two_theta_interpolated = 4
+        testv = self.map._get_z_mesh_interpolation()
         mock_scipy.interpolate.interp2d.assert_called_once()
         cargs = mock_scipy.interpolate.interp2d.call_args_list[0][0]
         self.assertTrue(np.allclose(cargs[0], np.asarray([4, 5])))
@@ -258,7 +258,7 @@ class DNSScMapTest(unittest.TestCase):
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'np.meshgrid')
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
-           'DNSScMap._get_z_mesh_interp')
+           'DNSScMap._get_z_mesh_interpolation')
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            '_get_hkl_mesh')
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
@@ -276,7 +276,7 @@ class DNSScMapTest(unittest.TestCase):
         self.map.interpolate_quad_mesh()
         mock_get_interpolated.assert_not_called()
         self.map.rectangular_grid = True
-        self.map.interpolate_quad_mesh(interp=0)
+        self.map.interpolate_quad_mesh(interpolation=0)
         mock_get_interpolated.assert_not_called()
         mock_get_interpolated.reset_mock()
         self.map.interpolate_quad_mesh()
@@ -286,9 +286,9 @@ class DNSScMapTest(unittest.TestCase):
         self.assertEqual(carg[0][0][1], 3)
         self.assertTrue(np.allclose(carg[1][0][0], np.asarray([4, 5])))
         self.assertEqual(carg[1][0][1], 3)
-        self.assertEqual(self.map.ttheta_intp,
+        self.assertEqual(self.map.two_theta_interpolated,
                          mock_get_interpolated.return_value)
-        self.assertEqual(self.map.omega_intp,
+        self.assertEqual(self.map.omega_interpolated,
                          mock_get_interpolated.return_value)
         mock_meshgrid.assert_called_with(mock_get_interpolated.return_value,
                                          mock_get_interpolated.return_value)
@@ -296,16 +296,16 @@ class DNSScMapTest(unittest.TestCase):
         mock_get_q_mesh.assert_called_once_with(4, 5, 4.74)
         mock_get_hkl_mesh.assert_called_once_with(1, 2, 1, 2)
         mock_get_z_mesh_interp.assert_called_once()
-        self.assertEqual(self.map.z_mesh_intp, 8)
-        self.assertEqual(self.map.omega_mesh_intp, 4)
-        self.assertEqual(self.map.ttheta_mesh_intp, 5)
-        self.assertEqual(self.map.qx_mesh_intp, 1)
-        self.assertEqual(self.map.qy_mesh_intp, 2)
-        self.assertEqual(self.map.hklx_mesh_intp, 3)
-        self.assertEqual(self.map.hkly_mesh_intp, 4)
-        self.assertEqual(self.map.tthomega_mesh_intp, [5, 4, 8])
-        self.assertEqual(self.map.hkl_mesh_intp, [3, 4, 8])
-        self.assertEqual(self.map.qxqy_mesh_intp, [1, 2, 8])
+        self.assertEqual(self.map.z_mesh_interpolated, 8)
+        self.assertEqual(self.map.omega_mesh_interpolated, 4)
+        self.assertEqual(self.map.two_theta_mesh_interpolated, 5)
+        self.assertEqual(self.map.qx_mesh_interpolated, 1)
+        self.assertEqual(self.map.qy_mesh_interpolated, 2)
+        self.assertEqual(self.map.hklx_mesh_interpolated, 3)
+        self.assertEqual(self.map.hkly_mesh_interpolated, 4)
+        self.assertEqual(self.map.two_theta_and_omega_mesh_interpolated, [5, 4, 8])
+        self.assertEqual(self.map.hkl_mesh_interpolated, [3, 4, 8])
+        self.assertEqual(self.map.qxqy_mesh_interpolated, [1, 2, 8])
 
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.'
            'tri')
@@ -335,17 +335,17 @@ class DNSScMapTest(unittest.TestCase):
         refimock = mock.Mock()
         mock_uni.return_value.refine_field.return_value = 4, refimock
         zmock = mock.Mock()
-        self.map.triang = None
+        self.map.triangulation = None
         self.map.z_mesh = zmock
         self.assertIsNone(self.map.interpolate_triangulation())
-        self.map.triang = 1
+        self.map.triangulation = 1
         testv = self.map.interpolate_triangulation()
         mock_lin_intp.assert_called_once_with(1, zmock.flatten.return_value)
         mock_uni.return_value.refine_field.assert_called_once_with(
             zmock, subdiv=0, triinterpolator=mock_lin_intp.return_value)
         self.assertEqual(testv[0], 1)
         self.assertEqual(testv[1], zmock.flatten.return_value)
-        testv = self.map.interpolate_triangulation(interp=1)
+        testv = self.map.interpolate_triangulation(interpolation=1)
         self.assertEqual(testv[0], 4)
         self.assertEqual(testv[1], refimock.flatten.return_value)
 
@@ -382,11 +382,11 @@ class DNSScMapTest(unittest.TestCase):
 
     def test_mask_triangles(self):
         mock_triang = mock.Mock()
-        self.map.triang = mock_triang
-        self.map.triang.triangles = np.array([[5, 4, 2],
-                                              [2, 4, 0],
-                                              [5, 2, 3],
-                                              [3, 2, 0]])
+        self.map.triangulation = mock_triang
+        self.map.triangulation.triangles = np.array([[5, 4, 2],
+                                                     [2, 4, 0],
+                                                     [5, 2, 3],
+                                                     [3, 2, 0]])
         testv = self.map.mask_triangles('tthomega')
         self.assertEqual(testv, mock_triang)
         testv = self.map.mask_triangles('qxqy_mesh')
