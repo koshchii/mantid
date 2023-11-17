@@ -27,7 +27,7 @@ from mantidqtinterfaces.dns_powder_elastic.data_structures.dns_elastic_powder_da
 )
 
 
-class DNSDatasetTest(unittest.TestCase):
+class DNSElasticDatasetTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.full_data = get_file_selector_full_data()["full_data"]
