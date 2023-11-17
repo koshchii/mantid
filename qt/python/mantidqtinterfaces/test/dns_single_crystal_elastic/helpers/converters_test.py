@@ -1,14 +1,12 @@
 # Mantid Repository : https://github.com/mantidproject/mantid
 #
-# Copyright &copy; 2021 ISIS Rutherford Appleton Laboratory UKRI,
+# Copyright &copy; 2024 ISIS Rutherford Appleton Laboratory UKRI,
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
 
 import unittest
-
-from mantidqtinterfaces.dns_single_crystal_elastic.helpers.converters import \
-    d_spacing_from_lattice
+from mantidqtinterfaces.dns_single_crystal_elastic.helpers.converters import d_spacing_from_lattice
 
 
 class DNSconvertersTest(unittest.TestCase):
@@ -20,5 +18,5 @@ class DNSconvertersTest(unittest.TestCase):
         self.assertAlmostEqual(testv, 0.9979628311312633)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
