@@ -44,7 +44,7 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertTrue(hasattr(self.model._data, 'zmin'))
         self.assertTrue(hasattr(self.model._data, 'zmax'))
         self.assertTrue(hasattr(self.model._data, 'pzmin'))
-        self.assertTrue(hasattr(self.model._data, 'triang'))
+        self.assertTrue(hasattr(self.model._data, 'triangulation'))
         self.assertTrue(hasattr(self.model._data, 'ztriang'))
 
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
@@ -92,9 +92,9 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(self.model._data.y, 1)
         self.assertEqual(self.model._data.z, 2)
         self.model._single_crystal_map.triangulate.assert_called_once_with(
-            meshname='hkl_mesh', switch=False)
+            mesh_name='hkl_mesh', switch=False)
         self.model._single_crystal_map.mask_triangles.assert_called_once_with(
-            meshname='hkl_mesh')
+            mesh_name='hkl_mesh')
         self.model._single_crystal_map.interpolate_triangulation.assert_called_once_with(
             True)
         self.assertEqual(testv, (1, 2))
@@ -102,7 +102,7 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.model._single_crystal_map.interpolate_triangulation.reset_mock()
         self.model.get_interpolated_triangulation(False, 'hkl', True)
         self.model._single_crystal_map.triangulate.assert_called_once_with(
-            meshname='hkl_mesh', switch=True)
+            mesh_name='hkl_mesh', switch=True)
         self.model._single_crystal_map.interpolate_triangulation.assert_called_once_with(
             False)
 
@@ -200,7 +200,7 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
         self.assertEqual(testv[2][0, 1], 13)
 
     def test_get_omegaoffset(self):
-        self.model._single_crystal_map = {'omegaoffset': 123}
+        self.model._single_crystal_map = {'omega_offset': 123}
         testv = self.model.get_omegaoffset()
         self.assertEqual(testv, 123)
 
