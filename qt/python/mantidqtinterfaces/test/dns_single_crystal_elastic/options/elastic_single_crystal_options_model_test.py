@@ -1,20 +1,17 @@
 # Mantid Repository : https://github.com/mantidproject/mantid
 #
-# Copyright &copy; 2021 ISIS Rutherford Appleton Laboratory UKRI,
+# Copyright &copy; 2024 ISIS Rutherford Appleton Laboratory UKRI,
 #     NScD Oak Ridge National Laboratory, European Spallation Source
 #     & Institut Laue - Langevin
 # SPDX - License - Identifier: GPL - 3.0 +
+
 import unittest
 from unittest import mock
 
-from mantidqtinterfaces.dns_powder_tof.data_structures.dns_obs_model import \
-    DNSObsModel
-from mantidqtinterfaces.dns_powder_tof.options.common_options_model import \
-    DNSCommonOptionsModel
-from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_model \
-    import DNSElasticSCOptionsModel
-from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import \
-    get_fake_elastic_single_crystal_options
+from mantidqtinterfaces.dns_powder_tof.data_structures.dns_obs_model import DNSObsModel
+from mantidqtinterfaces.dns_powder_tof.options.common_options_model import DNSCommonOptionsModel
+from mantidqtinterfaces.dns_single_crystal_elastic.options.elastic_single_crystal_options_model import DNSElasticSCOptionsModel
+from mantidqtinterfaces.dns_powder_tof.helpers.helpers_for_testing import get_fake_elastic_single_crystal_options
 
 
 class DNSElasticSCOptionsModelTest(unittest.TestCase):
@@ -35,5 +32,5 @@ class DNSElasticSCOptionsModelTest(unittest.TestCase):
         self.assertAlmostEqual(testv[1], 0.6427233372178484)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
