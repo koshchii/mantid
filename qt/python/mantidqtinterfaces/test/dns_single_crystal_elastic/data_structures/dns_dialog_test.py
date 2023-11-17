@@ -33,7 +33,7 @@ class DNSDialogTest(unittest.TestCase):
         mock_loadui.return_value = '123'
         cls.mock_loadui = mock_loadui
         mock_path.return_value = cls.path_parent
-        cls.dialog = DNSDialog(filen='123', ui='456')
+        cls.dialog = DNSDialog(files='123', ui='456')
 
     def test___init__(self):
         self.assertIsInstance(self.dialog, DNSDialog)

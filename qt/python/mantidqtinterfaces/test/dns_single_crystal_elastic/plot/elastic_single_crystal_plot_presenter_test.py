@@ -70,9 +70,9 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         self.view.get_state.return_value = {'colormap': 'jet',
                                             'fontsize': 18,
                                             'crystal_axes': False,
-                                            'xrange': [1, 2],
-                                            'yrange': [3, 4],
-                                            'zrange': [5, 6],
+                                            'x_range': [1, 2],
+                                            'y_range': [3, 4],
+                                            'z_range': [5, 6],
                                             'log_scale': False,
                                             'invert_cb': True}
         self.presenter._plot_param.xlim = None
@@ -175,7 +175,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
     def test___set_initial_oof_dxdy(self):
         self.model.get_omegaoffset.return_value = 3
         self.model.get_dx_dy.return_value = (1, 2)
-        self.presenter._set_initial_oof_dxdy()
+        self.presenter._set_initial_omega_offset_dxdy()
         self.model.get_omegaoffset.assert_called_once()
         self.model.get_dx_dy.assert_called_once()
         self.view.set_initial_oof_dxdy.assert_called_once_with(3, 1, 2)
@@ -190,7 +190,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
            'DNSElasticSCPlotPresenter._datalist_updated')
     def test_tab_got_focus(self, mock_datalist_updated):
         self.presenter.param_dict = {
-            'elastic_single_crystal_script_generator': {'plotlist': ['b', 'a'],
+            'elastic_single_crystal_script_generator': {'plot_list': ['b', 'a'],
                                                         'script_number': 0}}
         mock_datalist_updated.return_value = True
         self.presenter.tab_got_focus()
@@ -208,7 +208,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
            'elastic_single_crystal_plot_presenter.'
            'DNSElasticSCPlotPresenter._plot')
     def test__update_omegaoffset(self, mock_plot):
-        self.presenter._update_omegaoffset(2)
+        self.presenter._update_omega_offset(2)
         mock_plot.assert_called_once_with({'omega_offset': 2})
 
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'

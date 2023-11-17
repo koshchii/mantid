@@ -70,7 +70,7 @@ class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
         self.assertEqual(testv, OrderedDict([('script_path', ''),
                                              ('script_number', 0),
                                              ('script_text', ''),
-                                             ('plotlist', []),
+                                             ('plot_list', []),
                                              ('data_arrays', {})]))
 
 
