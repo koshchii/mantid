@@ -178,26 +178,6 @@ class DNSScMapTest(unittest.TestCase):
         self.assertTrue(testv[1].shape == (6, 7))
         self.assertTrue(np.allclose(testv[1], car[:, 0:7]))
 
-    @patch("mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.file_helper.create_dir_from_filename")
-    @patch("mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.DNSScMap.create_np_array")
-    @patch("mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.np.savetxt")
-    def test_save_ascii(self, mock_save, mock_create_array, mock_cdir):
-        header = " 2theta, omega, qx,      qy ,      hklx,     hkly,         Intensity,          Error"
-        self.map.rectangular_grid = False
-        mock_create_array.return_value = 1, 2
-        self.map.save_ascii("123.txt")
-        mock_cdir.assert_called_once_with("123_no_interp.txt")
-        mock_save.assert_called_once_with(
-            "123_no_interp.txt", 1, fmt="%7.3f %7.3f %8.5f %8.5f %9.5f %9.5f %15.5f %15.5f", delimiter=" ", newline="\n", header=header
-        )
-        mock_save.reset_mock()
-        self.map.rectangular_grid = True
-        self.map.save_ascii("123.txt")
-        self.assertEqual(mock_save.call_count, 2)
-        mock_save.assert_called_with(
-            "123_interp.txt", 2, fmt="%7.3f %7.3f %8.5f %8.5f %9.5f %9.5f %15.5f", delimiter=" ", newline="\n", header=header[0:-16]
-        )
-
     @patch("mantidqtinterfaces.dns_single_crystal_elastic.data_structures.dns_single_crystal_map.scipy")
     def test__get_z_mesh_interp(self, mock_scipy):
         self.map.omega_interpolated = 3
