@@ -363,7 +363,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
 
     def test__get_bg_corr_lines(self):
         self.model._vana_correction = True
-        testv = self.model._get_background_correction_lines()
+        testv = self.model._get_subtract_bg_from_standard_lines()
         self.assertEqual(
             testv,
             [
@@ -376,20 +376,20 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         )
         self.model._vana_correction = False
         self.model._nicr_correction = False
-        testv = self.model._get_background_correction_lines()
+        testv = self.model._get_subtract_bg_from_standard_lines()
         self.assertEqual(testv, [])
 
     def test__return_sample_bg_string(self):
         self.model._spacing = "  "
         self.model._background_factor = "123"
-        testv = self.model._return_sample_background_string()
+        testv = self.model._get_background_string()
         self.assertEqual(testv, "  background_subtraction(workspace," " factor=123)")
 
     def test__return_sample_vanac_strinf(self):
         self.model._spacing = "  "
         self.model._sum_sf_nsf = 1
         self.model._ignore_vana = 2
-        testv = self.model._return_sample_vana_correction_string()
+        testv = self.model._get_vana_correction_string()
         self.assertEqual(
             testv, "  vanadium_correction(workspace,  vana_set=s" "tandard_data['vana'], ignore_vana_fields=2," " sum_vana_sf_nsf=1)"
         )
@@ -409,24 +409,24 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
             " ignore_vana_fields=2, sum_vana_sf_nsf=1)",
         ]
 
-        testv = self.model._get_vana_correction_lines()
+        testv = self.model._get_sample_corrections_lines()
         self.assertEqual(testv, [])
         self.model._sample_background_correction = True
-        testv = self.model._get_vana_correction_lines()
+        testv = self.model._get_sample_corrections_lines()
         self.assertEqual(testv, compare)
         self.model._sample_background_correction = False
         self.model._vana_correction = True
-        testv = self.model._get_vana_correction_lines()
+        testv = self.model._get_sample_corrections_lines()
         self.assertEqual(testv, compare)
 
     def test__get_nicrc_lines(self):
         self.model._nicr_correction = False
         self.model._loop = "fo:"
         self.model._spacing = "  "
-        testv = self.model._get_nicrc_lines()
+        testv = self.model._get_nicr_cor_lines()
         self.assertEqual(testv, [])
         self.model._nicr_correction = True
-        testv = self.model._get_nicrc_lines()
+        testv = self.model._get_nicr_cor_lines()
         self.assertEqual(testv, ["fo:  fliping_ratio_correction(workspace)"])
 
     @patch("mantidqtinterfaces.dns_single_crystal_elastic.script_generator." "elastic_single_crystal_script_generator_model.mtd")
