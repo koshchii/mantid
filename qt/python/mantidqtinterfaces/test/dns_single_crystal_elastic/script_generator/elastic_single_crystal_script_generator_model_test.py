@@ -431,7 +431,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.model._sum_sf_nsf = 1
         self.model._ignore_vana = 2
         testv = self.model._return_sample_vanac_strinf()
-        self.assertEqual(testv, "  vanadium_correction(workspace,  vanaset=s"
+        self.assertEqual(testv, "  vanadium_correction(workspace,  vana_set=s"
                                 "tandard_data['vana'], ignore_vana_fields=2,"
                                 " sum_vana_sf_nsf=1)")
 
@@ -445,7 +445,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.model._vana_correction = False
         compare = ['# correct sample data',
                    "fo:  background_subtraction(workspace, factor=123)  vanad"
-                   "ium_correction(workspace,  vanaset=standard_data['vana'],"
+                   "ium_correction(workspace,  vana_set=standard_data['vana'],"
                    " ignore_vana_fields=2, sum_vana_sf_nsf=1)"]
 
         testv = self.model._get_vanac_lines()
