@@ -407,7 +407,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
 
     def test__get_bg_corr_lines(self):
         self.model._vana_correction = True
-        testv = self.model._get_bg_corr_lines()
+        testv = self.model._get_background_correction_lines()
         self.assertEqual(testv, [
             '# substract background from vanadium and nicr',
             'for sample, workspacelist in wss_standard.items(): \n    '
@@ -416,13 +416,13 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         ])
         self.model._vana_correction = False
         self.model._nicr_correction = False
-        testv = self.model._get_bg_corr_lines()
+        testv = self.model._get_background_correction_lines()
         self.assertEqual(testv, [])
 
     def test__return_sample_bg_string(self):
         self.model._spacing = '  '
         self.model._background_factor = '123'
-        testv = self.model._return_sample_bg_string()
+        testv = self.model._return_sample_background_string()
         self.assertEqual(testv, '  background_subtraction(workspace,'
                                 ' factor=123)')
 
@@ -430,7 +430,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         self.model._spacing = '  '
         self.model._sum_sf_nsf = 1
         self.model._ignore_vana = 2
-        testv = self.model._return_sample_vanac_strinf()
+        testv = self.model._return_sample_vana_correction_string()
         self.assertEqual(testv, "  vanadium_correction(workspace,  vana_set=s"
                                 "tandard_data['vana'], ignore_vana_fields=2,"
                                 " sum_vana_sf_nsf=1)")
@@ -448,14 +448,14 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
                    "ium_correction(workspace,  vana_set=standard_data['vana'],"
                    " ignore_vana_fields=2, sum_vana_sf_nsf=1)"]
 
-        testv = self.model._get_vanac_lines()
+        testv = self.model._get_vana_correction_lines()
         self.assertEqual(testv, [])
         self.model._sample_background_correction = True
-        testv = self.model._get_vanac_lines()
+        testv = self.model._get_vana_correction_lines()
         self.assertEqual(testv, compare)
         self.model._sample_background_correction = False
         self.model._vana_correction = True
-        testv = self.model._get_vanac_lines()
+        testv = self.model._get_vana_correction_lines()
         self.assertEqual(testv, compare)
 
     def test__get_nicrc_lines(self):
@@ -474,7 +474,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
     def test_get_plotlist(self, mtd):
         mtd.__getitem__.return_value = self.fake_workspace
         self.model._plot_list = ['4p1K_map']
-        testv = self.model.get_plotlist()
+        testv = self.model.get_plot_list()
         self.assertEqual(
             testv, (['4p1K_map'],
                     {'4p1K_map': {'ttheta': [1, 2, 3],

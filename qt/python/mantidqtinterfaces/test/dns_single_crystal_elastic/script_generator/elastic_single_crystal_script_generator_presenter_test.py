@@ -37,7 +37,7 @@ class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
         cls.view.sig_generate_script.connect = mock.Mock()
         cls.view.get_state.return_value = {}
         cls.model = mock.create_autospec(DNSElasticSCScriptGeneratorModel)
-        cls.model.get_plotlist.return_value = [[1], {2: 3}]
+        cls.model.get_plot_list.return_value = [[1], {2: 3}]
         cls.presenter = DNSElasticSCScriptGeneratorPresenter(
             view=cls.view,
             model=cls.model,
@@ -58,7 +58,7 @@ class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
 
     def test__finish_script_run(self):
         self.presenter._finish_script_run()
-        self.model.get_plotlist.assert_called_once()
+        self.model.get_plot_list.assert_called_once()
         self.assertEqual(self.presenter._plotlist, [1])
         self.assertEqual(self.presenter._data_arrays, {2: 3})
 
