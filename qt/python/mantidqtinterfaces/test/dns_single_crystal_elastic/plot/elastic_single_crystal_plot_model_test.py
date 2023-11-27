@@ -64,7 +64,7 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
            'helper.get_projection')
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
-           'helper.filter_flattend_meshs')
+           'helper.filter_flattened_meshes')
     def test_get_projections(self, mock_ffm, mock_gpj):
         mock_ffm.return_value = [1, 2, 3]
         mock_gpj.return_value = 2
@@ -161,7 +161,7 @@ class DNSElasticSCPlotModelTest(unittest.TestCase):
 
     @patch('mantidqtinterfaces.dns_single_crystal_elastic.plot.'
            'elastic_single_crystal_plot_model.'
-           'helper.stringrange_to_float')
+           'helper.string_range_to_float')
     def test_get_mlimits(self, mock_stringrange):
         mock_stringrange.return_value = 'a'
         testv = self.model.get_mlimits(1, 2)
