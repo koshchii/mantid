@@ -52,7 +52,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         cls.sample_data.omega.bin_edge_max = 5
         cls.sample_data.omega.nbins = 3
         cls.sample_data.omega.range = [4, 5, 6]
-        cls.sample_data.scriptname = 'script.py'
+        cls.sample_data.script_name = 'script.py'
         cls.sample_data.banks = [1, 2, 3]
         cls.standard_data = mock.create_autospec(DNSDataset)
         cls.model._standard_data = cls.standard_data
@@ -69,7 +69,7 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
         cls.standard_data.omega.bin_edge_max = 5
         cls.standard_data.omega.nbins = 3
         cls.standard_data.omega.range = [4, 5, 6]
-        cls.standard_data.scriptname = '123.txt'
+        cls.standard_data.script_name = '123.txt'
 
         cls.fake_workspace = mock.Mock()
         cls.fake_workspace.getErrorSquaredArray.return_value = 1
