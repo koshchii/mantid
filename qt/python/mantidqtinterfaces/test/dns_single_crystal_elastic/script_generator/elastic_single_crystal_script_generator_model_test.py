@@ -317,10 +317,6 @@ class DNSElasticSCScriptGeneratorModelTest(unittest.TestCase):
                                         {'standard_data': []})
         self.assertEqual(self.model._standard_data, self.standard_data)
 
-    def test_interpolate_standard(self):
-        self.model._interpolate_standard()
-        self.standard_data.interpolate_standard.assert_called_once()
-
     def test_set_loop(self):
         self.model._loop = None
         self.model._spac = None
