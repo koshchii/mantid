@@ -10,17 +10,15 @@ DNS script generator for elastic powder data
 import unittest
 from unittest import mock
 from collections import OrderedDict
-from mantidqtinterfaces.dns_powder_tof.script_generator.\
-    common_script_generator_presenter import DNSScriptGeneratorPresenter
-from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer import \
-    DNSObserver
-from mantidqtinterfaces.dns_single_crystal_elastic.script_generator.\
-    elastic_single_crystal_script_generator_presenter \
-    import DNSElasticSCScriptGeneratorPresenter
-from mantidqtinterfaces.dns_powder_tof.script_generator.\
-    common_script_generator_view import DNSScriptGeneratorView
-from mantidqtinterfaces.dns_single_crystal_elastic.script_generator.\
-    elastic_single_crystal_script_generator_model import DNSElasticSCScriptGeneratorModel
+from mantidqtinterfaces.dns_powder_tof.script_generator.common_script_generator_presenter import DNSScriptGeneratorPresenter
+from mantidqtinterfaces.dns_powder_tof.data_structures.dns_observer import DNSObserver
+from mantidqtinterfaces.dns_single_crystal_elastic.script_generator.elastic_single_crystal_script_generator_presenter import (
+    DNSElasticSCScriptGeneratorPresenter,
+)
+from mantidqtinterfaces.dns_powder_tof.script_generator.common_script_generator_view import DNSScriptGeneratorView
+from mantidqtinterfaces.dns_single_crystal_elastic.script_generator.elastic_single_crystal_script_generator_model import (
+    DNSElasticSCScriptGeneratorModel,
+)
 
 
 class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
@@ -39,40 +37,35 @@ class DNSElasticSCScriptGeneratorPresenterTest(unittest.TestCase):
         cls.model = mock.create_autospec(DNSElasticSCScriptGeneratorModel)
         cls.model.get_plot_list.return_value = [[1], {2: 3}]
         cls.presenter = DNSElasticSCScriptGeneratorPresenter(
-            view=cls.view,
-            model=cls.model,
-            name='elastic_single_crystal_script_generator',
-            parent=cls.parent)
+            view=cls.view, model=cls.model, name="elastic_single_crystal_script_generator", parent=cls.parent
+        )
 
     def setUp(self):
         self.view.reset_mock()
         self.model.reset_mock()
 
     def test___init__(self):
-        self.assertIsInstance(self.presenter,
-                              DNSElasticSCScriptGeneratorPresenter)
+        self.assertIsInstance(self.presenter, DNSElasticSCScriptGeneratorPresenter)
         self.assertIsInstance(self.presenter, DNSScriptGeneratorPresenter)
         self.assertIsInstance(self.presenter, DNSObserver)
-        self.assertTrue(hasattr(self.presenter, '_plot_list'))
-        self.assertTrue(hasattr(self.presenter, '_data_arrays'))
+        self.assertTrue(hasattr(self.presenter, "_plot_list"))
+        self.assertTrue(hasattr(self.presenter, "_data_arrays"))
 
     def test__finish_script_run(self):
         self.presenter._finish_script_run()
         self.model.get_plot_list.assert_called_once()
-        self.assertEqual(self.presenter._plotlist, [1])
+        self.assertEqual(self.presenter._plot_list, [1])
         self.assertEqual(self.presenter._data_arrays, {2: 3})
 
     def test_get_option_dict(self):
-        self.presenter._plotlist = []
+        self.presenter._plot_list = []
         self.presenter._data_arrays = {}
         testv = self.presenter.get_option_dict()
         self.view.get_state.assert_called_once()
-        self.assertEqual(testv, OrderedDict([('script_path', ''),
-                                             ('script_number', 0),
-                                             ('script_text', ''),
-                                             ('plot_list', []),
-                                             ('data_arrays', {})]))
+        self.assertEqual(
+            testv, OrderedDict([("script_path", ""), ("script_number", 0), ("script_text", ""), ("plot_list", []), ("data_arrays", {})])
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
