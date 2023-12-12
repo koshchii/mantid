@@ -46,7 +46,7 @@ class DNSElasticPowderPlotPresenterTest(unittest.TestCase):
         self.model.reset_mock()
         self.view.reset_mock()
         self.presenter.errorbar = 0
-        self.presenter.gridstate = 0
+        self.presenter.grid_state = 0
         self.presenter.linestyle = 0
         self.presenter.param_dict = self.param_dict
 
@@ -91,7 +91,7 @@ class DNSElasticPowderPlotPresenterTest(unittest.TestCase):
         self.presenter._change_error_bar()
         self.assertEqual(self.presenter._error_bar, 2)
 
-    def test_change_gridstate(self):
+    def test_change_grid_state(self):
         self.presenter._change_grid_state(False)
         self.view.set_no_grid.assert_called_once()
         self.assertEqual(self.presenter._grid_state, 0)

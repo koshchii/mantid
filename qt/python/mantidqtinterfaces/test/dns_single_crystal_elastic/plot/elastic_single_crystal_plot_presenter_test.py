@@ -302,31 +302,31 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
     @patch(
         "mantidqtinterfaces.dns_single_crystal_elastic.plot."
         "elastic_single_crystal_plot_presenter."
-        "DNSElasticSCPlotPresenter._create_gridhelper"
+        "DNSElasticSCPlotPresenter._create_grid_helper"
     )
-    def test__change_crystal_axes_grid(self, mock_gridhelper):
-        self.presenter._plot_param.gridstate = 1
+    def test__change_crystal_axes_grid(self, mock_grid_helper):
+        self.presenter._plot_param.grid_state = 1
         self.presenter._change_crystal_axes_grid()
-        mock_gridhelper.assert_called_once()
+        mock_grid_helper.assert_called_once()
         self.view.single_crystal_plot.set_grid.assert_called_once_with(major=True)
-        self.assertEqual(self.presenter._plot_param.gridstate, 1)
-        self.presenter._plot_param.gridstate = 4
+        self.assertEqual(self.presenter._plot_param.grid_state, 1)
+        self.presenter._plot_param.grid_state = 4
         self.presenter._change_crystal_axes_grid()
-        self.assertEqual(self.presenter._plot_param.gridstate, 0)
+        self.assertEqual(self.presenter._plot_param.grid_state, 0)
 
     def test_change_normal_grid(self):
-        self.presenter._plot_param.gridhelper = 1
-        self.presenter._plot_param.gridstate = 1
+        self.presenter._plot_param.grid_helper = 1
+        self.presenter._plot_param.grid_state = 1
         self.presenter._change_normal_grid()
         self.view.single_crystal_plot.set_grid.assert_called_once_with(major=1, minor=0)
-        self.assertEqual(self.presenter._plot_param.gridstate, 1)
-        self.presenter._plot_param.gridstate = 3
+        self.assertEqual(self.presenter._plot_param.grid_state, 1)
+        self.presenter._plot_param.grid_state = 3
         self.view.reset_mock()
         self.presenter._change_normal_grid()
-        self.assertEqual(self.presenter._plot_param.gridstate, 0)
-        self.assertIsNone(self.presenter._plot_param.gridhelper, 0)
+        self.assertEqual(self.presenter._plot_param.grid_state, 0)
+        self.assertIsNone(self.presenter._plot_param.grid_helper, 0)
         self.view.single_crystal_plot.set_grid.assert_called_once_with(major=0, minor=0)
-        self.presenter._plot_param.gridstate = 2
+        self.presenter._plot_param.grid_state = 2
         self.view.reset_mock()
         self.presenter._change_normal_grid()
         self.view.single_crystal_plot.set_grid.assert_called_once_with(major=2, minor=1)
@@ -355,17 +355,17 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
     @patch("mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_presenter.DNSElasticSCPlotPresenter._plot")
     def test__change_crystal_axes(self, mock_plot):
         self.presenter._change_crystal_axes()
-        self.assertEqual(self.presenter._plot_param.gridstate, 1)
+        self.assertEqual(self.presenter._plot_param.grid_state, 1)
         mock_plot.assert_called_once()
 
     @patch("mantidqtinterfaces.dns_single_crystal_elastic.plot.elastic_single_crystal_plot_presenter.get_grid_helper")
-    def test__create_gridhelper(self, mock_get_gridhelper):
-        self.presenter._plot_param.gridhelper = None
-        self.presenter._plot_param.gridstate = 0
+    def test__create_grid_helper(self, mock_get_grid_helper):
+        self.presenter._plot_param.grid_helper = None
+        self.presenter._plot_param.grid_state = 0
         self.model.get_changing_hkl_components.return_value = 1, 2, 3, 4
-        self.presenter._create_gridhelper()
+        self.presenter._create_grid_helper()
         self.view.get_axis_type.assert_called_once()
-        mock_get_gridhelper.assert_called_once_with(None, 0, 1, 2, 3, 4, False)
+        mock_get_grid_helper.assert_called_once_with(None, 0, 1, 2, 3, 4, False)
 
     @patch(
         "mantidqtinterfaces.dns_single_crystal_elastic.plot."
@@ -438,7 +438,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
     @patch(
         "mantidqtinterfaces.dns_single_crystal_elastic.plot."
         "elastic_single_crystal_plot_presenter."
-        "DNSElasticSCPlotPresenter._change_cb_range"
+        "DNSElasticSCPlotPresenter._change_color_bar_range"
     )
     @patch(
         "mantidqtinterfaces.dns_single_crystal_elastic.plot."
@@ -471,7 +471,7 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         self.presenter._plot_param.zlim = None
         self.presenter._plot_param.sny_zoom_in = None
         mock_get_current_limits.return_value = [1, 2], [3, 4], 5, 6
-        self.presenter._change_cb_range(zoom=True)
+        self.presenter._change_color_bar_range(zoom=True)
         mock_get_current_limits.assert_called_once_with(True)
         self.view.single_crystal_plot.set_zlim.assert_called_once_with(5)
         self.assertEqual(self.presenter._plot_param.xlim, [1, 2])
@@ -483,14 +483,14 @@ class DNSElasticSCPlotPresenterTest(unittest.TestCase):
         self.view.draw.assert_called_once()
         self.view.reset_mock()
         self.presenter._plot_param.projections = True
-        self.presenter._change_cb_range(zoom=False)
+        self.presenter._change_color_bar_range(zoom=False)
         mock_tg_proj.assert_called_once()
         self.view.draw.assert_not_called()
 
     @patch(
         "mantidqtinterfaces.dns_single_crystal_elastic.plot."
         "elastic_single_crystal_plot_presenter."
-        "DNSElasticSCPlotPresenter._change_cb_range"
+        "DNSElasticSCPlotPresenter._change_color_bar_range"
     )
     def test__home_button_clicked(self, mock_change_cb_range):
         self.view.get_state.return_value["log_scale"] = True
