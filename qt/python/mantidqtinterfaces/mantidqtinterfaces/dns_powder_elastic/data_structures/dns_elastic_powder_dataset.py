@@ -30,7 +30,7 @@ class DNSElasticDataset(ObjectDict):
         if data:
             self["is_sample"] = is_sample
             if is_sample:
-                self["angle_fields_data"] = get_sample_fields_each_bank(data)
+                self["angle_fields_data"], self["angle_fields_files_data"] = get_sample_fields_each_bank(data)
             if not is_sample and banks is not None:
                 data = remove_unnecessary_standard_banks(data, banks)
             if not is_sample and fields is not None:
@@ -81,23 +81,44 @@ class DNSElasticDataset(ObjectDict):
         return 0
 
 
-def round_step(step, rounding_limit=0.05):
-    likely_steps = np.arange(0, 5, 0.1)
-    for i in likely_steps:
-        if abs(step - i) <= rounding_limit:
-            return i
-    return step
+# def round_step(step, rounding_limit=0.05):
+#     likely_steps = np.arange(0, 5, 0.1)
+#     for i in likely_steps:
+#         if abs(step - i) <= rounding_limit:
+#             return i
+#     return step
 
 
-def get_omega_step(angles, rounding_limit=0.05):
+# def get_omega_step(angles, rounding_limit=0.05):
+#     angles = sorted(angles)
+#     diff_rot = [abs(angles[i] - angles[i + 1]) for i in range(len(angles) - 1)]
+#     diff_rot = [i for i in diff_rot if i >= rounding_limit]
+#     if not diff_rot:
+#         return 1
+#     diff_rot = list_to_set(diff_rot)
+#     min_step = min(diff_rot)
+#     return min_step
+
+
+def get_omega_step(angles):
     angles = sorted(angles)
-    diff_rot = [abs(angles[i] - angles[i + 1]) for i in range(len(angles) - 1)]
-    diff_rot = [i for i in diff_rot if i >= rounding_limit]
-    if not diff_rot:
-        return 1
-    diff_rot = list_to_set(diff_rot)
-    min_step = min(diff_rot)
-    return min_step
+    omega_steps = np.diff(angles)
+    if omega_steps.size == 0:
+        return 0
+    else:
+        values, counts = np.unique(omega_steps, return_counts=True)
+        ind = np.argmax(counts)
+        most_freq_step = values[ind]
+        if most_freq_step != 0:
+            # diff_rot = [abs(angles[i] - angles[i + 1]) for i in range(len(angles) - 1)]
+            # diff_rot = [i for i in diff_rot if i >= rounding_limit]
+            # if not diff_rot:
+            #    return 1
+            # diff_rot = list_to_set(diff_rot)
+            # min_step = min(diff_rot)
+            return most_freq_step
+        else:
+            return 0
 
 
 def list_to_set(bank_list, rounding_limit=0.05):
@@ -122,7 +143,9 @@ def automatic_omega_binning(sample_data):
         omega_max = max(omega)
         omega_min = min(omega)
         sample_rot = [x["sample_rot"] for x in sample_data]
-        omega_step = get_omega_step(sample_rot)
+        unique_sample_rot = list(set(sample_rot))
+        omega_step = get_omega_step(unique_sample_rot)
+        print("AUTO BIN", omega_step)
         return DNSBinning(omega_min, omega_max, omega_step)
 
 
@@ -203,32 +226,55 @@ def remove_unnecessary_standard_fields(standard_data, sample_fields, ignore_van)
     return standard_data_clean
 
 
-def get_bank_positions(sample_data, rounding_limit=0.05):
-    new_arr = []
-    inside = False
+def get_bank_positions(sample_data):
+    # unique_bank_positions = []
     banks = set(entry["det_rot"] for entry in sample_data)
-    for bank in banks:
-        for compare in new_arr:
-            if abs(compare - bank) < rounding_limit:
-                inside = True
-                break
-            inside = False
-        if not inside:
-            new_arr.append(bank)
-    return new_arr
+    # rounded_banks = [round(elem, 1) for elem in banks]
+    unique_bank_positions = list(sorted(banks))
+    # print("UNIQUE BANK POSITIONS", unique_bank_positions)
+    return unique_bank_positions
+
+
+# def get_bank_positions(sample_data, rounding_limit=0.1):
+#     new_arr = []
+#     inside = False
+#     banks = set(entry["det_rot"] for entry in sample_data)
+#     #rounded_banks = [round(elem, 1) for elem in banks]
+#     #unique_bank_positions = sorted(set(rounded_banks))
+#     # print("BANKS", banks)
+#     # print("ROUND", new_arr_r)
+#     for bank in banks:
+#         for compare in new_arr:
+#             if abs(compare - bank) < rounding_limit:
+#                 inside = True
+#                 break
+#             inside = False
+#         if not inside:
+#             new_arr.append(bank)
+#     # print("NEW ARR", new_arr)
+#     return new_arr
 
 
 def get_sample_fields_each_bank(sample_data):
+    # print("FULL SD", sample_data)
     det_banks = get_bank_positions(sample_data)
     angle_and_fields_data = {}
+    angle_fields_files_data = {}
     for det_bank in det_banks:
         fields = []
+        angle_fields_files_data[det_bank] = {}
         for file_dict in sample_data:
             if det_bank == file_dict["det_rot"]:
                 field = field_dict.get(file_dict["field"], file_dict["field"])
+                if field not in angle_fields_files_data[det_bank]:
+                    angle_fields_files_data[det_bank][field] = []
+                file = field_dict.get(file_dict["file_number"], file_dict["file_number"])
+                angle_fields_files_data[det_bank][field].append(file)
                 fields.append(field)
-        angle_and_fields_data[det_bank] = set(fields)
-    return angle_and_fields_data
+        unique_fields = list(set(fields))
+        angle_and_fields_data[det_bank] = unique_fields
+    print("NEW DATA", angle_fields_files_data)
+    return angle_and_fields_data, angle_fields_files_data
 
 
 def _get_path_string(dataset, sample_name):

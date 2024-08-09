@@ -9,6 +9,7 @@
 DNS single crystal elastic options tab presenter of DNS reduction GUI.
 """
 
+import numpy as np
 from mantidqtinterfaces.dns_powder_tof.options.common_options_presenter import DNSCommonOptionsPresenter
 
 
@@ -37,10 +38,14 @@ class DNSElasticSCOptionsPresenter(DNSCommonOptionsPresenter):
         if self.param_dict["file_selector"]["full_data"]:
             sample_data = self.param_dict["file_selector"]["full_data"]
             omega_params_dict = get_automatic_omega_binning(sample_data)
+            # if bool(omega_params_dict):
             own_options = self.get_option_dict()
             for parameter in omega_params_dict.keys():
                 own_options[parameter] = omega_params_dict[parameter]
             self.set_view_from_param()
+        # else:
+        #     self.view._map["automatic_binning"].setCheckState(0)
+        #     self.view._map["automatic_binning"].setDisabled(True)
 
     def _set_manual_two_theta_binning_lims(self):
         if self.param_dict["file_selector"]["full_data"]:
@@ -60,6 +65,7 @@ class DNSElasticSCOptionsPresenter(DNSCommonOptionsPresenter):
         if self.param_dict["file_selector"]["full_data"]:
             sample_data = self.param_dict["file_selector"]["full_data"]
             auto_bin_params = get_automatic_omega_binning(sample_data)
+            # if bool(auto_bin_params):
             min_lower_limit = auto_bin_params["omega_min"]
             min_upper_limit = auto_bin_params["omega_max"] - auto_bin_params["omega_bin_size"]
             max_lower_limit = auto_bin_params["omega_min"] + auto_bin_params["omega_bin_size"]
@@ -69,6 +75,9 @@ class DNSElasticSCOptionsPresenter(DNSCommonOptionsPresenter):
             self.view._map["omega_max"].setMinimum(max_lower_limit)
             self.view._map["omega_max"].setMaximum(max_upper_limit)
             self._evaluate_omega_max_bin_size()
+            # else:
+            #    self.view._map["automatic_binning"].setCheckState(0)
+            #    self.view._map["automatic_binning"].setDisabled(True)
 
     def _get_automatic_binning_state(self):
         return self.view._map["automatic_binning"].isChecked()
@@ -136,11 +145,16 @@ def get_automatic_two_theta_binning(sample_data):
     """
     Determines automatic two theta binning parameters from selected sample data.
     """
+    # self._sample_data = DNSElasticDataset(data=file_selector["full_data"], path=paths["data_dir"], is_sample=True)
+
     det_rot = [-x["det_rot"] for x in sample_data]
+    # TODO: make 'two_theta_last_det' constant and add to det properties class in future
     two_theta_last_det = 115.0
     two_theta_max = max(det_rot) + two_theta_last_det
     two_theta_min = min(det_rot)
-    two_theta_step = 0.5
+    # TODO: make 'two_theta_def_step' constant and add to det properties class in future
+    two_theta_def_step = 5.0
+    two_theta_step = two_theta_def_step
     number_two_theta_bins = int(round((two_theta_max - two_theta_min) / two_theta_step) + 1)
     two_theta_binning_dict = {
         "two_theta_min": two_theta_min,
@@ -151,14 +165,87 @@ def get_automatic_two_theta_binning(sample_data):
     return two_theta_binning_dict
 
 
-def get_automatic_omega_binning(sample_data):
+def get_automatic_omega_binning(sample_data, rounding_limit=0.05):
     """
     Determines automatic sample rotation binning parameters from selected sample data.
+    Automatic omega_bin_size=0 indicates problems with selected files.
     """
+    # print("SD", sample_data)
+    selected_fields = set([x["field"] for x in sample_data])
+    # selected_two_theta = set([x["det_rot"] for x in sample_data])
+    # print("TT", selected_two_theta)
+    # print("OM", [x["sample_rot"] - x["det_rot"] for x in sample_data])
+
+    selected_omega = {}
+    omega_step_dict = {}
+    omega_steps = []
+    # for each field component determine omega steps
+    for field in selected_fields:
+        selected_omega[field] = [x["sample_rot"] - x["det_rot"] for x in sample_data if x["field"] == field]
+        omega_step_dict[field] = np.diff(selected_omega[field])
+        print("ST", omega_step_dict[field])
+        # single file selected
+        if omega_step_dict[field].size == 0:
+            omega_binning_dict = {
+                "omega_min": min(selected_omega[field]),
+                "omega_max": max(selected_omega[field]),
+                "omega_bin_size": 0,
+                "omega_nbins": 1,
+            }
+            return omega_binning_dict
+        # two files with same omega at same two_theta:
+        # ToDo: need to check if it happens at same two_theta, otherwise OK
+        elif not np.all(omega_step_dict[field]):
+            omega_binning_dict = {
+                "omega_min": min(selected_omega[field]),
+                "omega_max": max(selected_omega[field]),
+                "omega_bin_size": 0,
+                "omega_nbins": 1,
+            }
+            return omega_binning_dict
+        else:
+            values, counts = np.unique(omega_step_dict[field], return_counts=True)
+            print("VALS", values)
+            print("COUNTS", counts)
+            ind = np.argmax(counts)
+            most_freq_step = values[ind]
+
+        # add most frequent step for this field component to the list of selected steps
+        omega_steps.append(most_freq_step)
+
+        # if omega_step_dict[field].size > 0:
+        #     # most frequent step for a specific field component
+        #     values, counts = np.unique(omega_step_dict[field], return_counts=True)
+        #     print("VALS", values)
+        #     print("COUNTS", counts)
+        #     ind = np.argmax(counts)
+        #     most_freq_step = values[ind]
+        #
+        #     # add most frequent step for this field component to the list of selected steps
+        #     omega_steps.append(most_freq_step)
+        # else:
+        #     omega_binning_dict = {"omega_min": min(selected_omega[field]),
+        #                           "omega_max": max(selected_omega[field]),
+        #                           "omega_bin_size": 0,
+        #                           "omega_nbins": 1}
+        #     return omega_binning_dict
+        # self.view._map["automatic_binning"].setCheckState(0)
+    # prevents error when single/no file is selected
+    # if len(omega_steps) > 0:
+    omega_step = max(omega_steps)
+    # print("STEP", omega_step)
+    # else:
+    #    return {}
+
+    # print("OM DICT:", omega_dict)
+    # print("OM STEP", omega_step_dict)
     omega = [x["sample_rot"] - x["det_rot"] for x in sample_data]
+    # print("SD:", set(fields))
+    # print("SD FIELDS", sample_data["field"].unique())
+    # print("OMEGA:", omega)
     omega_min = min(omega)
     omega_max = max(omega)
-    omega_step = 1.0
+    # omega_step = 1.0
     number_omega_bins = int(round((omega_max - omega_min) / omega_step) + 1)
     omega_binning_dict = {"omega_min": omega_min, "omega_max": omega_max, "omega_bin_size": omega_step, "omega_nbins": number_omega_bins}
     return omega_binning_dict

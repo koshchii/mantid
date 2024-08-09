@@ -142,6 +142,9 @@ class DNSElasticSCOptionsView(DNSView):
     def _omega_max_changed(self):
         self.sig_omega_max_changed.emit()
 
+    def _deactivate_auto_binning(self):
+        self._map["automatic_binning"].setCheckState(0)
+
     def _attach_signal_slots(self):
         self._map["wavelength"].valueChanged.connect(self.deactivate_get_wavelength)
         self._map["get_wavelength"].stateChanged.connect(self._get_wavelength)

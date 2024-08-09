@@ -193,8 +193,8 @@ class DNSTreeModel(QAbstractItemModel):
                     n_checked.append(
                         {
                             "file_number": int(item.get_tree_item_data(TreeItemEnum.number.value)),
-                            "det_rot": float(item.get_tree_item_data(TreeItemEnum.det_rot.value)),
-                            "sample_rot": float(item.get_tree_item_data(TreeItemEnum.sample_rot.value)),
+                            "det_rot": round(float(item.get_tree_item_data(TreeItemEnum.det_rot.value)), 1),
+                            "sample_rot": round(float(item.get_tree_item_data(TreeItemEnum.sample_rot.value)), 1),
                             "field": item.get_tree_item_data(TreeItemEnum.field.value),
                             "temperature": float(item.get_tree_item_data(TreeItemEnum.temperature.value)),
                             "sample_name": item.get_tree_item_data(TreeItemEnum.sample.value),
