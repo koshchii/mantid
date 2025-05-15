@@ -81,6 +81,7 @@ class DNSElasticSCPlotPresenter(DNSObserver):
         self.view.single_crystal_plot.create_colorbar()
         self.view.single_crystal_plot.on_resize()
         self._set_initial_omega_offset_dx_dy()
+        self._set_plot_limits()
         self.view.canvas.figure.tight_layout()
         self.view.draw()
 
@@ -244,7 +245,7 @@ class DNSElasticSCPlotPresenter(DNSObserver):
     def _get_current_xy_lim(self, zoom=False):
         own_dict = self.view.get_state()
         axis_type = self.view.get_axis_type()
-        xlim, ylim = self.model.get_m_limits(own_dict["x_range"], own_dict["y_range"])
+        xlim, ylim = [[own_dict["x_min"], own_dict["x_max"]], [own_dict["y_min"], own_dict["y_max"]]]
         if zoom:
             dx_lim, dy_lim = self.view.single_crystal_plot.get_active_limits()
         else:
@@ -262,7 +263,7 @@ class DNSElasticSCPlotPresenter(DNSObserver):
         if axis_type["switch"]:
             xlim, ylim = ylim, xlim
         dz_min, dz_max, dpz_min = self.model.get_data_z_min_max(xlim, ylim)
-        zlim = self.model.get_mz_limit(own_dict["z_range"])
+        zlim = [own_dict["z_min"], own_dict["z_max"]]
         if zlim[0] is None:
             zlim = [dz_min, dz_max]
             manual_z = False
@@ -288,6 +289,17 @@ class DNSElasticSCPlotPresenter(DNSObserver):
     def _get_column_headers(self):
         column_headers = np.array([["n_x", "n_y", "Intensity"]])
         return column_headers
+
+    def _set_plot_limits(self):
+        xlim, ylim = self.view.single_crystal_plot.get_active_limits()
+        self.view._map["x_min"].setValue(xlim[0])
+        self.view._map["x_max"].setValue(xlim[1])
+        self.view._map["y_min"].setValue(ylim[0])
+        self.view._map["y_max"].setValue(ylim[1])
+        zlim = self.model.get_data_z_min_max(xlim, ylim)
+        self.view._map["z_min"].setValue(zlim[0])
+        self.view._map["z_max"].setValue(zlim[1])
+        self._change_color_bar_range(zoom=False)
 
     def _attach_signal_slots(self):
         self.view.sig_plot.connect(self._plot)
