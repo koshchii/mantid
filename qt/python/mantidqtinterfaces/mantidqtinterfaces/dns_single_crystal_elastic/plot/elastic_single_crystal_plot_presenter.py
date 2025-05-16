@@ -81,7 +81,7 @@ class DNSElasticSCPlotPresenter(DNSObserver):
         self.view.single_crystal_plot.create_colorbar()
         self.view.single_crystal_plot.on_resize()
         self._set_initial_omega_offset_dx_dy()
-        self._set_plot_limits()
+        self._change_displayed_plot_limits(include_zlim=True)
         self.view.canvas.figure.tight_layout()
         self.view.draw()
 
@@ -241,6 +241,7 @@ class DNSElasticSCPlotPresenter(DNSObserver):
         if own_dict["log_scale"]:
             self.view.single_crystal_plot.redraw_colorbar()
         self.view.single_crystal_plot.connect_ylim_change()
+        self._change_displayed_plot_limits()
 
     def _get_current_xy_lim(self, zoom=False):
         own_dict = self.view.get_state()
@@ -290,16 +291,17 @@ class DNSElasticSCPlotPresenter(DNSObserver):
         column_headers = np.array([["n_x", "n_y", "Intensity"]])
         return column_headers
 
-    def _set_plot_limits(self):
+    def _change_displayed_plot_limits(self, include_zlim=False):
         xlim, ylim = self.view.single_crystal_plot.get_active_limits()
         self.view._map["x_min"].setValue(xlim[0])
         self.view._map["x_max"].setValue(xlim[1])
         self.view._map["y_min"].setValue(ylim[0])
         self.view._map["y_max"].setValue(ylim[1])
-        zlim = self.model.get_data_z_min_max(xlim, ylim)
-        self.view._map["z_min"].setValue(zlim[0])
-        self.view._map["z_max"].setValue(zlim[1])
-        self._change_color_bar_range(zoom=False)
+        if include_zlim:
+            zlim = self.model.get_data_z_min_max(xlim, ylim)
+            self.view._map["z_min"].setValue(zlim[0])
+            self.view._map["z_max"].setValue(zlim[1])
+            self._change_color_bar_range(zoom=False)
 
     def _attach_signal_slots(self):
         self.view.sig_plot.connect(self._plot)
@@ -319,3 +321,4 @@ class DNSElasticSCPlotPresenter(DNSObserver):
         self.view.sig_change_crystal_axes.connect(self._change_crystal_axes)
         self.view.sig_change_font_size.connect(self._change_font_size)
         self.view.sig_home_button_clicked.connect(self._home_button_clicked)
+        self.view.sig_plot_zoom_updated.connect(self._change_displayed_plot_limits)
